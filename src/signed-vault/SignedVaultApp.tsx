@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -2843,7 +2843,7 @@ export default function SignedVaultApp() {
   );
 }
 
-class VaultErrorBoundary extends React.Component<
+class VaultErrorBoundary extends Component<
   { children: React.ReactNode },
   { hasError: boolean; message: string }
 > {
