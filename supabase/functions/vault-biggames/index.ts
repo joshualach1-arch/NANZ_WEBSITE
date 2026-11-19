@@ -121,9 +121,10 @@ Deno.serve(async (req: Request) => {
       const collectorNo = Number(scopeCheck.data);
       if (!Number.isFinite(collectorNo)) return json({ error: "vault_access_denied" }, 401);
 
-      const origin = String(body.origin ?? "").trim();
-      if (!/^https:\/\//.test(origin)) return json({ error: "invalid_origin" }, 400);
-      const redirectUri = `${origin}/signed-vault/callback`;
+      // Fixed, canonical production callback. This exact URI must also be
+      // registered in the BIG Games developer app. Never trust a browser-
+      // supplied origin for an OAuth redirect URI.
+      const redirectUri = "https://nanz-clan.com/signed-vault/callback";
 
       const verifierBytes = crypto.getRandomValues(new Uint8Array(48));
       const codeVerifier = b64url(verifierBytes);
