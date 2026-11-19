@@ -91,11 +91,13 @@ function useVaultSession() {
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
+      let needsSetup = false;
       try {
         const status = await vaultCall('status');
-        const needsSetup = Boolean(status.setup_required);
+        needsSetup = Boolean(status.setup_required);
         if (!cancelled) setSetupRequired(needsSetup);
       } catch {
+        needsSetup = false;
         if (!cancelled) setSetupRequired(false);
       }
       const stored = readStoredToken();
@@ -115,7 +117,7 @@ function useVaultSession() {
           storeToken(null);
         }
       }
-      if (!cancelled) setPhase(setupRequired ? 'setup' : 'locked');
+      if (!cancelled) setPhase(needsSetup ? 'setup' : 'locked');
     };
     void boot();
     return () => { cancelled = true; };
@@ -123,8 +125,10 @@ function useVaultSession() {
 
   const signIn = useCallback(async (passkey: string) => {
     const result = await login(passkey);
-    storeToken(result.token);
+    // Only persist a session after the protected vault payload loaded successfully.
+    // This prevents a half-authenticated state if the data request fails.
     const vaultData = await fetchData(result.token);
+    storeToken(result.token);
     setToken(result.token);
     setData(vaultData);
     setPhase('ready');
@@ -2832,7 +2836,53 @@ export default function SignedVaultApp() {
     );
   }
 
-  return <VaultShell />;
+  return (
+    <VaultErrorBoundary>
+      <VaultShell />
+    </VaultErrorBoundary>
+  );
+}
+
+class VaultErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string }
+> {
+  state = { hasError: false, message: '' };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, message: error?.message || 'An unexpected interface error occurred.' };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[NANZO Signed Vault] Render error:', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="vault-app">
+          <div className="bg-glow bg-glow-1 vault-bg-glow-1" />
+          <div className="vault-lock-wrap">
+            <div className="vault-lock-card">
+              <div className="vault-lock-icon"><ShieldCheck size={30} /></div>
+              <h1 className="vault-lock-title">The vault could not be displayed</h1>
+              <p className="vault-lock-sub">
+                The page hit an interface error instead of showing a blank screen. Your collection data has not been changed.
+              </p>
+              <p className="vault-note" style={{ marginTop: 12, overflowWrap: 'anywhere' }}>
+                {this.state.message}
+              </p>
+              <button className="vault-btn vault-btn-gold" style={{ marginTop: 18 }} onClick={() => window.location.reload()}>
+                <RefreshCw size={14} /> Reload vault
+              </button>
+              <a className="vault-btn" href="/" style={{ marginTop: 10 }}>Back to NANZO</a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function VaultShell() {
