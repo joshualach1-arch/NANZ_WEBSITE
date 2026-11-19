@@ -82,8 +82,12 @@ function parsePet(item: Record<string, unknown>): Record<string, unknown> | null
     instance_id: instanceId,
     quantity: Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : 1,
     inventory_uid: `bg:${uidSource}`,
-    signed_status: isSigned ? "manual_review" : "not_signed",
-    signature_data: isSigned ? { signed_prefix_detected: true, source: "biggames_oauth" } : null,
+    // BIG Games strips the internal signature/ownership fields before exposing inventory.
+    // Absence of those fields is NOT proof that a pet is unsigned.
+    signed_status: "manual_review",
+    signature_data: isSigned
+      ? { signed_prefix_detected: true, source: "biggames_oauth" }
+      : { detection_status: "unavailable", reason: "biggames_api_redacts_signature_metadata", source: "biggames_oauth" },
     owner_label: null,
     rap: item.rap ?? null,
     exists: item.exists ?? null,
