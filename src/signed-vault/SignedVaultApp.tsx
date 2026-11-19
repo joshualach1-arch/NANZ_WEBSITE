@@ -455,6 +455,27 @@ function eventLabel(event: ActivityEvent): { title: string; meta: string } {
   }
 }
 
+function computeStats(data: VaultData, pets: VaultPet[]) {
+  const totalValue = pets.reduce((sum, pet) => {
+    const petValue = Number(pet.cosmic_value ?? 0);
+    const signature = data.signatures.find(
+      (sig) => sig.pet_id === pet.pet_id && sig.signer_id === pet.signer_id && sig.variant === pet.variant
+    );
+    const signatureValue = signature &&
+      (signature.verification_status === 'verified' || signature.verification_status === 'community_verified')
+      ? Number(signature.signature_value ?? 0)
+      : 0;
+    return sum + petValue + signatureValue;
+  }, 0);
+
+  const spent = pets.reduce((sum, pet) => sum + Number(pet.purchase_price ?? 0), 0);
+  const signablePetCount = data.catalog.filter((pet) => pet.signability === 'signable').length;
+  const ownedCatalogPetCount = new Set(pets.map((pet) => pet.pet_id)).size;
+  const missing = Math.max(0, signablePetCount - ownedCatalogPetCount);
+
+  return { totalValue, spent, missing };
+}
+
 function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: VaultTab) => void }) {
   const token = readStoredToken() ?? '';
   const [stats, setStats] = useState<VaultStats | null>(null);
