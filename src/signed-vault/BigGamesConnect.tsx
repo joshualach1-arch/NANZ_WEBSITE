@@ -51,7 +51,7 @@ export function BigGamesConnect({ onSynced }: { onSynced: () => Promise<void> })
     setBusy(true);
     setError(null);
     try {
-      const result = await vaultCall('biggames-oauth-start', {});
+      const result = await vaultCall('biggames-oauth-start', { origin: window.location.origin });
       const url = String(result.authorize_url ?? '');
       if (url) window.location.href = url;
       else setError('OAuth is not configured yet.');
