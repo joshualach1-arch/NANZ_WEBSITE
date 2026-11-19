@@ -136,6 +136,8 @@ Deno.serve(async (req: Request) => {
       vault_settings_manage: ["token", "p_settings", "p_collector_no", "p_label", "p_roblox_username", "p_roblox_user_id"],
       vault_roblox_manage: ["token", "p_action", "p_roblox_username", "p_roblox_user_id", "p_display_name", "p_avatar_url", "p_profile_url"],
       vault_roblox_admin: ["token", "p_collector_no", "p_action", "p_roblox_username", "p_roblox_user_id", "p_display_name", "p_avatar_url", "p_profile_url"],
+      vault_oauth_status: ["token"],
+      vault_oauth_disconnect: ["token"],
       vault_sync_log_get: ["token", "p_collector_no"],
       vault_signability_manage: ["token", "p_pet_id", "p_signability", "p_source"],
       vault_signer_manage_v2: ["token", "p_action", "p_signer_id", "p_signer_name", "p_roblox_username", "p_roblox_user_id", "p_display_name", "p_avatar_url", "p_profile_url", "p_roles", "p_is_developer", "p_is_partner", "p_is_creator", "p_youtube_channel_id", "p_youtube_channel_name", "p_youtube_channel_url", "p_youtube_avatar_url", "p_youtube_subscribers", "p_verification_status", "p_source", "p_merge_target_id", "p_notes"],
