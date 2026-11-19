@@ -334,7 +334,10 @@ Deno.serve(async (req: Request) => {
       const parsed = items
         .map(parsePet)
         .filter((entry): entry is Record<string, unknown> => entry !== null);
-      const signedFound = parsed.filter((p) => p.signed_status !== "not_signed").length;
+      const signedFound = parsed.filter((p) =>
+        asRecord(p.signature_data).signed_prefix_detected === true ||
+        (typeof p.signer_id === "string" && p.signer_id.length > 0)
+      ).length;
 
       const applyRes = await supabase.rpc("vault_inventory_apply", {
         p_collector_no: scope,
