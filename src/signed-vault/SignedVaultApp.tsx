@@ -263,7 +263,7 @@ function PetCard({ pet, onOpen, signatures }: { pet: VaultPet; onOpen: (pet: Vau
         {pet.signed_status === 'not_signed'
           ? <span className="vault-pill vault-pill-gray vault-pill-xs">Not signed</span>
           : <span className={`vault-pill vault-pill-xs ${isVerified ? 'vault-pill-green' : 'vault-pill-gold'}`}>
-              {isVerified ? 'Verified' : 'Unverified'}
+              {pet.signed_status === 'manual_review' ? 'Unknown – needs review' : isVerified ? 'Verified' : 'Unverified'}
             </span>}
       </div>
       <div className="vault-pet-body">
@@ -1022,7 +1022,7 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
           <div className="vault-note">{pet.pet_category} · {variantLabelWide[pet.variant] ?? pet.variant}{pet.quantity && pet.quantity > 1 ? ` · ×${pet.quantity}` : ''}</div>
           <div className="vault-row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
             <span className={`vault-pill ${pet.signed_status === 'not_signed' ? 'vault-pill-gray' : isVerified ? 'vault-pill-green' : 'vault-pill-gold'}`}>
-              {pet.signed_status === 'not_signed' ? 'Not signed' : verificationLabels[pet.verification_status ?? 'needs_review']}
+              {pet.signed_status === 'not_signed' ? 'Not signed' : pet.signed_status === 'manual_review' ? 'Unknown – needs review' : verificationLabels[pet.verification_status ?? 'needs_review']}
             </span>
             <span className="vault-pill vault-pill-gray">{signedStatusLabels[pet.signed_status ?? 'manual_review']}</span>
           </div>
