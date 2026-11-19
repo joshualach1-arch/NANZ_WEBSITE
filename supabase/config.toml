@@ -1,0 +1,31 @@
+[functions.nanz-ranking]
+verify_jwt = false
+entrypoint = "./functions/nanz-ranking/index.ts"
+
+[functions.roblox-avatars]
+verify_jwt = false
+entrypoint = "./functions/roblox-avatars/index.ts"
+
+[functions.nanz-awards]
+verify_jwt = false
+entrypoint = "./functions/nanz-awards/index.ts"
+
+[functions.nanz-intelligence]
+verify_jwt = false
+entrypoint = "./functions/nanz-intelligence/index.ts"
+
+[functions.nanz-discord-bridge]
+verify_jwt = false
+entrypoint = "./functions/nanz-discord-bridge/index.ts"
+
+[functions.vault-bridge]
+verify_jwt = false
+entrypoint = "./functions/vault-bridge/index.ts"
+
+[functions.vault-biggames]
+verify_jwt = false
+entrypoint = "./functions/vault-biggames/index.ts"
+
+[functions.vault-catalog]
+verify_jwt = false
+entrypoint = "./functions/vault-catalog/index.ts"

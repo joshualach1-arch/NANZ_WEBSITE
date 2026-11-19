@@ -1,0 +1,37 @@
+{
+  "projectId": "72951557",
+  "functions": {
+    "nanz-awards": {
+      "hasChanged": false,
+      "hash": "d848a278862fdbfe37c99f4340ce803a711991c2d77c7143f34ba4e60ad9d658"
+    },
+    "nanz-discord-bridge": {
+      "hasChanged": false,
+      "hash": "d8dea55699c69f291fbdebd3eafc64d0dbfce6da5e804542106e054229811800"
+    },
+    "nanz-intelligence": {
+      "hasChanged": false,
+      "hash": "9876fa0d0c58a256ba8b0fe2c17f566cee3a1d18d87cc5d0d7e871cc3416a9ed"
+    },
+    "nanz-ranking": {
+      "hasChanged": false,
+      "hash": "75ae63101acac2e7865f92d96ff2c7d3e1fe40e06779aed198d8167cb995bb60"
+    },
+    "roblox-avatars": {
+      "hasChanged": false,
+      "hash": "aa6d0421df87c1981b3ceb272777bb650a999779cb426e2ec38edaed668ee024"
+    },
+    "vault-biggames": {
+      "hasChanged": false,
+      "hash": "adfb9eae4e8be33c90cff87fbed17ec1f591553e1936f7ca86fc750632b143c4"
+    },
+    "vault-bridge": {
+      "hasChanged": false,
+      "hash": "7cb0cce7a98ffe4629fbef5b0163d3303d474caeb6eccc5a3d74d13f35f1e2e7"
+    },
+    "vault-catalog": {
+      "hasChanged": false,
+      "hash": "70e08d95da51b7dc1924daa61328d951dd16a902db7fc6fa976666a5e756236e"
+    }
+  }
+}
