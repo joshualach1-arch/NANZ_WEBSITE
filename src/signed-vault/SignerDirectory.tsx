@@ -164,7 +164,6 @@ export function SignerDetailPage({ data, signerId, onBack }: {
 }) {
   const signer = data.signers.find((entry) => entry.id === signerId);
   const [editOpen, setEditOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<'overview' | 'signatures' | 'info'>('overview');
   if (!signer) return (
     <div className="vault-signer-modal-backdrop" onMouseDown={onBack}>
       <section className="vault-signer-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
@@ -177,32 +176,33 @@ export function SignerDetailPage({ data, signerId, onBack }: {
   const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id) : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id);
   const totalValue = signatures.reduce((sum, record) => sum + (record.verification_status === 'verified' || record.verification_status === 'community_verified' ? Number(record.signature_value ?? 0) : 0), 0);
-  const verifiedCount = signatures.filter((record) => record.verification_status === 'verified' || record.verification_status === 'community_verified').length;
   const verified = signer.verification_status === 'verified' || signer.verification_status === 'community_verified';
   return (
     <div className="vault-signer-modal-backdrop" onMouseDown={onBack}>
-      <section className="vault-signer-modal" role="dialog" aria-modal="true" aria-label={signer.signer_name + ' signer profile'} onMouseDown={(event) => event.stopPropagation()}>
+      <section className="vault-signer-modal vault-signer-modal-refined" role="dialog" aria-modal="true" aria-label={signer.signer_name + ' signer profile'} onMouseDown={(event) => event.stopPropagation()}>
         <button className="vault-signer-modal-close" onClick={onBack} aria-label="Close signer details"><X size={19} /></button>
         <div className="vault-signer-modal-scroll">
-          <div className="vault-profile-hero">
+          <div className="vault-profile-hero vault-profile-hero-refined">
             <div className="vault-profile-identity">
               <div className="vault-profile-avatar">{signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} /> : signer.signer_name.slice(0, 2).toUpperCase()}</div>
               <div className="vault-profile-main">
-                <span className={'vault-profile-status' + (verified ? ' is-verified' : '')}><BadgeCheck size={13} /> {verificationLabels[signer.verification_status ?? 'unverified']}</span>
                 <h2>{signer.display_name || signer.signer_name}</h2>
-                <p>@{signer.roblox_username || signer.signer_name}{signer.roblox_user_id ? ' · ID ' + signer.roblox_user_id : ''}</p>
-                <div className="vault-profile-badges">{(signer.roles ?? []).map((role) => <span key={role} className={'vault-profile-role role-' + role}>{signerRoleLabels[role]}</span>)}</div>
+                <p>@{signer.roblox_username || signer.signer_name}</p>
+                <div className="vault-profile-badges">
+                  {(signer.roles ?? []).map((role) => <span key={role} className={'vault-profile-role role-' + role}>{signerRoleLabels[role]}</span>)}
+                  <span className={'vault-profile-role vault-profile-verification' + (verified ? ' is-verified' : '')}><BadgeCheck size={12} /> {verificationLabels[signer.verification_status ?? 'unverified']}</span>
+                </div>
+                <div className="vault-profile-links">
+                  {signer.profile_url && <a href={signer.profile_url} target="_blank" rel="noreferrer"><ExternalLink size={13} /> Roblox profile</a>}
+                  {signer.youtube_channel_url && <a href={signer.youtube_channel_url} target="_blank" rel="noreferrer"><Youtube size={13} /> {signer.youtube_channel_name || 'YouTube'}</a>}
+                  {data.is_owner && <button onClick={() => setEditOpen(true)}><Pencil size={13} /> Edit profile</button>}
+                </div>
               </div>
             </div>
-            <div className="vault-profile-rank"><strong>{signatures.length}</strong><span>KNOWN SIGNATURES</span></div>
           </div>
-          <div className="vault-profile-actions">
-            {signer.profile_url && <a href={signer.profile_url} target="_blank" rel="noreferrer" className="vault-profile-action primary"><ExternalLink size={16} /> Roblox Profile</a>}
-            {signer.youtube_channel_url && <a href={signer.youtube_channel_url} target="_blank" rel="noreferrer" className="vault-profile-action"><Youtube size={16} /> {signer.youtube_channel_name || 'YouTube'}</a>}
-            {data.is_owner && <button className="vault-profile-action" onClick={() => setEditOpen(true)}><Pencil size={15} /> Edit Profile</button>}
-          </div>
-          <div className="vault-profile-stat-grid">
-            <div className="vault-profile-stat"><span>VERIFIED SIGNATURE VALUE</span><strong>{totalValue > 0 ? formatValue(totalValue) : '—'}</strong><small>{verifiedCount} verified records</small></div>
+
+          <div className="vault-profile-stat-grid vault-profile-stat-grid-refined">
+            <div className="vault-profile-stat vault-profile-stat-featured"><span>VERIFIED SIGNATURE VALUE</span><strong>{totalValue > 0 ? formatValue(totalValue) : '—'}</strong></div>
             <div className="vault-profile-stat"><span>COSMIC EXCLUSIVE</span><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
             <div className="vault-profile-stat"><span>COSMIC HUGE</span><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
             <div className="vault-profile-stat"><span>COSMIC TITANIC</span><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
@@ -210,47 +210,26 @@ export function SignerDetailPage({ data, signerId, onBack }: {
             <div className="vault-profile-stat"><span>IN YOUR COLLECTION</span><strong>{myPets.length}</strong></div>
             {data.is_owner && <div className="vault-profile-stat"><span>IN COLLECTOR 2 VAULT</span><strong>{ownerPets.length}</strong></div>}
           </div>
-          <div className="vault-profile-tabs">
-            <button className={activePanel === 'overview' ? 'active' : ''} onClick={() => setActivePanel('overview')}><Layers3 size={15} /> Overview</button>
-            <button className={activePanel === 'signatures' ? 'active' : ''} onClick={() => setActivePanel('signatures')}><BadgeCheck size={15} /> Signatures <span>{signatures.length}</span></button>
-            <button className={activePanel === 'info' ? 'active' : ''} onClick={() => setActivePanel('info')}><UserRound size={15} /> Info</button>
-          </div>
-          {activePanel === 'overview' && <div className="vault-profile-content-grid">
-            <div className="vault-profile-content-card">
-              <h3><UserRound size={16} /> SIGNER INFORMATION</h3>
-              <div className="vault-profile-info-row"><span>Roblox Username</span><strong>{signer.roblox_username || signer.signer_name}</strong></div>
-              <div className="vault-profile-info-row"><span>Roblox User ID</span><strong>{signer.roblox_user_id || 'Not available'}</strong></div>
-              <div className="vault-profile-info-row"><span>Verification</span><strong>{verificationLabels[signer.verification_status ?? 'unverified']}</strong></div>
-              <div className="vault-profile-info-row"><span>Known signatures</span><strong>{signatures.length}</strong></div>
+
+          <section className="vault-known-signatures">
+            <div className="vault-known-signatures-kicker">SIGNATURE RECORDS</div>
+            <h3>KNOWN SIGNATURES</h3>
+            <div className="vault-known-signatures-underline" aria-hidden="true" />
+            <div className="vault-table-wrap vault-known-signatures-table">
+              <table className="vault-table">
+                <thead><tr><th>Pet</th><th>Variant</th><th>Signature</th><th>Signature Value</th></tr></thead>
+                <tbody>{signatures.map((record) => {
+                  const pet = data.catalog.find((entry) => entry.id === record.pet_id);
+                  return <tr key={record.id}>
+                    <td style={{ fontWeight: 750, color: 'var(--text)' }}>{pet?.pet_name ?? 'Unknown pet'}</td>
+                    <td>{variantLabel[record.variant]}</td>
+                    <td><span className="vault-signature-name-rainbow">{record.signature_name || signer.display_name || signer.signer_name}</span></td>
+                    <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 800 }}>{record.signature_value != null ? formatValue(record.signature_value) : '—'}</td>
+                  </tr>;
+                })}{signatures.length === 0 && <tr><td colSpan={4} className="vault-known-signatures-empty">No signature records for this signer yet.</td></tr>}</tbody>
+              </table>
             </div>
-            <div className="vault-profile-content-card">
-              <h3><BadgeCheck size={16} /> SIGNATURE OVERVIEW</h3>
-              <div className="vault-profile-info-row"><span>Verified records</span><strong>{verifiedCount}</strong></div>
-              <div className="vault-profile-info-row"><span>Unverified records</span><strong>{signatures.length - verifiedCount}</strong></div>
-              <div className="vault-profile-info-row"><span>In your collection</span><strong>{myPets.length} pets</strong></div>
-              {data.is_owner && <div className="vault-profile-info-row"><span>Collector 2 vault</span><strong>{ownerPets.length} pets</strong></div>}
-            </div>
-          </div>}
-          {activePanel === 'signatures' && <div className="vault-profile-content-card vault-profile-signatures">
-            <h3><BadgeCheck size={16} /> KNOWN SIGNATURES <span>{signatures.length} RECORDS</span></h3>
-            <div className="vault-table-wrap"><table className="vault-table">
-              <thead><tr><th>Pet</th><th>Variant</th><th>Signature</th><th>Signature Value</th></tr></thead>
-              <tbody>{signatures.map((record) => {
-                const pet = data.catalog.find((entry) => entry.id === record.pet_id);
-                return <tr key={record.id}><td style={{ fontWeight: 700, color: 'var(--text)' }}>{pet?.pet_name ?? 'Unknown pet'}</td><td>{variantLabel[record.variant]}</td><td><span className="vault-signature-name-rainbow">{record.signature_name || signer.display_name || signer.signer_name}</span></td><td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 700 }}>{record.signature_value != null ? formatValue(record.signature_value) : '—'}</td></tr>;
-              })}{signatures.length === 0 && <tr><td colSpan={4} style={{ color: 'var(--text4)' }}>No signature records for this signer yet.</td></tr>}</tbody>
-            </table></div>
-          </div>}
-          {activePanel === 'info' && <div className="vault-profile-content-grid">
-            <div className="vault-profile-content-card">
-              <h3><UserRound size={16} /> PROFILE DETAILS</h3>
-              <div className="vault-profile-info-row"><span>Display name</span><strong>{signer.display_name || '—'}</strong></div>
-              <div className="vault-profile-info-row"><span>Roblox profile</span>{signer.profile_url ? <a href={signer.profile_url} target="_blank" rel="noreferrer">Open profile <ExternalLink size={12} /></a> : <strong>—</strong>}</div>
-              <div className="vault-profile-info-row"><span>YouTube</span>{signer.youtube_channel_url ? <a href={signer.youtube_channel_url} target="_blank" rel="noreferrer">{signer.youtube_channel_name || 'Open channel'} <ExternalLink size={12} /></a> : <strong>—</strong>}</div>
-              {signer.youtube_subscribers != null && <div className="vault-profile-info-row"><span>Subscribers</span><strong>{signer.youtube_subscribers.toLocaleString('en-US')}</strong></div>}
-            </div>
-            <div className="vault-profile-content-card"><h3><Layers3 size={16} /> NOTES</h3><p className="vault-profile-notes">{signer.notes || 'No additional information has been added for this signer.'}</p></div>
-          </div>}
+          </section>
         </div>
         {data.is_owner && editOpen && <SignerEditor data={data} signer={signer} onClose={() => setEditOpen(false)} onSaved={async () => setEditOpen(false)} />}
       </section>
