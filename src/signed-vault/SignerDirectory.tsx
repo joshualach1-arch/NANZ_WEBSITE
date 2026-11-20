@@ -3,7 +3,7 @@ import {
   ArrowLeft, BadgeCheck, Check, ExternalLink, Merge, Pencil, Plus, Search, ShieldAlert, Trash2, X, Youtube,
 } from 'lucide-react';
 import {
-  VaultApiError, formatDate, formatValue, readStoredToken, rpcCall,
+  VaultApiError, formatDate, formatValue, readStoredToken, rpcCall, importCosmicSigners,
   signerRoleLabels, verificationLabels, vaultCall,
   type Signer, type SignerRole, type VaultData, type Variant, variantLabel,
 } from './vaultApi';
@@ -39,6 +39,9 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
   const [minSignatures, setMinSignatures] = useState(0);
   const [sort, setSort] = useState<'name' | 'signatures'>('name');
   const [editor, setEditor] = useState<'new' | Signer | null>(null);
+  const [importingCosmic, setImportingCosmic] = useState(false);
+  const [importSummary, setImportSummary] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const ownedSignerIds = useMemo(() => new Set(
     data.pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').map((pet) => pet.signer_id as string)
@@ -69,12 +72,36 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
           <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length} known signers</h3>
         </div>
         {isOwner && (
-          <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => setEditor('new')}>
-            <Plus size={13} /> Add signer
-          </button>
+          <div className="vault-row" style={{ gap: 8 }}>
+            <button
+              className="vault-btn vault-btn-sm"
+              disabled={importingCosmic}
+              onClick={() => {
+                setImportingCosmic(true);
+                setImportError(null);
+                setImportSummary(null);
+                void importCosmicSigners()
+                  .then(async (result) => {
+                    setImportSummary(
+                      `Cosmic Values import complete · ${Number(result.unique_signers ?? 0)} unique signers found · ${Number(result.added ?? 0)} added · ${Number(result.updated ?? 0)} updated · ${Number(result.skipped ?? 0)} skipped`
+                    );
+                    await onRefresh();
+                  })
+                  .catch((err) => setImportError(err instanceof Error ? err.message : 'Signer import failed.'))
+                  .finally(() => setImportingCosmic(false));
+              }}
+            >
+              {importingCosmic ? 'Importing…' : 'Import Cosmic Values'}
+            </button>
+            <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => setEditor('new')}>
+              <Plus size={13} /> Add signer
+            </button>
+          </div>
         )}
       </div>
 
+      {importSummary && <div className="vault-success" style={{ marginBottom: 12 }}>{importSummary}</div>}
+      {importError && <div className="vault-error" style={{ marginBottom: 12 }}>{importError}</div>}
       <div className="vault-card" style={{ marginBottom: 16 }}>
         <div className="vault-row" style={{ flexWrap: 'wrap', gap: 10 }}>
           <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 200 }}>
