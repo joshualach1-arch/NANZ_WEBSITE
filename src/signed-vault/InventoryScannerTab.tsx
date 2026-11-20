@@ -84,7 +84,10 @@ export function InventoryScannerTab({ onRefresh, isOwner }: { onRefresh: () => P
   }
   if (!data) return <div className="vault-loading"><div className="vault-spinner" /></div>;
 
-  const present = data.items.filter((item) => item.present);
+  const trackedCategories = new Set(['huge', 'exclusive', 'titanic', 'gargantuan', 'gigantuan']);
+  const present = data.items.filter((item) =>
+    item.present && trackedCategories.has(String(item.category ?? '').trim().toLowerCase())
+  );
   const needsReview = present.filter((item) => item.signed_status === 'manual_review' || item.signed_status === 'unverified');
   const verified = present.filter((item) => item.signed_status === 'verified');
   const plain = present.filter((item) => item.signed_status === 'not_signed');
