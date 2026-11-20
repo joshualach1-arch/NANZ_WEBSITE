@@ -243,12 +243,13 @@ export function StatCard({ label, value, hint, gold }: { label: string; value: s
   );
 }
 
-function PetCard({ pet, onOpen, signatures }: { pet: VaultPet; onOpen: (pet: VaultPet) => void; signatures?: SignatureRecord[] }) {
+function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: (pet: VaultPet) => void; signatures?: SignatureRecord[]; catalog?: CatalogPet[] }) {
   const isVerified = pet.verification_status === 'verified' || pet.verification_status === 'community_verified';
-  const signatureValue = signatures
-    ? petSignatureValue(pet, signatures)
-    : 0;
-  const combined = Number(pet.cosmic_value ?? 0) + signatureValue;
+  const signatureValue = signatures ? petSignatureValue(pet, signatures) : 0;
+  const catalogValue = catalog?.find((entry) => entry.id === pet.pet_id)?.cosmic_value;
+  const rawPetValue = pet.cosmic_value ?? catalogValue ?? null;
+  const petValue = rawPetValue == null ? null : Number(rawPetValue);
+  const combined = (petValue ?? 0) + signatureValue;
   return (
     <button className="vault-pet-card" onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
       <div className="vault-pet-media">
@@ -272,9 +273,9 @@ function PetCard({ pet, onOpen, signatures }: { pet: VaultPet; onOpen: (pet: Vau
           <span>{pet.signer_name ?? 'Unknown signer'}</span>
         </div>
         <div className="vault-value-breakdown">
-          <span><small>Pet value</small><b>{formatValue(Number(pet.cosmic_value ?? 0), '')}</b></span>
+          <span><small>Pet value</small><b>{petValue != null ? formatValue(petValue, '') : 'Not available'}</b></span>
           <span><small>Signature value</small><b>{signatureValue > 0 ? formatValue(signatureValue, '') : '—'}</b></span>
-          <span className="vault-value-total"><small>Combined</small><b>{formatValue(combined, '')}</b></span>
+          <span className="vault-value-total"><small>Combined</small><b>{petValue != null || signatureValue > 0 ? formatValue(combined, '') : 'Not available'}</b></span>
         </div>
         <div className="vault-pet-meta" style={{ marginTop: 5 }}>
           <span className="vault-note">
@@ -991,7 +992,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       ) : (
         <div className="vault-pet-grid">
-          {filtered.map((pet) => <PetCard key={pet.id} pet={pet} onOpen={setDetail} signatures={data.signatures} />)}
+          {filtered.map((pet) => <PetCard key={pet.id} pet={pet} onOpen={setDetail} signatures={data.signatures} catalog={data.catalog} />)}
         </div>
       )}
 
