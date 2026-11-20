@@ -82,7 +82,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
                 void importCosmicSigners()
                   .then(async (result) => {
                     setImportSummary(
-                      `Cosmic Values import complete · ${Number(result.unique_signers ?? 0)} unique signers found · ${Number(result.added ?? 0)} added · ${Number(result.updated ?? 0)} updated · ${Number(result.skipped ?? 0)} skipped`
+                      `Cosmic Values import complete · ${Number(result.unique_signers ?? 0)} distinct Roblox accounts from ${Number(result.source_rows ?? 0)} source rows · ${Number(result.added ?? 0)} added · ${Number(result.updated ?? 0)} updated · ${Number(result.skipped ?? 0)} skipped. Same display names remain separate when the Roblox accounts differ.`
                     );
                     await onRefresh();
                   })
