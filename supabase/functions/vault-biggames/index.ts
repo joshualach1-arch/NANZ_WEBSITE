@@ -20,7 +20,11 @@ const asRecord = (value: unknown): Record<string, unknown> =>
 const AUTHORIZE_URL = "https://db.biggames.io/oauth/authorize";
 const TOKEN_URL = "https://db.biggames.io/oauth/token";
 const API_BASE = "https://ps99.biggamesapi.io";
-const SCOPES = ["player-data:pet-simulator-99:inventory:read"];
+const SCOPES = [
+  "player-data:pet-simulator-99:inventory:read",
+  "player-data:pet-simulator-99:trades:read",
+  "player-data:pet-simulator-99:booth:read",
+];
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -276,6 +280,128 @@ Deno.serve(async (req: Request) => {
         display_name: displayName,
         avatar_url: avatarUrl,
         profile_url: `https://www.roblox.com/users/${userId}/profile`,
+      });
+    }
+
+    // ── import historical trades and booth transactions ─────────────
+    if (action === "history_sync") {
+      const tokenRes = await supabase.rpc("vault_assert_session", { p_token: token });
+      if (tokenRes.error) return json({ error: "vault_access_denied" }, 401);
+      const collectorNo = Number(tokenRes.data);
+      const requested = body.collector_no != null ? Number(body.collector_no) : collectorNo;
+      const scope = collectorNo === 1 ? (requested === 2 ? 2 : 1) : collectorNo;
+
+      const storedRes = await supabase
+        .from("vault_oauth_tokens")
+        .select("access_token, expires_at, roblox_user_id")
+        .eq("collector_no", scope)
+        .maybeSingle();
+      const stored = storedRes.data as { access_token: string; expires_at: string; roblox_user_id: number | null } | null;
+      if (!stored?.access_token) return json({ error: "oauth_not_connected" }, 400);
+      if (new Date(stored.expires_at).getTime() < Date.now()) return json({ error: "oauth_token_expired" }, 400);
+
+      const headers = { Authorization: `Bearer ${stored.access_token}`, Accept: "application/json" };
+      const [tradesRes, boothRes] = await Promise.all([
+        fetch(`${API_BASE}/v1/account/trades`, { headers, signal: AbortSignal.timeout(20000) }),
+        fetch(`${API_BASE}/v1/account/booth`, { headers, signal: AbortSignal.timeout(20000) }),
+      ]);
+      if (tradesRes.status === 403 || boothRes.status === 403) {
+        return json({ error: "oauth_history_scope_missing", required_scopes: [
+          "player-data:pet-simulator-99:trades:read",
+          "player-data:pet-simulator-99:booth:read"
+        ] }, 400);
+      }
+      if (tradesRes.status === 401 || boothRes.status === 401) return json({ error: "oauth_token_expired" }, 400);
+      if (tradesRes.status === 429 || boothRes.status === 429) {
+        const retryAfter = Math.max(Number(tradesRes.headers.get("Retry-After") ?? 0), Number(boothRes.headers.get("Retry-After") ?? 0), 60);
+        return json({ error: "rate_limited", retry_after: retryAfter }, 429);
+      }
+      if (!tradesRes.ok || !boothRes.ok) return json({ error: "history_fetch_failed" }, 502);
+
+      const tradesPayload = asRecord(await tradesRes.json().catch(() => ({})));
+      const boothPayload = asRecord(await boothRes.json().catch(() => ({})));
+      const tradeData = asRecord(tradesPayload.data);
+      const boothData = asRecord(boothPayload.data);
+      const tradeEntries = Array.isArray(tradeData.entries) ? tradeData.entries as Record<string, unknown>[] : [];
+      const boothEntries = Array.isArray(boothData.entries) ? boothData.entries as Record<string, unknown>[] : [];
+
+      const catalogRes = await supabase.from("vault_pet_catalog").select("id, pet_name, category");
+      if (catalogRes.error) return json({ error: "catalog_lookup_failed" }, 500);
+      const catalog = new Map((catalogRes.data ?? []).map((row: Record<string, unknown>) => [String(row.pet_name).toLowerCase(), row]));
+      const isTrackedPet = (item: Record<string, unknown>) => {
+        const name = String(item.id ?? item.displayName ?? "").trim();
+        const row = catalog.get(name.toLowerCase());
+        if (!row) return null;
+        const category = String(row.category ?? "");
+        return ["Huge", "Exclusive", "Titanic", "Gargantuan"].includes(category) ? row : null;
+      };
+      const itemName = (item: Record<string, unknown>) => String(item.id ?? item.displayName ?? "Unknown Pet");
+      const itemVariant = (item: Record<string, unknown>) => {
+        const v = String(item.variant ?? "Regular").toLowerCase().replace(/ /g, "_");
+        return ({ regular: "normal", shiny: "shiny", golden: "golden", rainbow: "rainbow", shiny_golden: "golden", shiny_rainbow: "rainbow" } as Record<string,string>)[v] ?? "normal";
+      };
+      const diamondAmount = (items: unknown[]) => items.reduce((sum, raw) => {
+        const item = asRecord(raw);
+        const id = String(item.id ?? item.displayName ?? "").toLowerCase();
+        if (id !== "diamonds" && id !== "diamond") return sum;
+        const amount = Number(item.count ?? item.amount ?? item.rawData && asRecord(item.rawData)._am ?? 0);
+        return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+      }, 0);
+      const records: Record<string, unknown>[] = [];
+      const addRecords = async (entries: Record<string, unknown>[], source: "trade" | "booth") => {
+        for (const entry of entries) {
+          const timestamp = Number(entry.timestamp ?? 0);
+          if (!Number.isFinite(timestamp) || timestamp <= 0) continue;
+          const received = Array.isArray(entry.received) ? entry.received.map(asRecord) : [];
+          const given = Array.isArray(entry.given) ? entry.given.map(asRecord) : [];
+          const pets = received.filter((item) => isTrackedPet(item));
+          if (!pets.length) continue;
+          const otherParty = asRecord(entry.otherParty);
+          const keyMaterial = JSON.stringify({ source, timestamp, other: otherParty.uid ?? null, given, received });
+          const key = Array.from(await sha256(keyMaterial)).map((b) => b.toString(16).padStart(2, "0")).join("");
+          const diamonds = source === "trade" ? diamondAmount(given) : 0;
+          for (const pet of pets) {
+            const catalogPet = isTrackedPet(pet)!;
+            const price = diamonds > 0 && pets.length === 1 ? diamonds : null;
+            records.push({
+              collector_no: scope,
+              pet_id: catalogPet.id,
+              variant: itemVariant(pet),
+              acquired_at: new Date(timestamp * 1000).toISOString().slice(0, 10),
+              purchase_price: price,
+              currency: "gems",
+              source: "trade",
+              acquisition_type: source === "booth" ? "booth_purchase" : "trade",
+              verification_status: "unverified",
+              external_transaction_key: key,
+              notes: [
+                source === "booth" ? "Imported from BIG Games booth history." : "Imported from BIG Games trade history.",
+                otherParty.displayName ? `Other party: ${String(otherParty.displayName)}` : "",
+                price == null ? "Exact purchase price unavailable from this transaction record." : "Diamond amount explicitly present in trade record."
+              ].filter(Boolean).join(" "),
+            });
+          }
+        }
+      };
+      await addRecords(tradeEntries, "trade");
+      await addRecords(boothEntries, "booth");
+
+      let imported = 0;
+      if (records.length) {
+        const { data: upserted, error: upsertError } = await supabase
+          .from("vault_acquisitions")
+          .upsert(records, { onConflict: "collector_no,external_transaction_key,pet_id,variant", ignoreDuplicates: true })
+          .select("id");
+        if (upsertError) return json({ error: "history_store_failed", detail: upsertError.message }, 500);
+        imported = upserted?.length ?? 0;
+      }
+      return json({
+        status: "ok",
+        trades_scanned: tradeEntries.length,
+        booth_transactions_scanned: boothEntries.length,
+        pet_acquisitions_found: records.length,
+        newly_imported: imported,
+        note: "BIG Games trade/booth history does not always expose the diamond price. Unknown prices remain blank."
       });
     }
 
