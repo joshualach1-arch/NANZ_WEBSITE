@@ -36,6 +36,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [verification, setVerification] = useState('all');
+  const [ownership, setOwnership] = useState<'all' | 'owned' | 'missing'>('all');
   const [sort, setSort] = useState<'name' | 'signatures'>('name');
   const [editor, setEditor] = useState<'new' | Signer | null>(null);
   const [importingCosmic, setImportingCosmic] = useState(false);
@@ -55,20 +56,30 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
           || (signer.display_name ?? '').toLowerCase().includes(q))) return false;
         if (category !== 'all' && !(signer.roles ?? []).includes(category as SignerRole)) return false;
         if (verification !== 'all' && signer.verification_status !== verification) return false;
+        if (ownership === 'owned' && !ownedSignerIds.has(signer.id)) return false;
+        if (ownership === 'missing' && ownedSignerIds.has(signer.id)) return false;
         return true;
       })
       .sort((a, b) => sort === 'name'
         ? a.signer_name.localeCompare(b.signer_name)
         : b.signature_count - a.signature_count);
-  }, [data.signers, query, category, verification, sort]);
+  }, [data.signers, query, category, verification, ownership, sort]);
+
+  const ownedSignerCount = data.signers.filter((entry) => ownedSignerIds.has(entry.id)).length;
+  const missingSignerCount = Math.max(0, data.signers.length - ownedSignerCount);
 
   return (
-    <div>
+    <div className="vault-signer-page">
       <div className="vault-section-head">
         <div>
           <span className="vault-kicker">Shared registry</span>
           <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length.toLocaleString('en-US')} signer records</h3>
           <div className="vault-note">Each Roblox account is a separate record, even when display names match.</div>
+          <div className="vault-signer-counts">
+            <div><small>In your collection</small><strong>{ownedSignerCount}</strong></div>
+            <div><small>Not collected yet</small><strong>{missingSignerCount}</strong></div>
+            <div><small>Total signer accounts</small><strong>{data.signers.length}</strong></div>
+          </div>
         </div>
         {isOwner && (
           <div className="vault-row" style={{ gap: 8 }}>
@@ -118,6 +129,11 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
               <option key={role} value={role}>{signerRoleLabels[role]}</option>
             ))}
           </select>
+          <select className="vault-select" style={{ maxWidth: 180 }} value={ownership} onChange={(event) => setOwnership(event.target.value as 'all' | 'owned' | 'missing')}>
+            <option value="all">All signers</option>
+            <option value="owned">I have signatures ({ownedSignerCount})</option>
+            <option value="missing">I don't have signatures ({missingSignerCount})</option>
+          </select>
           <select className="vault-select" style={{ maxWidth: 180 }} value={verification} onChange={(event) => setVerification(event.target.value)}>
             <option value="all">Any verification</option>
             {Object.entries(verificationLabels).map(([key, label]) => (
@@ -163,10 +179,10 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
                 ))}
               </div>
               <div className="vault-note" style={{ marginTop: 6 }}>{signer.signature_count} signatures</div>
-              <span className={`vault-pill vault-pill-xs ${ownedSignerIds.has(signer.id) ? 'vault-pill-green' : 'vault-pill-gray'}`}>
-                {ownedSignerIds.has(signer.id) ? 'In your collection' : 'Not collected'}
+              <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}>
+                <span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'Signature owned' : 'Not in collection'}
               </span>
-              <span className={`vault-pill ${verificationTone[signer.verification_status ?? 'unverified']}`} style={{ marginTop: 6 }}>
+              <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>
                 {signer.verification_status === 'verified' && <BadgeCheck size={11} />}
                 {verificationLabels[signer.verification_status ?? 'unverified']}
               </span>
@@ -209,10 +225,18 @@ export function SignerDetailPage({ data, signerId, onBack }: {
   }
 
   const signatures = data.signatures.filter((record) => record.signer_id === signer.id);
-  const ownerPets = data.is_owner
-    ? [...(data.other_pets ?? []), ...[]].filter((pet) => pet.signer_id === signer.id)
-    : [];
+  const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id) : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id);
+  const ownedSignatureKeys = new Set(signatures.map((record) => `${record.pet_id}:${record.variant}`));
+  const missingSignaturePets = data.catalog.filter((pet) => {
+    const category = String(pet.category ?? '').toLowerCase();
+    const tracked = category.startsWith('huge') || category.startsWith('exclusive') || category.startsWith('titanic')
+      || category.startsWith('gargantuan') || category.startsWith('gigantuan')
+      || pet.is_huge || pet.is_exclusive || pet.is_titanic || pet.is_gargantuan;
+    return tracked && !ownedSignatureKeys.has(`${pet.id}:normal`);
+  });
+  const verifiedCount = signatures.filter((record) => record.verification_status === 'verified' || record.verification_status === 'community_verified').length;
+  const unverifiedCount = signatures.length - verifiedCount;
   const totalValue = signatures.reduce((sum, record) => sum + (record.verification_status === 'verified' || record.verification_status === 'community_verified' ? Number(record.signature_value ?? 0) : 0), 0);
 
   return (
@@ -265,6 +289,9 @@ export function SignerDetailPage({ data, signerId, onBack }: {
 
       <div className="vault-stat-grid" style={{ marginTop: 16 }}>
         <StatCard label="Known signatures" value={String(signatures.length)} />
+        <StatCard label="Verified" value={String(verifiedCount)} />
+        <StatCard label="Unverified" value={String(unverifiedCount)} />
+        <StatCard label="Missing from signer catalog" value={String(missingSignaturePets.length)} />
         <StatCard label="Verified signature value" value={totalValue > 0 ? formatValue(totalValue) : '—'} gold />
         <StatCard label="Cosmic Exclusive" value={signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'} />
         <StatCard label="Cosmic Huge" value={signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'} />
@@ -311,8 +338,21 @@ export function SignerDetailPage({ data, signerId, onBack }: {
           </tbody>
         </table>
       </div>
+      <div className="vault-signature-status-legend">
+        <span className="vault-verification-badge vault-pill-green"><BadgeCheck size={11} /> Verified / community verified</span>
+        <span className="vault-verification-badge vault-pill-gold">Unverified</span>
+        <span className="vault-verification-badge vault-pill-red">Needs review</span>
+        <span className="vault-verification-badge vault-pill-gray">Not collected</span>
+      </div>
+      <div className="vault-card vault-missing-signatures">
+        <div className="vault-section-head"><div><span className="vault-kicker">Collection gaps</span><h3 style={{ margin: '4px 0 0', fontSize: 16 }}>Pets without this signature</h3></div><span className="vault-pill vault-pill-gray">{missingSignaturePets.length} missing</span></div>
+        <div className="vault-missing-signature-list">
+          {missingSignaturePets.slice(0, 18).map((pet) => <div key={pet.id}><span>{pet.display_name || pet.pet_name}</span><small>{pet.category}</small></div>)}
+          {missingSignaturePets.length === 0 && <div className="vault-note">No missing tracked pets found in the current catalog.</div>}
+        </div>
+      </div>
       <p className="vault-note" style={{ marginTop: 10, fontSize: 11.5 }}>
-        Signature values come from manual imports (Cosmic Values has no official API). Unverified records are not confirmed valuations.
+        Only verified and community-verified signatures contribute to verified signature value. Unverified records are shown separately and are not treated as confirmed valuations.
       </p>
 
       {data.is_owner && editOpen && (
