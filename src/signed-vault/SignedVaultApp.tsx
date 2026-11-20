@@ -429,6 +429,12 @@ function petCategory(pet: VaultPet): CategoryKey | null {
   return null;
 }
 
+function isTrackedCategory(value: string | null | undefined): boolean {
+  const category = String(value ?? '').trim().toLowerCase();
+  return category === 'huge' || category === 'exclusive' || category === 'titanic'
+    || category === 'gargantuan' || category === 'gigantuan' || category === 'gigantuan';
+}
+
 function eventLabel(event: ActivityEvent): { title: string; meta: string } {
   const detail = event.detail ?? {};
   switch (event.event) {
@@ -794,7 +800,8 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [verificationFilter, setVerificationFilter] = useState('all');
   const [sort, setSort] = useState<CollectionSort>('value_high');
 
-  const pets = view === data.me ? data.pets : (data.other_pets ?? []);
+  const pets = (view === data.me ? data.pets : (data.other_pets ?? []))
+    .filter((pet) => isTrackedCategory(pet.pet_category));
 
   const run = async (params: Record<string, unknown>) => {
     setBusy(true);
@@ -1148,7 +1155,10 @@ function MissingTab({ data }: { data: VaultData }) {
 
   const rows = useMemo(() => {
     if (!checklist) return [];
-    return checklist.map((entry): ChecklistEntry & { status: ChecklistStatus } => ({
+    return checklist.filter((entry) =>
+      entry.is_huge || entry.is_exclusive || entry.is_titanic || entry.is_gargantuan
+      || ['huge', 'exclusive', 'titanic', 'gargantuan', 'gigantuan'].includes(String(entry.category).toLowerCase())
+    ).map((entry): ChecklistEntry & { status: ChecklistStatus } => ({
       ...entry,
       status: entry.owned_verified
         ? 'COLLECTED'
@@ -2997,13 +3007,25 @@ function VaultShell() {
             </span>
           </a>
           <nav className="vault-tabs" style={{ marginLeft: 10 }}>
-            {vaultTabs.slice(0, 5).map((entry) => (
+            {vaultTabs.filter((entry) => ['overview', 'collection', 'signers', 'acquisitions'].includes(entry.id)).map((entry) => (
               <button
                 key={entry.id}
                 className={`vault-tab${tab === entry.id ? ' active' : ''}`}
                 onClick={() => navigate(entry.id)}
               >{entry.label}</button>
             ))}
+            <select
+              className="vault-select"
+              aria-label="More vault sections"
+              value={['scanner', 'missing', 'values', 'verification', 'settings'].includes(tab) ? tab : ''}
+              onChange={(event) => { if (event.target.value) navigate(event.target.value as VaultTab); }}
+              style={{ width: 'auto', minWidth: 132, maxWidth: 180 }}
+            >
+              <option value="">More…</option>
+              {vaultTabs.filter((entry) => ['scanner', 'missing', 'values', 'verification', 'settings'].includes(entry.id)).map((entry) => (
+                <option key={entry.id} value={entry.id}>{entry.label}</option>
+              ))}
+            </select>
           </nav>
           <div className="vault-nav-right">
             <span className="vault-collector-chip">
@@ -3014,17 +3036,7 @@ function VaultShell() {
             </button>
           </div>
         </div>
-        <div className="vault-nav-inner" style={{ height: 'auto', padding: '0 24px 10px' }}>
-          <div className="vault-tabs" style={{ width: '100%' }}>
-            {vaultTabs.slice(5).map((entry) => (
-              <button
-                key={entry.id}
-                className={`vault-tab${tab === entry.id ? ' active' : ''}`}
-                onClick={() => navigate(entry.id)}
-              >{entry.label}</button>
-            ))}
-          </div>
-        </div>
+        
       </header>
 
       <main className="vault-main">
