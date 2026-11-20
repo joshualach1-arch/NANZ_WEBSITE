@@ -84,7 +84,7 @@ export function InventoryScannerTab({ onRefresh, isOwner }: { onRefresh: () => P
   }
   if (!data) return <div className="vault-loading"><div className="vault-spinner" /></div>;
 
-  const trackedCategories = new Set(['huge', 'exclusive', 'titanic', 'gargantuan', 'gigantuan']);
+  const trackedCategories = new Set(['huge', 'huge pet', 'exclusive', 'exclusive pet', 'titanic', 'titanic pet', 'gargantuan', 'gargantuan pet', 'gigantuan', 'gigantuan pet']);
   const present = data.items.filter((item) =>
     item.present && trackedCategories.has(String(item.category ?? '').trim().toLowerCase())
   );
