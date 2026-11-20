@@ -135,6 +135,12 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
                 <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}</div>
               )}
               <div className="vault-row" style={{ gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
+        {signer.cosmic_exclusive_value != null && <span className="vault-pill vault-pill-gray">Exclusive {formatValue(signer.cosmic_exclusive_value, '')}</span>}
+        {signer.cosmic_huge_value != null && <span className="vault-pill vault-pill-gray">Huge {formatValue(signer.cosmic_huge_value, '')}</span>}
+        {signer.cosmic_titanic_value != null && <span className="vault-pill vault-pill-gray">Titanic {formatValue(signer.cosmic_titanic_value, '')}</span>}
+        {signer.cosmic_demand != null && <span className="vault-pill vault-pill-gray">Demand {signer.cosmic_demand}/10</span>}
+      </div>
+
                 {(signer.roles ?? []).slice(0, 3).map((role) => (
                   <span key={role} className="vault-pill vault-pill-gray">{signerRoleLabels[role]}</span>
                 ))}
