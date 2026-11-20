@@ -370,6 +370,29 @@ export async function correctAcquisition(token: string, acquisitionId: string, p
   await rpcCall('vault_acquisition_manage', token, { p_acquisition_id: acquisitionId, ...patch });
 }
 
+
+export async function importCosmicSigners(): Promise<Record<string, unknown>> {
+  const result = await vaultCall('catalog-import', { action: 'cosmic_signer_import' });
+  return result;
+}
+
+export async function assignUnknownSigner(token: string, params: {
+  petEntryId: string;
+  robloxUsername: string;
+  variant?: string;
+  signatureValue?: number | null;
+  notes?: string | null;
+}): Promise<Record<string, unknown>> {
+  const result = await rpcCall('vault_unknown_signer_assign', token, {
+    p_pet_entry_id: params.petEntryId,
+    p_roblox_username: params.robloxUsername,
+    p_variant: params.variant ?? null,
+    p_signature_value: params.signatureValue ?? null,
+    p_notes: params.notes ?? null,
+  });
+  return result.result as Record<string, unknown>;
+}
+
 export async function fetchStatus(): Promise<{ setup_required: boolean }> {
   const result = await vaultCall('status');
   return { setup_required: Boolean(result.setup_required) };
