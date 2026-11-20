@@ -51,6 +51,10 @@ export type Signer = {
   avatar_url: string | null;
   notes: string | null;
   signature_count: number;
+  cosmic_exclusive_value?: number | null;
+  cosmic_huge_value?: number | null;
+  cosmic_titanic_value?: number | null;
+  cosmic_demand?: number | null;
   display_name?: string | null;
   profile_url?: string | null;
   roles?: SignerRole[];
