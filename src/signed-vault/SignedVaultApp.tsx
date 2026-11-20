@@ -263,13 +263,10 @@ function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => vo
       </div>
       <div className="vault-pet-body">
         <div className="vault-pet-name">{pet.nickname || pet.pet_name}</div>
-        {isSigned && pet.verification_status !== "verified" && pet.verification_status !== "community_verified" && (
-          <span className="vault-overview-pet-verification">UNVERIFIED</span>
-        )}
         <div className="vault-pet-card-footer">
           {isSigned
             ? <span className="vault-signed-by">
-                <span className="vault-signed-by-star" aria-hidden="true">✦</span>
+                <Pencil className="vault-signed-by-pen" size={12} strokeWidth={2.7} aria-hidden="true" />
                 <span className="vault-signed-by-label">SIGNED BY</span>
                 <span className="vault-signer-name-aura">{pet.signer_name || 'UNKNOWN SIGNER'}</span>
               </span>
