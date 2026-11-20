@@ -218,3 +218,57 @@
   .vault-value-breakdown { gap: 4px; }
   .vault-value-breakdown b { font-size: 10px; }
 }
+
+
+/* NANZO vault visual direction v2 — high-contrast collector interface */
+.vault-app { background: #070914 !important; color:#f4f6ff; }
+.vault-app:before { content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.45; background: radial-gradient(ellipse at 50% -15%,rgba(53,89,190,.25),transparent 48%), radial-gradient(ellipse at 100% 60%,rgba(91,48,173,.14),transparent 38%); }
+.vault-app > * { position:relative; }
+.vault-nav { background:rgba(7,9,20,.94)!important; border-bottom:1px solid rgba(130,157,230,.16)!important; }
+.vault-main { max-width:1540px!important; padding-top:44px!important; }
+.vault-title { font-size:clamp(34px,4vw,54px)!important; letter-spacing:-.055em!important; }
+.vault-subtitle { font-size:15px!important; color:#99a7c7!important; }
+.vault-stat-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px!important; }
+.vault-stat-card { position:relative; overflow:hidden; min-height:130px; padding:22px!important; border-radius:20px!important; background:linear-gradient(145deg,#151d34,#0d1325)!important; border:1px solid rgba(139,166,237,.16)!important; box-shadow:0 16px 42px rgba(0,0,0,.24)!important; }
+.vault-stat-card:after { content:""; position:absolute; width:110px;height:110px;right:-40px;top:-45px;border-radius:50%;background:rgba(91,130,255,.10);filter:blur(4px); }
+.vault-stat-value { font-size:clamp(25px,2.5vw,34px)!important; color:#f4f7ff!important; }
+.vault-card { border-radius:22px!important; background:linear-gradient(145deg,rgba(19,27,48,.96),rgba(10,15,29,.98))!important; border:1px solid rgba(138,163,225,.16)!important; box-shadow:0 20px 55px rgba(0,0,0,.24)!important; padding:22px!important; }
+.vault-section-head { margin-bottom:20px!important; }
+.vault-kicker { color:#91b4ff!important; font-size:10px!important; letter-spacing:.2em!important; }
+.vault-tabs { background:#090e1d!important; border:1px solid rgba(128,154,221,.16)!important; padding:5px!important; border-radius:14px!important; }
+.vault-tab { color:#9aa9c9!important; border-radius:10px!important; padding:11px 16px!important; }
+.vault-tab.active { background:linear-gradient(120deg,#315bd0,#6747bd)!important; color:#fff!important; box-shadow:0 7px 22px rgba(69,91,210,.28)!important; }
+.vault-pet-grid { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(205px,1fr))!important; gap:16px!important; }
+.vault-pet-card { position:relative; border-radius:18px!important; background:linear-gradient(160deg,#18213a,#0d1427)!important; border:1px solid rgba(135,159,218,.16)!important; overflow:hidden!important; transition:transform .18s,border-color .18s,box-shadow .18s!important; }
+.vault-pet-card:hover { transform:translateY(-4px); border-color:rgba(121,160,255,.55)!important; box-shadow:0 16px 40px rgba(0,0,0,.36)!important; }
+.vault-pet-card-signed { border:1px solid transparent!important; background:linear-gradient(#0d1427,#0d1427) padding-box,conic-gradient(from var(--rainbow-angle,0deg),#ff4d6d,#ffb84d,#f9f871,#42e695,#4dbbff,#9b6bff,#ff4dca,#ff4d6d) border-box!important; animation:signedRainbowBorder 5s linear infinite; box-shadow:0 0 0 1px rgba(255,255,255,.05),0 10px 34px rgba(120,90,255,.13)!important; }
+.vault-pet-card-signed:before { content:""; position:absolute; inset:0 0 auto;height:3px; z-index:3; background:linear-gradient(90deg,#ff4d6d,#ffb84d,#f9f871,#42e695,#4dbbff,#9b6bff,#ff4dca); background-size:250% 100%; animation:rainbowFlow 3s linear infinite; }
+@keyframes signedRainbowBorder { to { --rainbow-angle:360deg; } }
+@property --rainbow-angle { syntax:"<angle>"; initial-value:0deg; inherits:false; }
+@keyframes rainbowFlow { to { background-position:250% 0; } }
+.vault-rainbow-signed { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:8px; color:#fff!important; font-size:9px!important; font-weight:950!important; letter-spacing:.13em; background:linear-gradient(100deg,#e83e69,#d98b31,#8bba39,#20a987,#347fe0,#8a53d6,#e83e69); background-size:250% 100%; animation:rainbowFlow 3s linear infinite; box-shadow:0 0 18px rgba(150,100,255,.2); }
+.vault-rainbow-signed span { font-size:13px; }
+.vault-status-verified,.vault-status-unassigned { display:inline-flex; padding:5px 8px; border-radius:7px; font-size:9px; font-weight:900; letter-spacing:.1em; }
+.vault-status-verified.is-verified { color:#8af2c5; background:rgba(33,190,131,.12); border:1px solid rgba(33,190,131,.24); }
+.vault-status-verified.is-unverified { color:#ffd28b; background:rgba(242,174,65,.12); border:1px solid rgba(242,174,65,.24); }
+.vault-status-unassigned { color:#9ca9c3; background:rgba(128,145,180,.1); border:1px solid rgba(128,145,180,.15); }
+.vault-collection-switch { display:grid!important; grid-template-columns:1fr 1fr; gap:14px!important; }
+.vault-collection-switch .vault-tab { min-height:72px!important; padding:17px 20px!important; background:linear-gradient(140deg,#151f39,#0d1427)!important; border:1px solid rgba(140,163,222,.16)!important; text-align:left; }
+.vault-collection-switch .vault-tab.active { border-color:#6d8fff!important; background:linear-gradient(120deg,rgba(55,91,198,.32),rgba(103,71,189,.25))!important; }
+.vault-collection-switch .vault-tab span { font-size:11px; letter-spacing:.12em; font-weight:900; }
+.vault-collection-switch .vault-tab b { font-size:24px!important; color:#fff!important; }
+.vault-missing-intro { display:flex; flex-direction:column; gap:8px; padding:23px 25px; margin:0 0 18px; border-radius:18px; background:linear-gradient(110deg,rgba(34,68,151,.24),rgba(17,25,47,.92)); border:1px solid rgba(111,151,255,.25); }
+.vault-missing-intro strong { font-size:22px; letter-spacing:-.03em; }
+.vault-missing-intro small { color:#9aa9c9; font-size:12px; }
+.vault-missing-pet-card { border:1px solid rgba(104,146,255,.19)!important; }
+.vault-missing-pet-card .vault-pet-media { min-height:180px; }
+.vault-value-breakdown { gap:5px!important; }
+.vault-value-breakdown span { background:rgba(5,10,22,.72)!important; border:1px solid rgba(132,155,211,.12)!important; }
+.vault-value-breakdown small { color:#8294ba!important; }
+.vault-value-breakdown b { color:#edf2ff!important; }
+.vault-value-breakdown .vault-value-total { background:rgba(70,105,213,.15)!important; border-color:rgba(112,148,255,.3)!important; }
+.vault-signer-card { border-radius:18px!important; background:linear-gradient(160deg,#17213a,#0d1427)!important; border:1px solid rgba(130,155,218,.15)!important; }
+.vault-signer-card:has(.vault-ownership-badge.is-owned) { border-color:rgba(48,206,150,.42)!important; box-shadow:inset 0 0 0 1px rgba(48,206,150,.08); }
+.vault-input,.vault-select { background:#080e1d!important; border-color:rgba(135,158,218,.22)!important; }
+.vault-note { color:#96a5c4!important; }
+@media(max-width:760px){.vault-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vault-collection-switch{grid-template-columns:1fr!important}.vault-pet-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vault-card{padding:16px!important}}
