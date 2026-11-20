@@ -293,7 +293,7 @@ export async function vaultCall(action: string, body: Record<string, unknown> = 
   const payloadBody: Record<string, unknown> = isBiggames || isCatalog
     ? {
         action: action === 'cosmic-signers-import'
-          ? 'cosmic_signers_import'
+          ? 'cosmic_signer_import'
           : action.replace(/^biggames-/, '').replace(/-/g, '_'),
         ...body,
         token: body.token ?? readStoredToken(),
