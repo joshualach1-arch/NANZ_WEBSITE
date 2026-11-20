@@ -3141,11 +3141,11 @@ function VaultShell() {
           <a className="vault-brand" href="/" title="Back to the main site">
             <span className="logo-mark"><img src="/image.png" alt="NANZ" /></span>
             <span className="vault-brand-text">
-              <span className="vault-brand-title">SIGNED VAULT</span>
-              <span className="vault-brand-sub">NANZO Collectors</span>
+              <span className="vault-brand-title">NANZO</span>
+              <span className="vault-brand-sub">SIGNED VAULT</span>
             </span>
           </a>
-          <nav className="vault-tabs" style={{ marginLeft: 10 }}>
+          <nav className="vault-tabs vault-header-tabs">
             {vaultTabs.filter((entry) => ['overview', 'collection', 'signers', 'acquisitions'].includes(entry.id)).map((entry) => (
               <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
             ))}
