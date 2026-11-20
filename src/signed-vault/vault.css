@@ -1136,3 +1136,45 @@
 @media(prefers-reduced-motion:reduce) {
   .vault-overview-latest .vault-signer-name-aura { animation:none!important; }
 }
+
+/* Overview page: pink premium treatment matching the final supplied reference */
+.vault-app:has(.vault-overview-latest) .vault-nav{background:rgba(8,10,20,.96)!important;border-bottom:1px solid rgba(147,154,190,.22)!important;box-shadow:0 8px 26px rgba(0,0,0,.2)}
+.vault-app:has(.vault-overview-latest) .vault-brand .logo-mark{filter:drop-shadow(0 0 12px rgba(244,55,164,.65))}
+.vault-app:has(.vault-overview-latest) .vault-header-tabs{border:1px solid rgba(128,139,174,.2)!important;background:rgba(9,12,23,.78)!important;border-radius:999px!important;padding:5px!important}
+.vault-app:has(.vault-overview-latest) .vault-header-tabs .vault-tab{border-radius:999px!important;padding:13px 25px!important;color:#d7d9e5!important}
+.vault-app:has(.vault-overview-latest) .vault-header-tabs .vault-tab.active{background:linear-gradient(110deg,#f33c9d,#e52b89)!important;border-color:rgba(255,130,202,.55)!important;color:white!important;box-shadow:0 7px 24px rgba(240,52,157,.35),inset 0 1px rgba(255,255,255,.3)!important}
+.vault-app:has(.vault-overview-latest) .vault-collector-chip{color:#ffc044!important;background:linear-gradient(140deg,rgba(90,58,16,.48),rgba(33,25,19,.92))!important;border:1px solid rgba(237,173,58,.45)!important;border-radius:999px!important}
+.vault-app:has(.vault-overview-latest) .vault-exit{color:#ffd5ed!important}
+.vault-main:has(.vault-overview-latest)>div:first-child{position:relative;isolation:isolate;overflow:hidden;min-height:158px;padding:2px 0 12px 10px}
+.vault-main:has(.vault-overview-latest)>div:first-child:after{content:'';position:absolute;z-index:-1;right:-8px;top:-44px;width:46%;height:205px;background:linear-gradient(132deg,transparent 0 37%,rgba(37,63,112,.12) 37.2%,rgba(42,65,112,.12) 58%,rgba(218,38,130,.18) 58.2%,rgba(190,30,110,.24) 78%,transparent 78.2%);border-right:1px solid rgba(102,154,228,.45);pointer-events:none}
+.vault-main:has(.vault-overview-latest)>div:first-child .vault-kicker{display:inline-flex;align-items:center;gap:13px;color:#f5c1df!important;font-size:13px!important;font-weight:900;letter-spacing:.13em!important;text-transform:uppercase}
+.vault-main:has(.vault-overview-latest)>div:first-child .vault-kicker:before{content:'';display:inline-block;width:3px;height:23px;border-radius:4px;background:linear-gradient(#ff68bd,#d92c91);box-shadow:0 0 14px rgba(255,76,179,.5)}
+.vault-main:has(.vault-overview-latest) .vault-title{color:#f5f2fa;font-size:clamp(42px,4.2vw,62px)!important;font-weight:900;letter-spacing:-.055em!important;line-height:1.02;margin:8px 0 7px;text-shadow:0 5px 28px rgba(222,81,170,.13)}
+.vault-main:has(.vault-overview-latest) .vault-subtitle{color:#c0c4d5!important;font-size:17px;max-width:680px}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:24px!important}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card{position:relative;display:flex;align-items:center;gap:23px;min-height:148px;padding:22px 25px 22px 86px!important;border-radius:21px!important;overflow:hidden;background:linear-gradient(145deg,rgba(24,22,38,.98),rgba(12,16,28,.99))!important;border:1px solid rgba(143,149,178,.23)!important;box-shadow:inset 0 1px rgba(255,255,255,.045),0 10px 28px rgba(0,0,0,.18)!important}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card:before{position:absolute;left:24px;top:50%;transform:translateY(-50%);font-size:38px;font-weight:800;line-height:1;color:#f34ca8;text-shadow:0 0 14px rgba(244,54,164,.4)}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:first-of-type>.vault-card:nth-child(1):before{content:'▱'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:first-of-type>.vault-card:nth-child(2):before{content:'▥'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:first-of-type>.vault-card:nth-child(3):before{content:'◉'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:first-of-type>.vault-card:nth-child(4):before{content:'↗'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:last-of-type>.vault-card:nth-child(1):before{content:'▱'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:last-of-type>.vault-card:nth-child(2):before{content:'▥'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:last-of-type>.vault-card:nth-child(3):before{content:'◉'}
+.vault-main:has(.vault-overview-latest) .vault-stat-grid:last-of-type>.vault-card:nth-child(4):before{content:'◎'}
+.vault-main:has(.vault-overview-latest) .vault-stat-label{color:#b8bfd1!important;font-size:13px!important;font-weight:850!important;letter-spacing:.02em;text-transform:uppercase;margin-bottom:8px}
+.vault-main:has(.vault-overview-latest) .vault-stat-value{color:#faf8ff!important;font-size:clamp(26px,2.2vw,36px)!important;font-weight:900;line-height:1.05;letter-spacing:-.045em}
+.vault-main:has(.vault-overview-latest) .vault-stat-hint{color:#b7bfd0!important;font-size:14px!important;margin-top:13px}
+.vault-main:has(.vault-overview-latest) .vault-section-head[style*='margin-top: 22px']{margin:42px 0 20px!important}
+.vault-main:has(.vault-overview-latest) .vault-section-head .vault-kicker{color:#ff6cbe!important;font-size:12px!important;letter-spacing:.16em!important}
+.vault-main:has(.vault-overview-latest) .vault-section-head h3{color:#f5f3fa;font-size:26px!important;font-weight:850!important;letter-spacing:-.035em}
+.vault-main:has(.vault-overview-latest) .vault-collection-summary{position:relative;padding:16px 25px!important;border-radius:22px!important;border:1px solid rgba(236,67,165,.6)!important;background:linear-gradient(110deg,rgba(25,19,36,.98),rgba(12,17,30,.99) 38%,rgba(12,17,29,.99))!important;box-shadow:0 0 0 1px rgba(255,255,255,.025),0 0 22px rgba(235,52,160,.12),0 12px 28px rgba(0,0,0,.2)!important}
+.vault-main:has(.vault-overview-latest) .vault-summary-avatar{width:94px!important;height:94px!important;border-radius:19px!important;border:1px solid rgba(240,103,190,.6)!important;box-shadow:0 0 18px rgba(236,53,158,.15)}
+.vault-main:has(.vault-overview-latest) .vault-summary-identity{gap:22px!important}
+.vault-main:has(.vault-overview-latest) .vault-summary-identity>div:last-child>div:first-child{color:#f5f4fb;font-size:22px!important;font-weight:850!important}
+.vault-main:has(.vault-overview-latest) .vault-summary-identity .vault-note{color:#c0c7d8!important;font-size:16px!important;margin-top:5px}
+.vault-main:has(.vault-overview-latest) .vault-summary-counts{border-left:1px solid rgba(151,157,187,.32);padding-left:35px;margin-left:18px;gap:34px!important}
+.vault-main:has(.vault-overview-latest) .vault-summary-counts strong{color:#faf8ff;font-size:29px!important;font-weight:900}
+.vault-main:has(.vault-overview-latest) .vault-summary-counts span{color:#c0c6d6;font-size:15px}
+@media(max-width:1050px){.vault-main:has(.vault-overview-latest) .vault-stat-grid{gap:13px!important}.vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card{gap:12px;padding:18px 15px 18px 64px!important}.vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card:before{left:17px;font-size:30px}.vault-main:has(.vault-overview-latest) .vault-summary-avatar{width:76px!important;height:76px!important}}
+@media(max-width:760px){.vault-app:has(.vault-overview-latest) .vault-header-tabs{order:3;width:100%;justify-content:center}.vault-app:has(.vault-overview-latest) .vault-header-tabs .vault-tab{padding:10px 13px!important;font-size:12px}.vault-main:has(.vault-overview-latest) .vault-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card{min-height:116px;padding:14px 10px 14px 48px!important;gap:9px}.vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card:before{left:10px;font-size:24px}.vault-main:has(.vault-overview-latest) .vault-stat-label{font-size:10px!important}.vault-main:has(.vault-overview-latest) .vault-stat-value{font-size:24px!important}.vault-main:has(.vault-overview-latest) .vault-stat-hint{font-size:10px!important;margin-top:7px}.vault-main:has(.vault-overview-latest) .vault-summary-avatar{width:58px!important;height:58px!important}.vault-main:has(.vault-overview-latest) .vault-summary-identity{gap:12px!important}.vault-main:has(.vault-overview-latest) .vault-summary-identity>div:last-child>div:first-child{font-size:16px!important}.vault-main:has(.vault-overview-latest) .vault-summary-identity .vault-note{font-size:11px!important}.vault-main:has(.vault-overview-latest) .vault-summary-counts{gap:9px!important;padding-left:12px;margin-left:8px}.vault-main:has(.vault-overview-latest) .vault-summary-counts strong{font-size:20px!important}.vault-main:has(.vault-overview-latest) .vault-summary-counts span{font-size:10px}}
