@@ -100,6 +100,10 @@ BEGIN
           'youtube_subscribers', s.youtube_subscribers,
           'verification_status', s.verification_status,
           'data_source', s.data_source,
+          'cosmic_exclusive_value', s.cosmic_exclusive_value,
+          'cosmic_huge_value', s.cosmic_huge_value,
+          'cosmic_titanic_value', s.cosmic_titanic_value,
+          'cosmic_demand', s.cosmic_demand,
           'signature_count', (
             SELECT count(*) FROM vault_signatures g WHERE g.signer_id = s.id
           )
