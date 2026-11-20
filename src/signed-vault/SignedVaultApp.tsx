@@ -608,13 +608,14 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
         </>
       )}
 
-      <div className="vault-section-head">
-        <div>
-          <span className="vault-kicker">Recently acquired</span>
-          <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Latest additions</h3>
+      <section className="vault-overview-latest">
+        <div className="vault-section-head vault-overview-section-head">
+          <div>
+            <span className="vault-kicker">Recently acquired</span>
+            <h3>Latest additions</h3>
+          </div>
+          <button className="vault-btn vault-btn-sm" onClick={() => onNavigate('collection')}>View all</button>
         </div>
-        <button className="vault-btn vault-btn-sm" onClick={() => onNavigate('collection')}>View all</button>
-      </div>
       {recentPets.length === 0 ? (
         <div className="vault-empty">
           <div className="vault-empty-title">No pets yet</div>
@@ -627,13 +628,14 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
           ))}
         </div>
       )}
+      </section>
 
       {recentAcquisitions.length > 0 && (
-        <>
-          <div className="vault-section-head">
+        <section className="vault-overview-trades">
+          <div className="vault-section-head vault-overview-section-head">
             <div>
               <span className="vault-kicker">Recent acquisitions</span>
-              <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Purchases &amp; trades</h3>
+              <h3>Purchases &amp; trades</h3>
             </div>
             <button className="vault-btn vault-btn-sm" onClick={() => onNavigate('acquisitions')}>Full history</button>
           </div>
@@ -663,7 +665,7 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
               </tbody>
             </table>
           </div>
-        </>
+        </section>
       )}
 
       <div className="vault-section-head">
