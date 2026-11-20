@@ -1194,3 +1194,8 @@
 .vault-overview-latest .vault-status-unassigned{padding:7px 11px!important;border-radius:9px!important}
 .vault-main:has(.vault-overview-latest) .vault-stat-grid>.vault-card{border-color:rgba(226,87,169,.44)!important}
 .vault-main:has(.vault-overview-latest) .vault-card:has(.vault-collection-summary){padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+
+.vault-main:has(.vault-overview-latest) .vault-overview-second-head+.vault-stat-grid>.vault-card:nth-child(1):before{content:'▱'}
+.vault-main:has(.vault-overview-latest) .vault-overview-second-head+.vault-stat-grid>.vault-card:nth-child(2):before{content:'▥'}
+.vault-main:has(.vault-overview-latest) .vault-overview-second-head+.vault-stat-grid>.vault-card:nth-child(3):before{content:'◉'}
+.vault-main:has(.vault-overview-latest) .vault-overview-second-head+.vault-stat-grid>.vault-card:nth-child(4):before{content:'◎'}
