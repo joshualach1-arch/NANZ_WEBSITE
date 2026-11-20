@@ -53,7 +53,7 @@ import { BigGamesConnect, OAuthCallback } from './BigGamesConnect';
 import { InventoryScannerTab } from './InventoryScannerTab';
 import { AcquisitionsPage } from './AcquisitionsPage';
 import { RobloxConnectionCard } from './RobloxConnect';
-import { SignerDetailPage, SignerGallery, signabilityTone } from './SignerDirectory';
+import { SignerGallery, signabilityTone } from './SignerDirectory';
 import { signabilityLabels } from './vaultApi';
 import './vault.css';
 
