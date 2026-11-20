@@ -62,9 +62,9 @@ function buildItem(pet: PetRow): Record<string, unknown> {
 
 
 function parseCosmicValue(value: string | null): number | null {
-  if (!value || /^SOON$/i.test(value.trim()) || /^N\/?A$/i.test(value.trim())) return null;
+  if (!value || /^SOON$/i.test(value.trim()) || /^N\\/?A$/i.test(value.trim())) return null;
   const normalized = value.trim().replace(/,/g, "").toUpperCase();
-  const match = normalized.match(/^(\d+(?:\\.\d+)?)([KMBT])?$/);
+  const match = normalized.match(/^(\\d+(?:\\.\\d+)?)([KMBT])?$/);
   if (!match) return null;
   const factor: Record<string, number> = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
   return Number(match[1]) * (factor[match[2] ?? ""] ?? 1);
@@ -74,28 +74,24 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
   const rows: Record<string, unknown>[] = [];
-  const cards = html.match(/<[^>]*class=["'][^"']*(?:value-card|item-card|signature)[^"']*["'][^>]*>[\s\\S]*?<\/[^>]+>/gi) ?? [];
-  for (const card of cards) {
-    const text = decode(card);
-    const at = text.match(/@([A-Za-z0-9_]{3,20})/);
-    if (!at) continue;
-    const before = text.slice(0, text.indexOf("@" + at[1])).trim();
-    const signerName = before.split(/\s+/).slice(-3).join(" ").replace(/^(Staff|Partner|Dev)\s+/i, "").trim();
-    const exclusive = text.match(/Exclusive\s+([\d,.]+\s*[KMBT]?|SOON)/i)?.[1] ?? null;
-    const huge = text.match(/Huge\s+([\d,.]+\s*[KMBT]?|SOON)/i)?.[1] ?? null;
-    const titanic = text.match(/Titanic\s+([\d,.]+\s*[KMBT]?|SOON)/i)?.[1] ?? null;
-    const demand = text.match(/Demand\s+(N\/?A|\d+\/10)/i)?.[1] ?? null;
-    if (!signerName) continue;
+  // The page's rows are table/list content, so parse across the full document
+  // instead of relying on a CSS class name that may change.
+  const text = decode(html);
+  const pattern = /(?:Staff|Partner|Dev)\\s+(.{1,60}?)\\s+@([A-Za-z0-9_]{3,20})\\s+Exclusive\\s+([\\d,.]+\\s*[KMBT]?|SOON)\\s+Huge\\s+([\\d,.]+\\s*[KMBT]?|SOON)\\s+Titanic\\s+([\\d,.]+\\s*[KMBT]?|SOON)\\s+Demand\\s+(N\\/?A|\\d+\\/10)/gi;
+  for (const match of text.matchAll(pattern)) {
+    const signerName = match[1].replace(/\\s+/g, " ").trim();
+    const username = match[2];
+    if (!signerName || !username) continue;
     rows.push({
       signer_name: signerName,
-      roblox_username: at[1],
+      roblox_username: username,
       roles: [role],
-      exclusive_value: parseCosmicValue(exclusive),
-      huge_value: parseCosmicValue(huge),
-      titanic_value: parseCosmicValue(titanic),
-      demand: demand && /\d+\/10/.test(demand) ? Number(demand.split("/")[0]) : null,
+      exclusive_value: parseCosmicValue(match[3]),
+      huge_value: parseCosmicValue(match[4]),
+      titanic_value: parseCosmicValue(match[5]),
+      demand: /\\d+\\/10/.test(match[6]) ? Number(match[6].split("/")[0]) : null,
       source: "cosmic_values",
       profile_url: null,
       avatar_url: null,
