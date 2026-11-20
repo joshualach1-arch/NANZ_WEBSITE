@@ -432,8 +432,7 @@ function petCategory(pet: VaultPet): CategoryKey | null {
 
 function isTrackedCategory(value: string | null | undefined): boolean {
   const category = String(value ?? '').trim().toLowerCase();
-  return category === 'huge' || category === 'exclusive' || category === 'titanic'
-    || category === 'gargantuan' || category === 'gigantuan';
+  return ['huge', 'huge pet', 'exclusive', 'exclusive pet', 'titanic', 'titanic pet', 'gargantuan', 'gargantuan pet', 'gigantuan', 'gigantuan pet'].includes(category);
 }
 
 function eventLabel(event: ActivityEvent): { title: string; meta: string } {
@@ -790,6 +789,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [addOpen, setAddOpen] = useState(false);
   const [detail, setDetail] = useState<VaultPet | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [variantFilter, setVariantFilter] = useState('all');
@@ -853,6 +853,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
   return (
     <div>
+      {showScanner && <div style={{ marginBottom: 18 }}><InventoryScannerTab onRefresh={onRefresh} isOwner={isOwner} /></div>}
       <div className="vault-section-head">
         <div className="vault-row">
           <span className="vault-kicker">Collection</span>
@@ -864,9 +865,14 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           )}
           <span className="vault-pill vault-pill-gray">{filtered.length} of {pets.length} pets</span>
         </div>
-        <button className="vault-btn vault-btn-gold" onClick={() => setAddOpen(true)} disabled={busy}>
-          <Plus size={15} /> Add pet
-        </button>
+        <div className="vault-row" style={{ gap: 8 }}>
+          <button className="vault-btn vault-btn-sm" onClick={() => setShowScanner((value) => !value)}>
+            {showScanner ? 'Hide scanner' : 'Scan Roblox inventory'}
+          </button>
+          <button className="vault-btn vault-btn-gold" onClick={() => setAddOpen(true)} disabled={busy}>
+            <Plus size={15} /> Add pet
+          </button>
+        </div>
       </div>
 
       <div className="vault-card" style={{ marginBottom: 16 }}>
@@ -3137,24 +3143,8 @@ function VaultShell() {
           </a>
           <nav className="vault-tabs" style={{ marginLeft: 10 }}>
             {vaultTabs.filter((entry) => ['overview', 'collection', 'signers', 'acquisitions'].includes(entry.id)).map((entry) => (
-              <button
-                key={entry.id}
-                className={`vault-tab${tab === entry.id ? ' active' : ''}`}
-                onClick={() => navigate(entry.id)}
-              >{entry.label}</button>
+              <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
             ))}
-            <select
-              className="vault-select"
-              aria-label="More vault sections"
-              value={['scanner', 'missing', 'values', 'verification', 'settings'].includes(tab) ? tab : ''}
-              onChange={(event) => { if (event.target.value) navigate(event.target.value as VaultTab); }}
-              style={{ width: 'auto', minWidth: 132, maxWidth: 180 }}
-            >
-              <option value="">More…</option>
-              {vaultTabs.filter((entry) => ['scanner', 'missing', 'values', 'verification', 'settings'].includes(entry.id)).map((entry) => (
-                <option key={entry.id} value={entry.id}>{entry.label}</option>
-              ))}
-            </select>
           </nav>
           <div className="vault-nav-right">
             <span className="vault-collector-chip">
@@ -3174,8 +3164,8 @@ function VaultShell() {
           <h1 className="vault-title">{vaultTabs.find((entry) => entry.id === tab)?.label ?? 'Overview'}</h1>
           <p className="vault-subtitle">
             {data.is_owner
-              ? 'You manage both collections, the catalog, signers and values.'
-              : 'You manage your own collection. Shared data is owner-curated.'}
+              ? 'Your signed pets, signer records and trade history in one place.'
+              : 'Your collection, signer records and trade history.'}
           </p>
         </div>
 
