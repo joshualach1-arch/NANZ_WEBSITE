@@ -74,7 +74,7 @@ const vaultTabs: { id: VaultTab; label: string }[] = [
   { id: 'scanner', label: 'Inventory Scanner' },
   { id: 'missing', label: 'Missing Pets' },
   { id: 'signers', label: 'Signer Database' },
-  { id: 'acquisitions', label: 'Acquisition History' },
+  { id: 'acquisitions', label: 'Trade History' },
   { id: 'values', label: 'Cosmic Value Tracker' },
   { id: 'verification', label: 'Verification' },
   { id: 'settings', label: 'Settings' },
