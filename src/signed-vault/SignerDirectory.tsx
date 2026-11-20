@@ -166,7 +166,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
                   ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" />
                   : signer.signer_name.slice(0, 2).toUpperCase()}
               </div>
-              <div className="vault-signer-name">{signer.display_name || signer.signer_name}</div>
+              <div className={`vault-signer-name${ownedSignerIds.has(signer.id) ? ' vault-signer-name-rainbow' : ''}`}>{signer.display_name || signer.signer_name}</div>
               <div className="vault-note" style={{ marginTop: 2 }}>{signer.signer_name}</div>
               {signer.roblox_username && <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>}
               <div className="vault-row" style={{ gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
