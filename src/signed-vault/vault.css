@@ -272,3 +272,22 @@
 .vault-input,.vault-select { background:#080e1d!important; border-color:rgba(135,158,218,.22)!important; }
 .vault-note { color:#96a5c4!important; }
 @media(max-width:760px){.vault-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vault-collection-switch{grid-template-columns:1fr!important}.vault-pet-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.vault-card{padding:16px!important}}
+
+
+/* Rainbow signer identity on signed pet cards */
+.vault-signer-name-rainbow {
+  display: inline-block;
+  font-weight: 900 !important;
+  letter-spacing: .015em;
+  background: linear-gradient(100deg,#ff5577 0%,#ffbd55 17%,#f7f36a 32%,#51e3a4 48%,#58bdff 64%,#a78bfa 80%,#ff65c8 100%);
+  background-size: 260% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent !important;
+  animation: rainbowFlow 3.2s linear infinite;
+  filter: drop-shadow(0 0 7px rgba(132,116,255,.22));
+}
+@media (prefers-reduced-motion: reduce) {
+  .vault-signer-name-rainbow { animation: none; background-position: 50% 0; }
+}
