@@ -977,3 +977,34 @@
   .vault-header-tabs .vault-tab { padding:0 7px!important;font-size:9px!important; }
   .vault-signer-page .vault-signers-stats { grid-template-columns:1fr!important; }
 }
+
+
+/* Signed pet attribution: quiet pen icon + animated rainbow signer name */
+.vault-pet-card-footer .vault-signed-by {
+  display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  padding:7px 10px;border-radius:9px;
+  color:#dce4f4!important;background:rgba(12,17,31,.88);
+  border:1px solid rgba(128,145,190,.2);
+  font-size:9px!important;font-weight:900!important;letter-spacing:.075em;
+  box-shadow:inset 0 1px rgba(255,255,255,.035),0 3px 12px rgba(0,0,0,.16);
+}
+.vault-pet-card-footer .vault-signed-by>svg {
+  flex:0 0 auto;color:#f06ab1;filter:drop-shadow(0 0 5px rgba(240,75,169,.5));
+}
+.vault-signed-by-label { color:#b9c4d9;white-space:nowrap; }
+.vault-signer-name-aura {
+  display:inline-block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px;font-weight:950;letter-spacing:.025em;
+  background:linear-gradient(100deg,#ff48b8 0%,#ff7d8f 16%,#ffc45d 30%,#f7f36d 42%,#6be99b 56%,#45d8e9 70%,#7796ff 83%,#d17bff 94%,#ff48b8 100%);
+  background-size:300% 100%;background-position:0% 50%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:vaultSignerAura 4.4s linear infinite;
+  filter:drop-shadow(0 0 4px rgba(255,72,184,.45)) drop-shadow(0 0 9px rgba(73,213,255,.2));
+}
+@keyframes vaultSignerAura {
+  0% { background-position:0% 50%; }
+  100% { background-position:300% 50%; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .vault-signer-name-aura { animation:none; }
+}
