@@ -41,7 +41,7 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
   const [view, setView] = useState<number>(myCollectorNo);
   const [category, setCategory] = useState('all');
   const [signer, setSigner] = useState('all');
-  const [type, setType] = useState('all');
+  const [type, setType] = useState('trade');
   const [verification, setVerification] = useState('all');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -88,7 +88,9 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
     let list = entries.filter((entry) => {
       if (category !== 'all' && (entry.pet_category ?? 'other') !== category) return false;
       if (signer !== 'all' && (entry.signer_id ?? 'none') !== signer) return false;
-      if (type !== 'all' && (entry.acquisition_type ?? 'unconfirmed') !== type) return false;
+      const entryType = entry.acquisition_type ?? 'unconfirmed';
+      if (type === 'trade' && entryType !== 'trade') return false;
+      if (type !== 'all' && type !== 'trade' && entryType !== type) return false;
       if (verification !== 'all' && (entry.verification_status ?? 'unverified') !== verification) return false;
       const date = entry.acquired_at ?? entry.created_at.slice(0, 10);
       if (from && date < from) return false;
@@ -178,8 +180,9 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
           <div className="vault-field">
             <span className="vault-label">Type</span>
             <select className="vault-select" value={type} onChange={(event) => setType(event.target.value)}>
-              <option value="all">All</option>
-              {Object.entries(acquisitionTypeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              <option value="trade">Trades only</option>
+              <option value="all">All acquisition records</option>
+              {Object.entries(acquisitionTypeLabels).filter(([key]) => key !== 'trade').map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select>
           </div>
           <div className="vault-field">
