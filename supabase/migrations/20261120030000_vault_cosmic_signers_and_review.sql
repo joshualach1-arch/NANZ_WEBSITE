@@ -64,9 +64,8 @@ BEGIN
          is_developer, is_partner, is_creator, verification_status, data_source,
          cosmic_exclusive_value, cosmic_huge_value, cosmic_titanic_value, cosmic_demand)
       VALUES
-        (v_name, v_username, v_name,
-         'https://www.roblox.com/users/' || coalesce(v_item->>'roblox_user_id','') || '/profile',
-         null, coalesce((v_item->'roles') ? 'big_games_developer', false),
+        (v_name, v_username, nullif(v_item->>'roblox_user_id','')::bigint, coalesce(v_item->>'display_name', v_name),
+         nullif(v_item->>'profile_url',''), nullif(v_item->>'avatar_url',''), coalesce((v_item->'roles') ? 'big_games_developer', false),
          coalesce((v_item->'roles') ? 'big_games_partner', false),
          false, 'unverified', 'cosmic_values',
          nullif(v_item->>'exclusive_value','')::numeric,
@@ -88,6 +87,9 @@ BEGIN
         cosmic_huge_value = coalesce(nullif(v_item->>'huge_value','')::numeric, cosmic_huge_value),
         cosmic_titanic_value = coalesce(nullif(v_item->>'titanic_value','')::numeric, cosmic_titanic_value),
         cosmic_demand = coalesce(nullif(v_item->>'demand','')::numeric, cosmic_demand),
+        roblox_user_id = coalesce(nullif(v_item->>'roblox_user_id','')::bigint, roblox_user_id),
+        avatar_url = coalesce(nullif(v_item->>'avatar_url',''), avatar_url),
+        profile_url = coalesce(nullif(v_item->>'profile_url',''), profile_url),
         data_source = CASE WHEN data_source = 'manual' THEN data_source ELSE 'cosmic_values' END,
         updated_at = now()
       WHERE id = v_signer;
