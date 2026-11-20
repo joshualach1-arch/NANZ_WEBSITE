@@ -1504,9 +1504,16 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
   // ── real stored data only ────────────────────────────────────────
   const snapList = snapshots ?? [];
   const total = data.pets.reduce((sum, pet) => sum + Number(pet.cosmic_value ?? 0), 0);
-  const spent = data.acquisitions.reduce((sum, entry) => sum + Number(entry.purchase_price ?? 0), 0);
-  const profit = total - spent;
-  const pctReturn = spent > 0 ? (profit / spent) * 100 : null;
+  // Cosmic values are gems. Cash/Robux acquisition prices are kept separate:
+  // subtract only explicitly recorded gem-denominated costs.
+  const gemSpent = data.acquisitions
+    .filter((entry) => String(entry.currency ?? '').toLowerCase() === 'gems')
+    .reduce((sum, entry) => sum + Number(entry.purchase_price ?? 0), 0);
+  const cashSpent = data.acquisitions
+    .filter((entry) => String(entry.currency ?? '').toLowerCase() !== 'gems' && entry.purchase_price != null)
+    .reduce((sum, entry) => sum + Number(entry.purchase_price ?? 0), 0);
+  const profit = total - gemSpent;
+  const pctReturn = gemSpent > 0 ? (profit / gemSpent) * 100 : null;
 
   const firstSnap = snapList.length > 0 ? Number(snapList[0].total_value) : null;
   const lastSnap = snapList.length > 0 ? Number(snapList[snapList.length - 1].total_value) : null;
@@ -1518,11 +1525,11 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
     <div>
       <div className="vault-stat-grid">
         <StatCard label="Portfolio value" value={formatValue(total)} hint="current cosmic values" gold />
-        <StatCard label="Purchase cost" value={formatValue(spent)} hint="recorded acquisition prices" />
+        <StatCard label="Gem cost" value={formatValue(gemSpent, '')} hint="only gem-denominated purchases" />
         <StatCard
           label={profit >= 0 ? 'Unrealized profit' : 'Unrealized loss'}
           value={`${profit >= 0 ? '+' : ''}${formatValue(profit)}`}
-          hint={pctReturn !== null ? `${pctReturn >= 0 ? '+' : ''}${pctReturn.toFixed(1)}% return on cost` : 'no cost recorded yet'}
+          hint={pctReturn !== null ? `${pctReturn >= 0 ? '+' : ''}${pctReturn.toFixed(1)}% return on gem cost` : (cashSpent > 0 ? 'cash purchases excluded from gem profit' : 'no gem purchases recorded yet')}
         />
         <StatCard
           label="Change over snapshots"
