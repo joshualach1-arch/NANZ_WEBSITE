@@ -1635,6 +1635,13 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
                   <td className="vault-num" title={pet.in_game_value_source ?? 'Not recorded'}>
                     {pet.in_game_value != null ? formatValue(pet.in_game_value, '') : '—'}
                     {pet.in_game_value_timestamp && <div className="vault-note">{formatDate(pet.in_game_value_timestamp)}</div>}
+                    {isOwner && (
+                      <button
+                        className="vault-btn vault-btn-sm"
+                        style={{ marginTop: 5 }}
+                        onClick={() => open(pet)}
+                      >Update</button>
+                    )}
                   </td>
                   <td><span className="vault-pill vault-pill-gray">{pet.value_source ?? 'manual'}</span></td>
                   <td><span className="vault-note">{snapList.length > 0 ? formatDate(snapList[snapList.length - 1].captured_at) : '—'}</span></td>
