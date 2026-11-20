@@ -259,9 +259,9 @@ function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: 
       </div>
       <div className="vault-pet-badges">
         {pet.variant !== 'normal' && (
-          <span className={`vault-variant-tag ${pet.variant}`}>{variantLabelWide[pet.variant] ?? pet.variant}</span>
+          <span className={`vault-variant-tag vault-variant-${pet.variant}`}>{variantLabelWide[pet.variant] ?? pet.variant}</span>
         )}
-        {pet.signer_id && pet.signed_status !== 'not_signed' && <span className="vault-rainbow-signed"><span>✦</span> SIGNED BY YOU</span>}
+        {pet.signer_id && pet.signed_status !== 'not_signed' && <span className="vault-rainbow-signed"><span>✦</span> SIGNED BY {pet.signer_name || 'UNKNOWN SIGNER'}</span>}
         {!pet.signer_id || pet.signed_status === 'not_signed'
           ? <span className="vault-status-unassigned">NOT SIGNED</span>
           : <span className={`vault-status-verified ${isVerified ? 'is-verified' : 'is-unverified'}`}>
@@ -279,11 +279,6 @@ function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: 
           <span><small>Pet value</small><b>{petValue != null ? formatValue(petValue, '') : 'Not available'}</b></span>
           <span><small>Signature value</small><b>{signatureValue > 0 ? formatValue(signatureValue, '') : '—'}</b></span>
           <span className="vault-value-total"><small>Combined</small><b>{petValue != null || signatureValue > 0 ? formatValue(combined, '') : 'Not available'}</b></span>
-        </div>
-        <div className="vault-pet-meta" style={{ marginTop: 5 }}>
-          <span className="vault-note">
-            {pet.purchase_price != null ? `Bought ${formatValue(pet.purchase_price, pet.currency === 'USD' ? '$' : '')}` : (pet.acquired_at ? `Acquired ${formatDate(pet.acquired_at)}` : '')}
-          </span>
         </div>
       </div>
     </button>
@@ -1044,7 +1039,6 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
   const signatureValue = signature && isVerified ? Number(signature.signature_value ?? 0) : 0;
   const combined = Number(pet.cosmic_value ?? 0) + signatureValue;
 
-  const [history, setHistory] = useState<ValueHistoryPoint[] | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1052,19 +1046,6 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
   // vault_collection_manage 'update' overwrites signer_id unconditionally —
   // the editor always sends the current signer so an unchanged signer survives.
   const scopeCollectorNo = data.is_owner ? pet.collector_no ?? data.me : null;
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const points = await fetchValueHistory(token, pet.pet_id);
-        if (!cancelled) setHistory(points);
-      } catch {
-        if (!cancelled) setHistory([]);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [token, pet.pet_id]);
 
   const cosmicSource = data.catalog.find((entry) => entry.id === pet.pet_id)?.value_source ?? 'manual';
 
@@ -1102,52 +1083,13 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
           <span className="vault-label">Signer roles</span>
           <div>{signer?.roles?.length ? signer.roles.map((role) => signerRoleLabels[role]).join(', ') : '—'}</div>
         </div>
-        <div className="vault-field">
-          <span className="vault-label">Signature</span>
-          <div>{signature?.signature_name ?? 'No verified signature record'}</div>
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Acquired</span>
-          <div>{formatDate(pet.acquired_at)}</div>
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Purchase price</span>
-          <div>{formatValue(pet.purchase_price, pet.currency === 'USD' ? '$' : '')} {pet.currency}</div>
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Value at acquisition</span>
-          <div>{formatValue(signatureValue || pet.cosmic_value)} (current: {formatValue(combined)})</div>
+        <div className="vault-field vault-detail-signature">
+          <span className="vault-label">Signature name</span>
+          <div className="vault-signer-name-rainbow">{signature?.signature_name || signer?.display_name || signer?.signer_name || 'Signature name unavailable'}</div>
         </div>
       </div>
 
       {pet.notes && <p className="vault-note" style={{ marginTop: 12 }}>{pet.notes}</p>}
-
-      <div className="vault-divider" />
-      <span className="vault-label">Value history</span>
-      {history === null ? (
-        <div className="vault-note" style={{ marginTop: 8 }}>Loading history…</div>
-      ) : history.length === 0 ? (
-        <div className="vault-note" style={{ marginTop: 8 }}>No value changes recorded yet.</div>
-      ) : (
-        <div className="vault-table-wrap" style={{ marginTop: 8 }}>
-          <table className="vault-table">
-            <thead>
-              <tr><th>Date</th><th>Pet value</th><th>Signature value</th><th>Combined</th><th>Source</th></tr>
-            </thead>
-            <tbody>
-              {history.slice(-8).reverse().map((point, index) => (
-                <tr key={index}>
-                  <td>{formatDate(point.captured_at)}</td>
-                  <td className="vault-num">{formatValue(point.pet_value)}</td>
-                  <td className="vault-num">{formatValue(point.signature_value)}</td>
-                  <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 700 }}>{formatValue(point.combined_value ?? (Number(point.pet_value ?? 0) + Number(point.signature_value ?? 0)))}</td>
-                  <td><span className="vault-pill vault-pill-gray">{point.source}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {error && <div className="vault-error" style={{ marginTop: 10 }}>{error}</div>}
 
