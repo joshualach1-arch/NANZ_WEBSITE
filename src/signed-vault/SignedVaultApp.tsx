@@ -841,7 +841,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
   const filtered = useMemo(() => {
     let list = pets.filter((pet) => {
-      if (categoryFilter !== 'all' && pet.pet_category !== categoryFilter) return false;
+      if (categoryFilter !== 'all' && !String(pet.pet_category ?? '').toLowerCase().startsWith(categoryFilter)) return false;
       if (variantFilter !== 'all' && pet.variant !== variantFilter) return false;
       if (signerFilter !== 'all' && (pet.signer_id ?? 'none') !== signerFilter) return false;
       const value = petSignatureValue(pet, data.signatures) + Number(pet.cosmic_value ?? 0);
