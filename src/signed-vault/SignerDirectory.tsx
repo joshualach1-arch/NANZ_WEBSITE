@@ -213,7 +213,7 @@ export function SignerDetailPage({ data, signerId, onBack }: {
     ? [...(data.other_pets ?? []), ...[]].filter((pet) => pet.signer_id === signer.id)
     : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id);
-  const totalValue = signatures.reduce((sum, record) => sum + Number(record.signature_value ?? 0), 0);
+  const totalValue = signatures.reduce((sum, record) => sum + (record.verification_status === 'verified' || record.verification_status === 'community_verified' ? Number(record.signature_value ?? 0) : 0), 0);
 
   return (
     <div>
@@ -265,7 +265,11 @@ export function SignerDetailPage({ data, signerId, onBack }: {
 
       <div className="vault-stat-grid" style={{ marginTop: 16 }}>
         <StatCard label="Known signatures" value={String(signatures.length)} />
-        <StatCard label="Total signature value" value={totalValue > 0 ? formatValue(totalValue) : '—'} gold />
+        <StatCard label="Verified signature value" value={totalValue > 0 ? formatValue(totalValue) : '—'} gold />
+        <StatCard label="Cosmic Exclusive" value={signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'} />
+        <StatCard label="Cosmic Huge" value={signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'} />
+        <StatCard label="Cosmic Titanic" value={signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'} />
+        <StatCard label="Cosmic Demand" value={signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'} />
         <StatCard label="In your collection" value={String(myPets.length)} />
         {data.is_owner && <StatCard label="In collector 2 vault" value={String(ownerPets.length)} />}
       </div>
