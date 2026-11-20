@@ -261,10 +261,11 @@ function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: 
         {pet.variant !== 'normal' && (
           <span className={`vault-variant-tag ${pet.variant}`}>{variantLabelWide[pet.variant] ?? pet.variant}</span>
         )}
-        {pet.signed_status === 'not_signed'
-          ? <span className="vault-pill vault-pill-gray vault-pill-xs">Not signed</span>
-          : <span className={`vault-pill vault-pill-xs ${isVerified ? 'vault-pill-green' : 'vault-pill-gold'}`}>
-              {pet.signed_status === 'manual_review' ? 'Unknown – needs review' : isVerified ? 'Verified' : 'Unverified'}
+        {pet.signer_id && pet.signed_status !== 'not_signed' && <span className="vault-rainbow-signed"><span>✦</span> SIGNED BY YOU</span>}
+        {!pet.signer_id || pet.signed_status === 'not_signed'
+          ? <span className="vault-status-unassigned">NOT SIGNED</span>
+          : <span className={`vault-status-verified ${isVerified ? 'is-verified' : 'is-unverified'}`}>
+              {pet.signed_status === 'manual_review' ? 'NEEDS REVIEW' : isVerified ? 'VERIFIED' : 'UNVERIFIED'}
             </span>}
       </div>
       <div className="vault-pet-body">
@@ -833,20 +834,11 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const ownedPetIds = useMemo(() => new Set(pets.map((pet) => pet.pet_id)), [pets]);
   const missingCatalog = useMemo(() => data.catalog.filter((pet) => {
     const category = String(pet.category ?? '').trim().toLowerCase();
-    const tracked = category.startsWith('huge') || category.startsWith('exclusive')
-      || category.startsWith('titanic') || category.startsWith('gargantuan')
-      || category.startsWith('gigantuan') || pet.is_huge || pet.is_exclusive
-      || pet.is_titanic || pet.is_gargantuan;
-    if (!tracked || ownedPetIds.has(pet.id)) return false;
-    const matchesCategory = categoryFilter === 'all'
-      || (categoryFilter === 'huge' && (category.startsWith('huge') || pet.is_huge))
-      || (categoryFilter === 'exclusive' && (category.startsWith('exclusive') || pet.is_exclusive))
-      || (categoryFilter === 'titanic' && (category.startsWith('titanic') || pet.is_titanic))
-      || (categoryFilter === 'gargantuan' && (category.startsWith('gargantuan') || category.startsWith('gigantuan') || pet.is_gargantuan));
-    if (!matchesCategory) return false;
+    const isHuge = category.startsWith('huge') || pet.is_huge === true;
+    if (!isHuge || ownedPetIds.has(pet.id)) return false;
     const q = catalogSearch.trim().toLowerCase();
     return !q || pet.pet_name.toLowerCase().includes(q) || String(pet.display_name ?? '').toLowerCase().includes(q);
-  }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, categoryFilter, catalogSearch]);
+  }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, catalogSearch]);
   const signersList = useMemo(
     () => [...new Map(pets.filter((pet) => pet.signer_id).map((pet) => [pet.signer_id!, pet.signer_name!])).entries()],
     [pets]
@@ -904,16 +896,21 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
       </div>
 
       <div className="vault-collection-switch">
-        <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}><span>Owned collection</span><b>{pets.length}</b></button>
-        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}><span>Missing catalog</span><b>{missingCatalog.length}</b></button>
+        <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}><span>MY SIGNED COLLECTION</span><b>{pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').length}</b></button>
+        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}><span>MISSING HUGE PETS</span><b>{missingCatalog.length}</b></button>
       </div>
-      <div className="vault-row" style={{ gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
+      {collectionMode === 'owned' && <div className="vault-row" style={{ gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
         {['all', ...categories.map((entry) => entry.toLowerCase())].map((entry) => (
           <button key={entry} className={`vault-tab${categoryFilter === entry ? ' active' : ''}`} onClick={() => setCategoryFilter(entry)}>
             {entry === 'all' ? 'All pets' : entry.charAt(0).toUpperCase() + entry.slice(1)}
           </button>
         ))}
-      </div>
+      </div>}
+      {collectionMode === 'missing' && <div className="vault-missing-intro">
+        <span className="vault-kicker">HUGE ONLY · COLLECTION GOAL</span>
+        <strong>Huge pets you haven't collected yet</strong>
+        <small>Only Huge pets appear here. Select a pet to add it to your collection.</small>
+      </div>}
       <div className="vault-card" style={{ marginBottom: 16 }}>
         <div className="vault-field" style={{ marginBottom: 12 }}>
           <span className="vault-label">{collectionMode === 'missing' ? 'Find a missing pet' : 'Search your collection'}</span>
