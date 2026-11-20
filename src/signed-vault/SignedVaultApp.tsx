@@ -271,7 +271,9 @@ function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: 
       <div className="vault-pet-body">
         <div className="vault-pet-name">{pet.nickname || pet.pet_name}</div>
         <div className="vault-pet-meta">
-          <span>{pet.signer_name ?? 'Unknown signer'}</span>
+          <span className={pet.signer_id && pet.signed_status !== 'not_signed' ? 'vault-signer-name-rainbow' : ''}>
+            {pet.signer_name ?? 'Unknown signer'}
+          </span>
         </div>
         <div className="vault-value-breakdown">
           <span><small>Pet value</small><b>{petValue != null ? formatValue(petValue, '') : 'Not available'}</b></span>
