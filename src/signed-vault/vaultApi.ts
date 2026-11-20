@@ -21,6 +21,9 @@ export type CatalogPet = {
   cosmic_value: number | null;
   demand: number | null;
   value_source: string | null;
+  in_game_value?: number | null;
+  in_game_value_source?: string | null;
+  in_game_value_timestamp?: string | null;
   external_id?: string | null;
   display_name?: string | null;
   signability?: string;
