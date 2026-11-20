@@ -1667,6 +1667,14 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
               <span className="vault-label">Demand (1–10)</span>
               <input className="vault-input" type="number" min="1" max="10" value={demand} onChange={(event) => setDemand(event.target.value)} placeholder="e.g. 7" />
             </div>
+            <div className="vault-field">
+              <span className="vault-label">Current in-game value (gems)</span>
+              <input className="vault-input" type="number" min="0" value={inGameValue} onChange={(event) => setInGameValue(event.target.value)} placeholder="Optional — check in-game" />
+            </div>
+            <div className="vault-field">
+              <span className="vault-label">In-game value source</span>
+              <input className="vault-input" value={inGameSource} onChange={(event) => setInGameSource(event.target.value)} />
+            </div>
           </div>
           {error && <div className="vault-error" style={{ marginTop: 10 }}>{error}</div>}
           <div className="vault-row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
