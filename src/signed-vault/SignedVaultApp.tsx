@@ -1044,15 +1044,11 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
           <strong className={signer ? 'vault-signer-name-rainbow' : ''}>{signer ? (signer.display_name || signer.signer_name) : 'No signer assigned'}</strong>
           {signer?.roblox_username && <small>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</small>}
         </div>
-        {canEdit && <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => { setSelectedSignerId(pet.signer_id ?? ''); setSignerSearch(''); setSignerPickerOpen(true); }}>
+        {data.is_owner && <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => { setSelectedSignerId(pet.signer_id ?? ''); setSignerSearch(''); setSignerPickerOpen(true); }}>
           {signer ? 'Change signer' : 'Make signed'}
         </button>}
       </div>
       <div className="vault-form-grid">
-        <div className="vault-field">
-          <span className="vault-label">Signer roles</span>
-          <div>{signer?.roles?.length ? signer.roles.map((role) => signerRoleLabels[role]).join(', ') : '—'}</div>
-        </div>
         <div className="vault-field">
           <span className="vault-label">Signer roles</span>
           <div>{signer?.roles?.length ? signer.roles.map((role) => signerRoleLabels[role]).join(', ') : '—'}</div>
