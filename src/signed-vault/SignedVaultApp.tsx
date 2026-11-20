@@ -1878,26 +1878,11 @@ function VerificationTab({ data, onRefresh }: { data: VaultData; onRefresh: () =
 
       {/* ── queue 3: unknown signers ── */}
       {unknownSignerPets.length > 0 && (
-        <>
-          <div className="vault-section-head">
-            <div>
-              <span className="vault-kicker">Queue</span>
-              <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Pets with unknown signers</h3>
-            </div>
-            {!owner && <span className="vault-note">The owner assigns signers in My Collection → pet details.</span>}
-          </div>
-          <div className="vault-grid">
-            {unknownSignerPets.map((pet) => (
-              <div key={pet.id} className="vault-card vault-row">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{pet.nickname || pet.pet_name}</div>
-                  <div className="vault-note">{variantLabelWide[pet.variant] ?? pet.variant} · {pet.pet_category}</div>
-                </div>
-                <span className="vault-pill vault-pill-red">No signer assigned</span>
-              </div>
-            ))}
-          </div>
-        </>
+        <UnknownSignerReview
+          pets={unknownSignerPets}
+          onSaved={onRefresh}
+          owner={owner}
+        />
       )}
 
       {/* ── queue 4: signability needing review ── */}
@@ -2149,6 +2134,118 @@ function SignabilityConfirmModal({ pet, onClose, onSaved }: {
 }
 
 /* ── settings ────────────────────────────────────────────────────── */
+
+
+function UnknownSignerReview({ pets, onSaved, owner }: {
+  pets: VaultPet[];
+  onSaved: () => Promise<void>;
+  owner: boolean;
+}) {
+  const [activePet, setActivePet] = useState<VaultPet | null>(null);
+  const [username, setUsername] = useState('');
+  const [variant, setVariant] = useState<Variant>('normal');
+  const [signatureValue, setSignatureValue] = useState('');
+  const [notes, setNotes] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const open = (pet: VaultPet) => {
+    setActivePet(pet);
+    setUsername('');
+    setVariant(pet.variant);
+    setSignatureValue('');
+    setNotes('');
+    setMessage(null);
+    setError(null);
+  };
+
+  const save = async () => {
+    if (!activePet || !username.trim()) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await vaultCall('manage', {
+        rpc: 'vault_unknown_signer_assign',
+        token: readStoredToken() ?? '',
+        params: {
+          p_pet_entry_id: activePet.id,
+          p_roblox_username: username.trim().replace(/^@/, ''),
+          p_variant: variant,
+          p_signature_value: signatureValue.trim() ? Number(signatureValue) : null,
+          p_notes: notes.trim() || null,
+        },
+      });
+      await onSaved();
+      setActivePet(null);
+      setMessage('Signer assigned. The pet is marked Needs review until verified.');
+    } catch (err) {
+      setError(err instanceof VaultApiError ? err.message : 'Could not assign this signer.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="vault-section-head">
+        <div>
+          <span className="vault-kicker">Queue</span>
+          <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Pets with unknown signers</h3>
+        </div>
+        {!owner && <span className="vault-note">Only the owner can assign a signer.</span>}
+      </div>
+      {message && <div className="vault-success" style={{ marginBottom: 12 }}>{message}</div>}
+      <div className="vault-grid">
+        {pets.map((pet) => (
+          <div key={pet.id} className="vault-card vault-row">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{pet.nickname || pet.pet_name}</div>
+              <div className="vault-note">{variantLabelWide[pet.variant] ?? pet.variant} · {pet.pet_category}</div>
+            </div>
+            <span className="vault-pill vault-pill-red">No signer assigned</span>
+            {owner && <button className="vault-btn vault-btn-sm" onClick={() => open(pet)}>I have a signature</button>}
+          </div>
+        ))}
+      </div>
+      {activePet && (
+        <Modal title={`Assign signer — ${activePet.nickname || activePet.pet_name}`} onClose={() => setActivePet(null)}>
+          <p className="vault-note" style={{ marginBottom: 12 }}>
+            Enter the Roblox username shown on the signature. The assignment stays unverified until a separate review confirms it.
+          </p>
+          <div className="vault-field">
+            <span className="vault-label">Roblox username</span>
+            <input className="vault-input" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="@Username" />
+          </div>
+          <div className="vault-form-grid" style={{ marginTop: 10 }}>
+            <div className="vault-field">
+              <span className="vault-label">Variant</span>
+              <select className="vault-select" value={variant} onChange={(event) => setVariant(event.target.value as Variant)}>
+                {(['normal','golden','rainbow','shiny'] as Variant[]).map((v) => <option key={v} value={v}>{variantLabel[v]}</option>)}
+              </select>
+            </div>
+            <div className="vault-field">
+              <span className="vault-label">Signature value (optional)</span>
+              <input className="vault-input" type="number" min="0" value={signatureValue} onChange={(event) => setSignatureValue(event.target.value)} placeholder="Gems" />
+            </div>
+          </div>
+          <div className="vault-field" style={{ marginTop: 10 }}>
+            <span className="vault-label">Evidence / notes</span>
+            <textarea className="vault-textarea" rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Screenshot link, proof, context…" />
+          </div>
+          {error && <div className="vault-error" style={{ marginTop: 10 }}>{error}</div>}
+          <div className="vault-row" style={{ marginTop: 14, justifyContent: 'flex-end' }}>
+            <button className="vault-btn" onClick={() => setActivePet(null)}>Cancel</button>
+            <button className="vault-btn vault-btn-gold" disabled={busy || username.trim().length < 3} onClick={() => void save()}>
+              {busy ? 'Saving…' : 'Assign & send to review'}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
 
 function SettingsTab({ data, onRefresh, onSignOut }: { data: VaultData; onRefresh: () => Promise<void>; onSignOut: () => void }) {
   const [label1, setLabel1] = useState(data.collectors.find((c) => c.collector_no === 1)?.label ?? '');
