@@ -21,7 +21,7 @@ END $$;
 
 
 -- Some installations may have created a standalone unique index rather than a table constraint.
-DO $
+DO $$
 DECLARE idx record;
 BEGIN
   FOR idx IN
@@ -40,7 +40,7 @@ BEGIN
   LOOP
     EXECUTE format('DROP INDEX IF EXISTS public.%I', idx.index_name);
   END LOOP;
-END $;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.vault_cosmic_signers_import(
   p_token text,
