@@ -11,6 +11,11 @@ ALTER TABLE public.vault_pet_catalog
   ADD COLUMN IF NOT EXISTS in_game_value_source text,
   ADD COLUMN IF NOT EXISTS in_game_value_timestamp timestamptz;
 
+ALTER TABLE public.vault_cosmic_values
+  ADD COLUMN IF NOT EXISTS in_game_value numeric,
+  ADD COLUMN IF NOT EXISTS in_game_value_source text,
+  ADD COLUMN IF NOT EXISTS in_game_value_timestamp timestamptz;
+
 CREATE OR REPLACE FUNCTION public.vault_cosmic_signers_import(
   p_token text,
   p_signers jsonb
@@ -198,12 +203,22 @@ BEGIN
     RETURN v_result;
   ELSIF p_rpc = 'vault_cosmic_values_manage' THEN
     PERFORM public.vault_assert_session(p_token, true);
-    UPDATE public.vault_cosmic_values
-       SET in_game_value = nullif(p_params->>'p_in_game_value','')::numeric,
-           in_game_value_source = nullif(p_params->>'p_in_game_value_source',''),
-           in_game_value_timestamp = CASE WHEN nullif(p_params->>'p_in_game_value','') IS NULL THEN NULL ELSE now() END,
-           updated_at = now()
-     WHERE pet_id = (p_params->>'p_pet_id')::uuid;
+    INSERT INTO public.vault_cosmic_values
+      (pet_id, cosmic_value, source, in_game_value, in_game_value_source, in_game_value_timestamp, updated_at)
+    VALUES (
+      (p_params->>'p_pet_id')::uuid,
+      NULL,
+      'manual_import',
+      nullif(p_params->>'p_in_game_value','')::numeric,
+      nullif(p_params->>'p_in_game_value_source',''),
+      CASE WHEN nullif(p_params->>'p_in_game_value','') IS NULL THEN NULL ELSE now() END,
+      now()
+    )
+    ON CONFLICT (pet_id) DO UPDATE SET
+      in_game_value = excluded.in_game_value,
+      in_game_value_source = excluded.in_game_value_source,
+      in_game_value_timestamp = excluded.in_game_value_timestamp,
+      updated_at = now();
     IF NOT FOUND THEN
       RAISE EXCEPTION 'pet_value_row_not_found';
     END IF;
