@@ -285,11 +285,13 @@ export async function vaultCall(action: string, body: Record<string, unknown> = 
   // everything else goes through the vault-bridge dispatcher. The session token
   // is injected automatically for the integration functions.
   const isBiggames = action.startsWith('biggames-') || action === 'roblox-lookup';
-  const isCatalog = action === 'catalog-import';
+  const isCatalog = action === 'catalog-import' || action === 'cosmic-signers-import';
   const url = isBiggames ? BIGGAMES_URL : isCatalog ? CATALOG_URL : BRIDGE_URL;
   const payloadBody: Record<string, unknown> = isBiggames || isCatalog
     ? {
-        action: action.replace(/^biggames-/, '').replace(/-/g, '_'),
+        action: action === 'cosmic-signers-import'
+          ? 'cosmic_signers_import'
+          : action.replace(/^biggames-/, '').replace(/-/g, '_'),
         ...body,
         token: body.token ?? readStoredToken(),
       }
