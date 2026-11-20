@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  ArrowLeft, BadgeCheck, Check, ExternalLink, Merge, Pencil, Plus, Search, ShieldAlert, Trash2, X, Youtube,
+  ArrowLeft, BadgeCheck, Check, ExternalLink, Pencil, Plus, Search, ShieldAlert, Trash2, X, Youtube,
 } from 'lucide-react';
 import {
   VaultApiError, formatDate, formatValue, readStoredToken, rpcCall, importCosmicSigners,
@@ -341,7 +341,6 @@ function SignerEditor({ data, signer, onClose, onSaved }: {
   const [ytSubs, setYtSubs] = useState(signer?.youtube_subscribers ? String(signer.youtube_subscribers) : '');
   const [status, setStatus] = useState(signer?.verification_status ?? 'unverified');
   const [notes, setNotes] = useState(signer?.notes ?? '');
-  const [mergeInto, setMergeInto] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -396,26 +395,6 @@ function SignerEditor({ data, signer, onClose, onSaved }: {
       onClose();
     } catch (err) {
       setError(err instanceof VaultApiError ? err.message : 'Could not save the signer.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const merge = async () => {
-    if (!signer || !mergeInto) return;
-    if (!window.confirm(`Merge ${signer.signer_name} into the selected signer? All records move over and the duplicate is removed.`)) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await rpcCall('vault_signer_manage_v2', readStoredToken() ?? '', {
-        p_action: 'merge',
-        p_signer_id: signer.id,
-        p_merge_target_id: mergeInto,
-      });
-      await onSaved();
-      onClose();
-    } catch (err) {
-      setError(err instanceof VaultApiError ? err.message : 'Could not merge.');
     } finally {
       setBusy(false);
     }
@@ -514,16 +493,8 @@ function SignerEditor({ data, signer, onClose, onSaved }: {
         <>
           <div className="vault-divider" />
           <span className="vault-label" style={{ color: 'var(--red)' }}>Danger zone</span>
+          <p className="vault-note">Signer records are kept separate by Roblox account. Merging is disabled to protect alternate and legacy accounts.</p>
           <div className="vault-row" style={{ marginTop: 8, flexWrap: 'wrap' }}>
-            <select className="vault-select" style={{ maxWidth: 240 }} value={mergeInto} onChange={(event) => setMergeInto(event.target.value)}>
-              <option value="">Merge into…</option>
-              {data.signers.filter((entry) => entry.id !== signer?.id).map((entry) => (
-                <option key={entry.id} value={entry.id}>{entry.signer_name}</option>
-              ))}
-            </select>
-            <button className="vault-btn vault-btn-sm" disabled={busy || !mergeInto} onClick={() => void merge()}>
-              <Merge size={12} /> Merge
-            </button>
             <span className="vault-spacer" />
             <button className="vault-btn vault-btn-sm vault-btn-danger" disabled={busy} onClick={() => void remove()}>
               <Trash2 size={12} /> Delete signer
