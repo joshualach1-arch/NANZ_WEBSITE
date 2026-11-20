@@ -87,6 +87,10 @@ BEGIN
           'roblox_username', s.roblox_username,
           'roblox_user_id', s.roblox_user_id,
           'avatar_url', s.avatar_url, 'notes', s.notes,
+          'cosmic_exclusive_value', s.cosmic_exclusive_value,
+          'cosmic_huge_value', s.cosmic_huge_value,
+          'cosmic_titanic_value', s.cosmic_titanic_value,
+          'cosmic_demand', s.cosmic_demand,
           'display_name', s.display_name,
           'profile_url', s.profile_url,
           'roles', (
