@@ -1392,3 +1392,23 @@
 .vault-app:has(.vault-overview-page) .vault-logo-svg path {
   fill:#f044a5;filter:drop-shadow(0 0 5px rgba(255,74,179,.9)) drop-shadow(0 0 13px rgba(236,42,153,.62));
 }
+
+
+/* Keep the original NANZ artwork in the Signed Vault header on every tab. */
+.vault-app .vault-brand .vault-logo-mark {
+  width:76px!important;height:76px!important;flex:0 0 76px!important;
+  display:block!important;overflow:hidden!important;border:0!important;
+  border-radius:14px!important;background:transparent!important;
+  filter:drop-shadow(0 0 13px rgba(239,49,162,.28))!important;
+}
+.vault-app .vault-brand .vault-logo-mark img {
+  display:block!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;visibility:visible!important;
+}
+.vault-app .vault-brand .vault-logo-mark:after {content:none!important;display:none!important;}
+.vault-app .vault-brand .vault-logo-svg {display:none!important;}
+@media(max-width:700px) {
+  .vault-app .vault-brand .vault-logo-mark {
+    width:42px!important;height:42px!important;flex-basis:42px!important;
+  }
+}
