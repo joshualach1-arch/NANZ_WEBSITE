@@ -1151,6 +1151,30 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
 
       {error && <div className="vault-error" style={{ marginTop: 10 }}>{error}</div>}
 
+      {signature && !isVerified && canEdit && (
+        <div className="vault-verify-action">
+          <div><strong>Signature not verified yet</strong><small>One click confirms this signature as verified.</small></div>
+          <button className="vault-btn vault-btn-verify" disabled={busy} onClick={async () => {
+            setError(null);
+            try {
+              await rpcCall('vault_signature_manage', token, {
+                p_action: 'verify',
+                p_signature_id: signature.id,
+                p_pet_id: pet.pet_id,
+                p_signer_id: signature.signer_id,
+                p_variant: signature.variant,
+                p_signature_value: signature.signature_value == null ? null : Number(signature.signature_value),
+                p_verification_status: 'verified'
+              });
+              await onSaved();
+            } catch (err) {
+              setError(err instanceof VaultApiError ? err.message : 'Could not verify this signature.');
+            }
+          }}>
+            <BadgeCheck size={15} /> Mark as verified
+          </button>
+        </div>
+      )}
       <div className="vault-row" style={{ marginTop: 18, justifyContent: 'space-between' }}>
         <button className="vault-btn vault-btn-danger" disabled={busy} onClick={onRemove}>Remove</button>
         <div className="vault-row" style={{ gap: 8 }}>
