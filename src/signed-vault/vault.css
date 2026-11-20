@@ -352,3 +352,24 @@
   box-shadow:0 5px 20px rgba(31,213,145,.2);
 }
 .vault-btn-verify:disabled { opacity:.55; cursor:wait; }
+
+
+/* Force the rainbow title to win over base signer typography */
+.vault-signer-card .vault-signer-name.vault-signer-name-rainbow,
+.vault-signer-page .vault-signer-name.vault-signer-name-rainbow {
+  display: inline-block !important;
+  color: transparent !important;
+  background-image: linear-gradient(100deg,#ff456b 0%,#ffb347 16%,#f9f871 32%,#38e7a2 48%,#43c5ff 64%,#9872ff 80%,#ff55c8 100%) !important;
+  background-size: 300% 100% !important;
+  background-position: 0% 50%;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: signerNameRainbow 3s linear infinite !important;
+  font-weight: 950 !important;
+  filter: drop-shadow(0 0 8px rgba(132,116,255,.28));
+}
+@keyframes signerNameRainbow {
+  from { background-position: 0% 50%; }
+  to { background-position: 300% 50%; }
+}
