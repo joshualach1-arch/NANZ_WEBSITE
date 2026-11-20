@@ -73,7 +73,7 @@ const vaultTabs: { id: VaultTab; label: string }[] = [
   { id: 'collection', label: 'My Collection' },
   { id: 'scanner', label: 'Inventory Scanner' },
   { id: 'missing', label: 'Missing Pets' },
-  { id: 'signers', label: 'Signer Database' },
+  { id: 'signers', label: 'Signers' },
   { id: 'acquisitions', label: 'Trade History' },
   { id: 'values', label: 'Cosmic Value Tracker' },
   { id: 'verification', label: 'Verification' },
@@ -793,6 +793,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [showScanner, setShowScanner] = useState(false);
   const [collectionMode, setCollectionMode] = useState<'owned' | 'missing'>('owned');
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [petSearch, setPetSearch] = useState('');
   const [presetPetId, setPresetPetId] = useState<string | null>(null);
 
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -843,6 +844,8 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const filtered = useMemo(() => {
     let list = pets.filter((pet) => {
       if (categoryFilter !== 'all' && !String(pet.pet_category ?? '').toLowerCase().startsWith(categoryFilter)) return false;
+      const q = petSearch.trim().toLowerCase();
+      if (q && !pet.pet_name.toLowerCase().includes(q) && !(pet.nickname ?? '').toLowerCase().includes(q) && !(pet.signer_name ?? '').toLowerCase().includes(q)) return false;
       if (variantFilter !== 'all' && pet.variant !== variantFilter) return false;
       if (signerFilter !== 'all' && (pet.signer_id ?? 'none') !== signerFilter) return false;
       const value = petSignatureValue(pet, data.signatures) + Number(pet.cosmic_value ?? 0);
@@ -863,7 +866,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
     if (sort === 'oldest') list = [...list].sort((a, b) => (a.acquired_at ?? '').localeCompare(b.acquired_at ?? ''));
     if (sort === 'alpha') list = [...list].sort((a, b) => (a.nickname || a.pet_name).localeCompare(b.nickname || b.pet_name));
     return list;
-  }, [pets, data.signatures, categoryFilter, variantFilter, signerFilter, minValue, maxValue, acquiredFrom, acquiredTo, verificationFilter, sort]);
+  }, [pets, data.signatures, categoryFilter, petSearch, variantFilter, signerFilter, minValue, maxValue, acquiredFrom, acquiredTo, verificationFilter, sort]);
 
   return (
     <div>
@@ -893,16 +896,22 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}>Owned · {pets.length}</button>
         <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}>Missing · {missingCatalog.length}</button>
       </div>
+      <div className="vault-row" style={{ gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
+        {['all', ...categories.map((entry) => entry.toLowerCase())].map((entry) => (
+          <button key={entry} className={`vault-tab${categoryFilter === entry ? ' active' : ''}`} onClick={() => setCategoryFilter(entry)}>
+            {entry === 'all' ? 'All pets' : entry.charAt(0).toUpperCase() + entry.slice(1)}
+          </button>
+        ))}
+      </div>
       <div className="vault-card" style={{ marginBottom: 16 }}>
-        {collectionMode === 'missing' && <div className="vault-field" style={{ marginBottom: 12 }}><span className="vault-label">Find a missing pet</span><input className="vault-input" placeholder="Search catalog…" value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} /></div>}
-        <div className="vault-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
-          <div className="vault-field">
-            <span className="vault-label">Category</span>
-            <select className="vault-select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-              <option value="all">All</option>
-              {categories.map((entry) => <option key={entry} value={entry.toLowerCase()}>{entry}</option>)}
-            </select>
-          </div>
+        <div className="vault-field" style={{ marginBottom: 12 }}>
+          <span className="vault-label">{collectionMode === 'missing' ? 'Find a missing pet' : 'Search your collection'}</span>
+          <input className="vault-input" placeholder={collectionMode === 'missing' ? 'Search catalog…' : 'Search pet, nickname or signer…'} value={collectionMode === 'missing' ? catalogSearch : petSearch} onChange={(event) => collectionMode === 'missing' ? setCatalogSearch(event.target.value) : setPetSearch(event.target.value)} />
+        </div>
+        <details className="vault-advanced-filters">
+          <summary>Advanced filters and sorting</summary>
+          <div className="vault-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', marginTop: 12 }}>
+
           <div className="vault-field">
             <span className="vault-label">Variant</span>
             <select className="vault-select" value={variantFilter} onChange={(event) => setVariantFilter(event.target.value)}>
@@ -954,7 +963,8 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
               <option value="alpha">Alphabetical</option>
             </select>
           </div>
-        </div>
+          </div>
+        </details>
       </div>
 
       {collectionMode === 'missing' ? (
