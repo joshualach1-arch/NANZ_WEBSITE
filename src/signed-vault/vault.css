@@ -819,3 +819,161 @@
   .vault-known-signatures h3 { margin-left:5px;font-size:29px; }
   .vault-known-signatures-underline { margin-left:90px; }
 }
+
+
+/* ── Signers page: match the supplied reference layout ───────────── */
+.vault-nav {
+  position:sticky!important;top:0!important;z-index:50!important;
+  background:linear-gradient(100deg,rgba(11,13,24,.97),rgba(9,12,23,.95) 55%,rgba(11,13,24,.97))!important;
+  border-bottom:1px solid rgba(150,160,190,.16)!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(22px) saturate(155%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(155%)!important;
+}
+.vault-nav-inner {
+  width:100%!important;max-width:1540px!important;min-height:82px!important;height:82px!important;
+  margin:0 auto!important;padding:0 44px!important;
+  display:grid!important;grid-template-columns:minmax(220px,1fr) auto minmax(180px,1fr)!important;
+  align-items:center!important;gap:24px!important;overflow:visible!important;
+}
+.vault-brand { justify-self:start!important;display:flex!important;align-items:center!important;gap:12px!important; }
+.vault-brand .logo-mark {
+  width:48px!important;height:48px!important;flex:0 0 48px!important;
+  border:0!important;border-radius:12px!important;background:transparent!important;overflow:hidden!important;
+}
+.vault-brand .logo-mark img { display:block!important;width:100%!important;height:100%!important;object-fit:contain!important; }
+.vault-brand-text { display:flex!important;flex-direction:column!important;gap:1px!important;line-height:1.08!important; }
+.vault-brand-title { color:#f6f6fb!important;font-size:17px!important;font-weight:900!important;letter-spacing:-.015em!important; }
+.vault-brand-sub { color:#f0f1f7!important;font-size:15px!important;font-weight:800!important;letter-spacing:-.01em!important; }
+.vault-header-tabs {
+  justify-self:center!important;display:flex!important;align-items:center!important;gap:4px!important;
+  margin:0!important;padding:4px!important;overflow:visible!important;
+  border:1px solid rgba(130,143,174,.18)!important;border-radius:999px!important;
+  background:rgba(8,11,21,.76)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025),0 8px 26px rgba(0,0,0,.16)!important;
+}
+.vault-header-tabs .vault-tab {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-height:48px!important;padding:0 24px!important;border:1px solid transparent!important;
+  border-radius:999px!important;background:transparent!important;
+  color:#bac2d3!important;font-size:13px!important;font-weight:750!important;
+  white-space:nowrap!important;transition:background .2s ease,color .2s ease,box-shadow .2s ease!important;
+}
+.vault-header-tabs .vault-tab:hover { background:rgba(255,255,255,.055)!important;color:#fff!important; }
+.vault-header-tabs .vault-tab.active {
+  color:#fff!important;background:linear-gradient(105deg,#f23b91,#d92582)!important;
+  border-color:rgba(255,255,255,.08)!important;
+  box-shadow:0 5px 22px rgba(226,39,133,.32),inset 0 1px rgba(255,255,255,.18)!important;
+}
+.vault-header-tabs .vault-tab.active:after { display:none!important; }
+.vault-nav-right { justify-self:end!important;display:flex!important;align-items:center!important;gap:17px!important;margin-left:0!important; }
+.vault-collector-chip {
+  min-height:42px!important;display:inline-flex!important;align-items:center!important;gap:8px!important;
+  padding:0 17px!important;border-radius:999px!important;
+  border:1px solid rgba(221,163,53,.3)!important;
+  background:linear-gradient(110deg,rgba(197,133,36,.12),rgba(77,54,27,.2))!important;
+  color:#f4b83e!important;font-size:13px!important;font-weight:850!important;
+}
+.vault-collector-chip:before { content:"♛";font-size:18px;line-height:1;color:#f5bf35;text-shadow:0 0 10px rgba(245,191,53,.22); }
+.vault-exit { width:40px!important;height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important;color:#f0f1f7!important;border-radius:11px!important; }
+.vault-exit svg { width:20px!important;height:20px!important;stroke-width:2.1!important; }
+.vault-exit:hover { color:#fff!important;background:rgba(255,255,255,.08)!important; }
+
+/* Match the compact, balanced page spacing and the reference's pink accent */
+.vault-signer-page { --signer-pink:#ed3d91!important; }
+.vault-signer-page .vault-signers-hero {
+  min-height:156px!important;margin:0 0 16px!important;padding:0 18px 10px!important;
+}
+.vault-signer-page .vault-signers-hero-mark {
+  right:-3%!important;top:-66%!important;width:40%!important;height:230%!important;
+  background:linear-gradient(90deg,transparent 0%,rgba(93,104,153,.035) 34%,rgba(237,61,145,.17) 74%,transparent 100%)!important;
+}
+.vault-signer-page .vault-signers-toolbar { gap:18px!important;margin:0 0 20px!important; }
+.vault-signer-page .vault-signers-stats { gap:14px!important; }
+.vault-signer-page .vault-signers-stat {
+  min-height:84px!important;padding:14px 20px!important;border-radius:15px!important;
+  background:linear-gradient(145deg,rgba(28,30,46,.9),rgba(15,19,31,.97))!important;
+  border-color:rgba(141,151,180,.15)!important;
+}
+.vault-signer-page .vault-signers-stat svg { color:#ec4c9d!important; }
+.vault-signer-page .vault-signers-actions { gap:12px!important; }
+.vault-signer-page .vault-signers-actions .vault-btn { min-height:48px!important;border-radius:13px!important;padding:0 18px!important; }
+.vault-signer-page .vault-signers-filter-panel {
+  grid-template-columns:minmax(260px,2.35fr) minmax(145px,.9fr) minmax(145px,.9fr) minmax(165px,1fr) minmax(145px,.9fr)!important;
+  gap:10px!important;padding:12px 14px!important;margin:0 0 24px!important;border-radius:16px!important;
+  background:linear-gradient(145deg,rgba(22,26,42,.94),rgba(13,17,29,.97))!important;
+}
+.vault-signer-page .vault-signers-search { height:46px!important;border-radius:13px!important; }
+.vault-signer-page .vault-signers-filter-panel .vault-select { min-width:0!important;height:46px!important; }
+.vault-signer-page .vault-signer-grid {
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:24px!important;
+}
+.vault-signer-page .vault-signer-card {
+  min-width:0!important;padding:17px 18px!important;gap:13px!important;border-radius:18px!important;
+  background:linear-gradient(145deg,rgba(17,21,34,.98),rgba(10,14,24,.99))!important;
+  border:1px solid rgba(210,73,145,.25)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.018)!important;
+}
+.vault-signer-page .vault-signer-card:has(.vault-ownership-badge.is-owned) {
+  border-color:rgba(210,73,145,.25)!important;
+  background:linear-gradient(145deg,rgba(17,21,34,.98),rgba(10,14,24,.99))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.018)!important;
+}
+.vault-signer-page .vault-signer-card:hover {
+  transform:translateY(-2px)!important;border-color:rgba(237,61,145,.58)!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.27),0 0 22px rgba(237,61,145,.055)!important;
+}
+.vault-signer-page .vault-signer-card-identity .vault-signer-avatar {
+  width:64px!important;height:64px!important;flex-basis:64px!important;border-radius:15px!important;
+  margin:0!important;background:linear-gradient(145deg,#30323d,#151925)!important;
+  border:1px solid rgba(151,162,190,.2)!important;color:#ffc928!important;font-size:22px!important;
+}
+.vault-signer-page .vault-signer-card-names .vault-signer-name { font-size:16px!important; }
+.vault-signer-page .vault-signer-card-names .vault-note { font-size:12px!important; }
+.vault-signer-page .vault-signer-metrics { gap:0!important;border:1px solid rgba(132,151,200,.14)!important;border-radius:12px!important;overflow:hidden!important; }
+.vault-signer-page .vault-signer-metrics>div {
+  padding:11px 13px!important;border:0!important;border-right:1px solid rgba(132,151,200,.13)!important;border-radius:0!important;
+  background:rgba(5,10,21,.72)!important;
+}
+.vault-signer-page .vault-signer-metrics>div:last-child { border-right:0!important; }
+.vault-signer-page .vault-signer-metrics small { font-size:10px!important;color:#9aa9c4!important; }
+.vault-signer-page .vault-signer-metrics strong { margin-top:7px!important;font-size:15px!important; }
+.vault-signer-page .vault-signer-card-footer { padding-top:10px!important;font-size:12px!important; }
+
+/* Keep the existing site logo image; only the navigation treatment changes. */
+@media(max-width:1050px) {
+  .vault-nav-inner { grid-template-columns:auto minmax(0,1fr) auto!important;gap:12px!important;padding:0 20px!important; }
+  .vault-header-tabs .vault-tab { padding:0 14px!important; }
+  .vault-signer-page .vault-signers-filter-panel { grid-template-columns:minmax(220px,2fr) repeat(2,minmax(140px,1fr))!important; }
+}
+@media(max-width:720px) {
+  .vault-nav-inner { min-height:70px!important;height:70px!important;grid-template-columns:auto minmax(0,1fr) auto!important;gap:7px!important;padding:0 10px!important; }
+  .vault-brand { gap:7px!important; }
+  .vault-brand .logo-mark { width:38px!important;height:38px!important;flex-basis:38px!important; }
+  .vault-brand-title { font-size:13px!important; }
+  .vault-brand-sub { font-size:11px!important; }
+  .vault-header-tabs { min-width:0!important;max-width:100%!important;overflow-x:auto!important;justify-self:center!important;padding:3px!important; }
+  .vault-header-tabs .vault-tab { min-height:38px!important;padding:0 9px!important;font-size:10px!important; }
+  .vault-nav-right { gap:4px!important; }
+  .vault-collector-chip { min-height:34px!important;padding:0 8px!important;font-size:10px!important; }
+  .vault-collector-chip:before { font-size:14px!important; }
+  .vault-exit { width:32px!important;height:34px!important; }
+  .vault-signer-page .vault-signers-toolbar { align-items:stretch!important;flex-direction:column!important; }
+  .vault-signer-page .vault-signers-stats { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+  .vault-signer-page .vault-signers-stat { gap:8px!important;padding:11px 9px!important; }
+  .vault-signer-page .vault-signers-stat svg { width:23px!important;height:23px!important; }
+  .vault-signer-page .vault-signers-stat strong { font-size:20px!important; }
+  .vault-signer-page .vault-signers-stat span { font-size:10px!important; }
+  .vault-signer-page .vault-signers-actions { justify-content:stretch!important; }
+  .vault-signer-page .vault-signers-actions .vault-btn { flex:1!important;justify-content:center!important;padding:0 8px!important;font-size:11px!important; }
+  .vault-signer-page .vault-signers-filter-panel { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  .vault-signer-page .vault-signers-search { grid-column:1/-1!important; }
+  .vault-signer-page .vault-signer-grid { grid-template-columns:1fr!important;gap:12px!important; }
+  .vault-signer-page .vault-signer-card { padding:14px!important; }
+  .vault-signer-page .vault-signer-card-identity .vault-signer-avatar { width:54px!important;height:54px!important;flex-basis:54px!important; }
+}
+@media(max-width:460px) {
+  .vault-brand-text { display:none!important; }
+  .vault-header-tabs .vault-tab { padding:0 7px!important;font-size:9px!important; }
+  .vault-signer-page .vault-signers-stats { grid-template-columns:1fr!important; }
+}
