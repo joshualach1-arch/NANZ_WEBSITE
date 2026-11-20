@@ -376,7 +376,7 @@ export async function correctAcquisition(token: string, acquisitionId: string, p
 
 
 export async function importCosmicSigners(): Promise<Record<string, unknown>> {
-  const result = await vaultCall('catalog-import', { action: 'cosmic_signer_import' });
+  const result = await vaultCall('cosmic-signers-import');
   return result;
 }
 
