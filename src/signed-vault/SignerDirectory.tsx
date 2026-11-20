@@ -169,16 +169,33 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
               <div className={`vault-signer-name${ownedSignerIds.has(signer.id) ? ' vault-signer-name-rainbow' : ''}`}>{signer.display_name || signer.signer_name}</div>
               <div className="vault-note" style={{ marginTop: 2 }}>{signer.signer_name}</div>
               {signer.roblox_username && <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>}
-              <div className="vault-row" style={{ gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
-        <span className="vault-signer-cosmic-value"><small>Cosmic Exclusive</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></span>
-        <span className="vault-signer-cosmic-value"><small>Cosmic Huge</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></span>
-        <span className="vault-signer-cosmic-value"><small>Cosmic Titanic</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></span>
-        <span className="vault-signer-cosmic-value"><small>Cosmic Demand</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></span>
-                {(signer.roles ?? []).slice(0, 3).map((role) => (
-                  <span key={role} className="vault-pill vault-pill-gray">{signerRoleLabels[role]}</span>
-                ))}
+              <div className="vault-signer-card-top">
+            <div className="vault-signer-card-identity">
+              <div className="vault-signer-avatar">
+                {signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" /> : signer.signer_name.slice(0, 2).toUpperCase()}
               </div>
-              <div className="vault-note" style={{ marginTop: 6 }}>{signer.signature_count} signatures</div>
+              <div className="vault-signer-card-names">
+                <div className={`vault-signer-name${ownedSignerIds.has(signer.id) ? ' vault-signer-name-rainbow' : ''}`}>{signer.display_name || signer.signer_name}</div>
+                <div className="vault-note">@{signer.roblox_username || signer.signer_name}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>
+              </div>
+            </div>
+            <div className="vault-signer-card-status">
+              <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}>
+                <span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'OWNED' : 'MISSING'}
+              </span>
+              <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>{verificationLabels[signer.verification_status ?? 'unverified']}</span>
+            </div>
+          </div>
+          <div className="vault-signer-metrics">
+            <div><small>EXCLUSIVE</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
+            <div><small>HUGE</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
+            <div><small>TITANIC</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
+            <div><small>DEMAND</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></div>
+          </div>
+          <div className="vault-signer-card-footer">
+            <span>{signer.signature_count} signatures</span>
+            <span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span>
+          </div>
               <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}>
                 <span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'Signature owned' : 'Not in collection'}
               </span>
