@@ -11,6 +11,7 @@ import {
   variantLabelWide,
   acquisitionTypeLabels,
   verificationLabels,
+  vaultCall,
   type AcquisitionHistoryEntry,
 } from './vaultApi';
 import { Modal } from './SignedVaultApp';
@@ -48,6 +49,8 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
   const [editing, setEditing] = useState<AcquisitionHistoryEntry | null>(null);
   const [detail, setDetail] = useState<AcquisitionHistoryEntry | null>(null);
   const [layout, setLayout] = useState<'timeline' | 'table'>('timeline');
+  const [syncingHistory, setSyncingHistory] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const load = useCallback(async (scope: number) => {
     const token = readStoredToken();
@@ -57,12 +60,28 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
       setEntries(list);
       setError(null);
     } catch (err) {
-      setError(err instanceof VaultApiError ? err.message : 'Acquisition history could not be loaded.');
+      setError(err instanceof VaultApiError ? err.message : 'Trade history could not be loaded.');
       setEntries([]);
     }
   }, [myCollectorNo]);
 
   useEffect(() => { void load(view); }, [load, view]);
+
+  const importHistory = async () => {
+    setSyncingHistory(true);
+    setSyncMessage(null);
+    setError(null);
+    try {
+      const result = await vaultCall('biggames-history-sync', { collector_no: view });
+      setSyncMessage('Scanned ' + Number(result.trades_scanned ?? 0) + ' trades and ' + Number(result.booth_transactions_scanned ?? 0) + ' booth transactions. Found ' + Number(result.pet_acquisitions_found ?? 0) + ' pet entries; imported ' + Number(result.newly_imported ?? 0) + ' new entries. Exact prices are shown only when BIG Games provides them.');
+      await load(view);
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof VaultApiError ? err.message : 'Trade history import failed. Check that BIG Games trades:read and booth:read scopes are enabled, then reconnect.');
+    } finally {
+      setSyncingHistory(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!entries) return [];
@@ -108,7 +127,7 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
     <div>
       <div className="vault-section-head">
         <div>
-          <span className="vault-kicker">Acquisition history</span>
+          <span className="vault-kicker">Trade history</span>
           <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{filtered.length} entries</h3>
         </div>
         <div className="vault-row">
@@ -126,6 +145,7 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
               <button className={`vault-tab${view === (myCollectorNo === 1 ? 2 : 1) ? ' active' : ''}`} onClick={() => setView(myCollectorNo === 1 ? 2 : 1)}>Collector 2</button>
             </div>
           )}
+          <button className="vault-btn vault-btn-gold vault-btn-sm" disabled={syncingHistory} onClick={() => void importHistory()}><Clock size={12} /> {syncingHistory ? "Importing…" : "Import past trades"}</button>
           <span className="vault-pill vault-pill-gold"><Tag size={11} /> Total {formatValue(total)}</span>
         </div>
       </div>
@@ -184,13 +204,14 @@ export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
         </div>
       </div>
 
+      {syncMessage && <div className="vault-success" style={{ marginBottom: 12 }}>{syncMessage}</div>}
       {error && <div className="vault-error" style={{ marginBottom: 12 }}>{error}</div>}
       {!entries ? (
         <div className="vault-loading"><div className="vault-spinner" /></div>
       ) : filtered.length === 0 ? (
         <div className="vault-empty">
-          <div className="vault-empty-title">No acquisitions</div>
-          <div>Entries appear here as pets are acquired, manually or via inventory scan.</div>
+          <div className="vault-empty-title">No trade history imported yet</div>
+          <div>Import your available BIG Games trade and booth history. Older entries appear only if they are still included in the save snapshot.</div>
         </div>
       ) : layout === 'timeline' ? (
         <div className="vault-timeline">
