@@ -221,9 +221,6 @@ BEGIN
       in_game_value_source = excluded.in_game_value_source,
       in_game_value_timestamp = excluded.in_game_value_timestamp,
       updated_at = now();
-    IF NOT FOUND THEN
-      RAISE EXCEPTION 'pet_value_row_not_found';
-    END IF;
     RETURN jsonb_build_object('updated', true);
   END IF;
   RAISE EXCEPTION 'unknown_rpc';
