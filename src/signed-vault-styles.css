@@ -227,3 +227,94 @@
   .vault-timeline-aside { text-align: left; width: 100%; }
   .vault-modal-wide { width: calc(100vw - 24px); max-width: none; }
 }
+
+
+/* ── Wide NANZO Signed Vault navigation ─────────────────────────── */
+.vault-nav {
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(100deg,rgba(12,14,25,.97),rgba(9,12,22,.94) 55%,rgba(12,14,25,.97));
+  border-bottom:1px solid rgba(139,151,185,.17);
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+}
+.vault-nav-inner {
+  width:100%;max-width:none;height:82px;margin:0;
+  padding:0 clamp(24px,5.5vw,86px);
+  display:grid;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);
+  align-items:center;gap:24px;
+}
+.vault-brand { justify-self:start;gap:15px;min-width:0;text-decoration:none; }
+.vault-brand .logo-mark {
+  width:56px;height:56px;border:0;border-radius:14px;overflow:hidden;
+  background:transparent;box-shadow:none;
+}
+.vault-brand .logo-mark img { width:100%;height:100%;object-fit:contain; }
+.vault-brand-text { gap:2px;line-height:1.08; }
+.vault-brand-title { color:#f6f6fb;font-size:20px;font-weight:900;letter-spacing:-.025em; }
+.vault-brand-sub { color:#e8eaf2;font-size:17px;font-weight:800;letter-spacing:-.015em; }
+.vault-header-tabs {
+  justify-self:center;margin:0!important;padding:5px;gap:4px;
+  align-items:center;overflow:visible;
+  border:1px solid rgba(132,147,179,.17);border-radius:999px;
+  background:rgba(8,11,20,.72);
+  box-shadow:inset 0 1px rgba(255,255,255,.025),0 8px 28px rgba(0,0,0,.14);
+}
+.vault-header-tabs .vault-tab {
+  min-height:52px;display:flex;align-items:center;justify-content:center;
+  padding:0 28px;border-radius:999px;
+  color:#b9c1d2;font-size:14px;font-weight:700;
+  transition:background .2s ease,color .2s ease,box-shadow .2s ease;
+}
+.vault-header-tabs .vault-tab:hover { background:rgba(255,255,255,.055);color:#fff; }
+.vault-header-tabs .vault-tab.active {
+  color:#fff;
+  background:linear-gradient(105deg,#f23b91 0%,#d92582 100%);
+  box-shadow:0 5px 22px rgba(226,39,133,.3),inset 0 1px rgba(255,255,255,.18);
+}
+.vault-header-tabs .vault-tab.active:after { display:none; }
+.vault-nav-right { justify-self:end;margin-left:0;gap:18px; }
+.vault-collector-chip {
+  display:inline-flex;align-items:center;gap:9px;
+  min-height:48px;padding:0 20px;border-radius:999px;
+  border:1px solid rgba(221,163,53,.29);
+  background:linear-gradient(110deg,rgba(197,133,36,.12),rgba(77,54,27,.2));
+  color:#f4b83e;font-size:14px;font-weight:800;
+  box-shadow:inset 0 1px rgba(255,255,255,.04),0 0 20px rgba(212,151,43,.05);
+}
+.vault-collector-chip:before { content:"♛";font-size:20px;line-height:1;color:#f5bf35;text-shadow:0 0 10px rgba(245,191,53,.22); }
+.vault-exit {
+  width:48px;height:48px;justify-content:center;padding:0;
+  border-radius:13px;color:#edf0f8;
+}
+.vault-exit svg { width:21px;height:21px;stroke-width:2.2; }
+.vault-exit:hover { color:#fff;background:rgba(255,255,255,.08); }
+@media(max-width:1050px) {
+  .vault-nav-inner { grid-template-columns:auto minmax(0,1fr) auto;gap:14px;padding:0 22px; }
+  .vault-header-tabs .vault-tab { padding:0 16px; }
+}
+@media(max-width:720px) {
+  .vault-nav-inner {
+    height:72px;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;
+    padding:0 12px;overflow:visible;
+  }
+  .vault-brand { gap:8px; }
+  .vault-brand .logo-mark { width:42px;height:42px; }
+  .vault-brand-text { display:flex; }
+  .vault-brand-title { font-size:14px; }
+  .vault-brand-sub { font-size:11px; }
+  .vault-header-tabs { min-width:0;max-width:100%;overflow-x:auto;justify-self:center;padding:4px; }
+  .vault-header-tabs .vault-tab { min-height:40px;padding:0 11px;font-size:11px; }
+  .vault-nav-right { gap:5px; }
+  .vault-collector-chip { min-height:36px;padding:0 9px;font-size:10px;gap:5px; }
+  .vault-collector-chip:before { font-size:14px; }
+  .vault-exit { width:34px;height:36px; }
+  .vault-exit svg { width:17px;height:17px; }
+}
+@media(max-width:460px) {
+  .vault-nav-inner { grid-template-columns:auto minmax(0,1fr) auto;gap:6px;padding:0 8px; }
+  .vault-brand-text { display:none; }
+  .vault-brand .logo-mark { width:38px;height:38px; }
+  .vault-header-tabs .vault-tab { padding:0 8px;font-size:10px; }
+  .vault-collector-chip { padding:0 7px;font-size:9px; }
+}
