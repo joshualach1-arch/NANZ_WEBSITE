@@ -74,3 +74,40 @@
   .vault-tab, .vault-pet-card, .vault-signer-card { transition: none; }
   .vault-pet-card:hover, .vault-signer-card:hover { transform: none; }
 }
+
+
+.vault-value-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+.vault-value-breakdown > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(132,151,200,.13);
+  border-radius: 9px;
+  background: rgba(5,10,25,.34);
+}
+.vault-value-breakdown small {
+  color: var(--text4, #8b93a8);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+.vault-value-breakdown b {
+  color: #dce5ff;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vault-value-breakdown .vault-value-total {
+  border-color: rgba(91,132,255,.3);
+  background: linear-gradient(145deg, rgba(77,124,255,.13), rgba(132,92,255,.08));
+}
+.vault-value-breakdown .vault-value-total b { color: #a9c0ff; }
