@@ -60,6 +60,50 @@ function buildItem(pet: PetRow): Record<string, unknown> {
   };
 }
 
+
+function parseCosmicValue(value: string | null): number | null {
+  if (!value || /^SOON$/i.test(value.trim()) || /^N\/?A$/i.test(value.trim())) return null;
+  const normalized = value.trim().replace(/,/g, "").toUpperCase();
+  const match = normalized.match(/^(\\d+(?:\\.\\d+)?)([KMBT])?$/);
+  if (!match) return null;
+  const factor: Record<string, number> = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
+  return Number(match[1]) * (factor[match[2] ?? ""] ?? 1);
+}
+
+function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
+  const decode = (s: string) => s
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+  const rows: Record<string, unknown>[] = [];
+  const cards = html.match(/<[^>]*class=["'][^"']*(?:value-card|item-card|signature)[^"']*["'][^>]*>[\\s\\S]*?<\\/[^>]+>/gi) ?? [];
+  for (const card of cards) {
+    const text = decode(card);
+    const at = text.match(/@([A-Za-z0-9_]{3,20})/);
+    if (!at) continue;
+    const before = text.slice(0, text.indexOf("@" + at[1])).trim();
+    const signerName = before.split(/\\s+/).slice(-3).join(" ").replace(/^(Staff|Partner|Dev)\\s+/i, "").trim();
+    const exclusive = text.match(/Exclusive\\s+([\\d,.]+\\s*[KMBT]?|SOON)/i)?.[1] ?? null;
+    const huge = text.match(/Huge\\s+([\\d,.]+\\s*[KMBT]?|SOON)/i)?.[1] ?? null;
+    const titanic = text.match(/Titanic\\s+([\\d,.]+\\s*[KMBT]?|SOON)/i)?.[1] ?? null;
+    const demand = text.match(/Demand\\s+(N\\/?A|\\d+\\/10)/i)?.[1] ?? null;
+    if (!signerName) continue;
+    rows.push({
+      signer_name: signerName,
+      roblox_username: at[1],
+      roles: [role],
+      exclusive_value: parseCosmicValue(exclusive),
+      huge_value: parseCosmicValue(huge),
+      titanic_value: parseCosmicValue(titanic),
+      demand: demand && /\\d+\\/10/.test(demand) ? Number(demand.split("/")[0]) : null,
+      source: "cosmic_values",
+      profile_url: null,
+      avatar_url: null,
+    });
+  }
+  return rows;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -68,6 +112,63 @@ Deno.serve(async (req: Request) => {
     const body = asRecord(await req.json().catch(() => ({})));
     const action = String(body.action ?? "");
     const token = String(body.token ?? "");
+
+
+    if (action === "cosmic_signer_import") {
+      // Cosmic Values publishes separate, paginated signer lists. We only ingest
+      // explicitly published profile/value data; unknown or "SOON" values remain null.
+      const session = await supabase.rpc("vault_assert_session", { p_token: token });
+      if (session.error) return json({ error: "vault_access_denied" }, 401);
+      const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
+      if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
+
+      const categories = [
+        { type: "BIG Games Staff", role: "big_games_developer" },
+        { type: "BIG Games Dev", role: "big_games_developer" },
+        { type: "Partner", role: "big_games_partner" },
+      ];
+      const allRows: Record<string, unknown>[] = [];
+      for (const group of categories) {
+        for (let page = 1; page <= 10; page++) {
+          const url = new URL("https://petsimulatorvalues.com/values.php");
+          url.searchParams.set("category", "Signatures");
+          url.searchParams.set("sigtype", group.type);
+          url.searchParams.set("page", String(page));
+          const res = await fetch(url.toString(), {
+            headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault data importer" },
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!res.ok) return json({ error: "cosmic_signer_fetch_failed", type: group.type, page }, 502);
+          const html = await res.text();
+          const rows = parseCosmicSignerRows(html, group.role);
+          if (rows.length === 0) break;
+          allRows.push(...rows);
+          if (!html.includes("Next")) break;
+        }
+      }
+
+      const deduped = new Map<string, Record<string, unknown>>();
+      for (const row of allRows) {
+        const username = String(row.roblox_username ?? "").replace(/^@/, "").trim();
+        const key = username.toLowerCase() || String(row.signer_name ?? "").toLowerCase();
+        if (!key) continue;
+        const existing = deduped.get(key);
+        if (existing) {
+          const roles = new Set([...(existing.roles as string[]), ...(row.roles as string[])]);
+          existing.roles = [...roles];
+          for (const field of ["exclusive_value", "huge_value", "titanic_value", "demand"]) {
+            if (existing[field] == null && row[field] != null) existing[field] = row[field];
+          }
+        } else deduped.set(key, { ...row });
+      }
+
+      const signerRes = await supabase.rpc("vault_cosmic_signers_import", {
+        p_token: token,
+        p_signers: [...deduped.values()],
+      });
+      if (signerRes.error) return json({ error: signerRes.error.message ?? "cosmic_signer_import_failed" }, 500);
+      return json({ status: "ok", source_rows: allRows.length, unique_signers: deduped.size, ...asRecord(signerRes.data) });
+    }
 
     if (action === "catalog_import") {
       // owner session required (validated against vault sessions server-side)
