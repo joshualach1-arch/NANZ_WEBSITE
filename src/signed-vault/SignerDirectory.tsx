@@ -161,14 +161,6 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
               style={{ border: 'none' }}
               onClick={() => onOpenSigner(signer.id)}
             >
-              <div className="vault-signer-avatar">
-                {signer.avatar_url
-                  ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" />
-                  : signer.signer_name.slice(0, 2).toUpperCase()}
-              </div>
-              <div className={`vault-signer-name${ownedSignerIds.has(signer.id) ? ' vault-signer-name-rainbow' : ''}`}>{signer.display_name || signer.signer_name}</div>
-              <div className="vault-note" style={{ marginTop: 2 }}>{signer.signer_name}</div>
-              {signer.roblox_username && <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>}
               <div className="vault-signer-card-top">
             <div className="vault-signer-card-identity">
               <div className="vault-signer-avatar">
@@ -196,13 +188,6 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
             <span>{signer.signature_count} signatures</span>
             <span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span>
           </div>
-              <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}>
-                <span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'Signature owned' : 'Not in collection'}
-              </span>
-              <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>
-                {signer.verification_status === 'verified' && <BadgeCheck size={11} />}
-                {verificationLabels[signer.verification_status ?? 'unverified']}
-              </span>
             </button>
           ))}
         </div>
