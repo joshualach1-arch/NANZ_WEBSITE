@@ -973,9 +973,40 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
   const combined = Number(pet.cosmic_value ?? 0) + signatureValue;
 
   const [editOpen, setEditOpen] = useState(false);
+  const [signerPickerOpen, setSignerPickerOpen] = useState(false);
+  const [signerSearch, setSignerSearch] = useState('');
+  const [selectedSignerId, setSelectedSignerId] = useState(pet.signer_id ?? '');
+  const [assignBusy, setAssignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canEdit = data.is_owner || data.me === 2;
+  const filteredSignerOptions = data.signers.filter((entry) => {
+    const q = signerSearch.trim().toLowerCase();
+    return Boolean(entry.roblox_username) && (!q || [entry.signer_name, entry.display_name, entry.roblox_username, String(entry.roblox_user_id ?? '')].some((value) => String(value ?? '').toLowerCase().includes(q)));
+  });
+  const assignSigner = async () => {
+    const selected = data.signers.find((entry) => entry.id === selectedSignerId);
+    if (!selected?.roblox_username) {
+      setError('This signer has no Roblox username. Add the account details before assigning it.');
+      return;
+    }
+    setAssignBusy(true);
+    setError(null);
+    try {
+      await rpcCall('vault_unknown_signer_assign', token, {
+        p_pet_entry_id: pet.id,
+        p_roblox_username: selected.roblox_username,
+        p_variant: pet.variant,
+        p_notes: 'Signer assigned from the pet detail picker',
+      });
+      setSignerPickerOpen(false);
+      await onSaved();
+    } catch (err) {
+      setError(err instanceof VaultApiError ? err.message : 'Could not assign this signer.');
+    } finally {
+      setAssignBusy(false);
+    }
+  };
   // vault_collection_manage 'update' overwrites signer_id unconditionally —
   // the editor always sends the current signer so an unchanged signer survives.
   const scopeCollectorNo = data.is_owner ? pet.collector_no ?? data.me : null;
@@ -1007,10 +1038,20 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
       </div>
 
       <div className="vault-divider" />
+      <div className="vault-detail-signer-action">
+        <div className="vault-detail-signer-current">
+          <span className="vault-label">Signer</span>
+          <strong className={signer ? 'vault-signer-name-rainbow' : ''}>{signer ? (signer.display_name || signer.signer_name) : 'No signer assigned'}</strong>
+          {signer?.roblox_username && <small>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</small>}
+        </div>
+        {canEdit && <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => { setSelectedSignerId(pet.signer_id ?? ''); setSignerSearch(''); setSignerPickerOpen(true); }}>
+          {signer ? 'Change signer' : 'Make signed'}
+        </button>}
+      </div>
       <div className="vault-form-grid">
         <div className="vault-field">
-          <span className="vault-label">Signer</span>
-          <div>{signer ? `${signer.display_name || signer.signer_name}${signer.roblox_username ? ` (@${signer.roblox_username})` : ''}` : 'Unknown signer'}</div>
+          <span className="vault-label">Signer roles</span>
+          <div>{signer?.roles?.length ? signer.roles.map((role) => signerRoleLabels[role]).join(', ') : '—'}</div>
         </div>
         <div className="vault-field">
           <span className="vault-label">Signer roles</span>
@@ -1021,6 +1062,31 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
           <div className="vault-signer-name-rainbow">{signature?.signature_name || signer?.display_name || signer?.signer_name || 'Signature name unavailable'}</div>
         </div>
       </div>
+
+      {signerPickerOpen && (
+        <Modal title={pet.signer_id ? 'Change pet signer' : 'Make this pet signed'} onClose={() => !assignBusy && setSignerPickerOpen(false)}>
+          <p className="vault-note" style={{ marginBottom: 12 }}>Search the signer directory, select the exact Roblox account, then save. Accounts with matching display names remain separate.</p>
+          <div className="vault-field">
+            <span className="vault-label">Search signer</span>
+            <input className="vault-input" autoFocus value={signerSearch} onChange={(event) => setSignerSearch(event.target.value)} placeholder="Name, @username or Roblox ID…" />
+          </div>
+          <div className="vault-signer-picker-list">
+            {filteredSignerOptions.map((entry) => (
+              <button type="button" key={entry.id} className={`vault-signer-picker-option${selectedSignerId === entry.id ? ' is-selected' : ''}`} onClick={() => setSelectedSignerId(entry.id)}>
+                <span className="vault-signer-picker-avatar">{entry.avatar_url ? <img src={entry.avatar_url} alt="" /> : (entry.display_name || entry.signer_name).slice(0, 2).toUpperCase()}</span>
+                <span className="vault-signer-picker-copy"><strong>{entry.display_name || entry.signer_name}</strong><small>@{entry.roblox_username}{entry.roblox_user_id ? ` · ID ${entry.roblox_user_id}` : ''}</small></span>
+                <span className={`vault-signer-picker-radio${selectedSignerId === entry.id ? ' is-selected' : ''}`}>{selectedSignerId === entry.id ? '✓' : ''}</span>
+              </button>
+            ))}
+            {filteredSignerOptions.length === 0 && <div className="vault-note" style={{ padding: 16 }}>No matching signer accounts found.</div>}
+          </div>
+          {error && <div className="vault-error" style={{ marginTop: 10 }}>{error}</div>}
+          <div className="vault-row" style={{ justifyContent: 'flex-end', marginTop: 14 }}>
+            <button className="vault-btn" disabled={assignBusy} onClick={() => setSignerPickerOpen(false)}>Cancel</button>
+            <button className="vault-btn vault-btn-gold" disabled={assignBusy || !selectedSignerId} onClick={() => void assignSigner()}>{assignBusy ? 'Saving…' : 'Save signer'}</button>
+          </div>
+        </Modal>
+      )}
 
       {pet.notes && <p className="vault-note" style={{ marginTop: 12 }}>{pet.notes}</p>}
 
