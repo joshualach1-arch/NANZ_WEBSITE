@@ -19,6 +19,29 @@ BEGIN
   END LOOP;
 END $$;
 
+
+-- Some installations may have created a standalone unique index rather than a table constraint.
+DO $
+DECLARE idx record;
+BEGIN
+  FOR idx IN
+    SELECT index_class.relname AS index_name
+      FROM pg_index i
+      JOIN pg_class table_class ON table_class.oid = i.indrelid
+      JOIN pg_class index_class ON index_class.oid = i.indexrelid
+      JOIN pg_namespace ns ON ns.oid = table_class.relnamespace
+      JOIN pg_attribute a ON a.attrelid = table_class.oid AND a.attnum = ANY(i.indkey)
+     WHERE ns.nspname = 'public'
+       AND table_class.relname = 'vault_signers'
+       AND i.indisunique
+       AND i.indnkeyatts = 1
+       AND a.attname = 'signer_name'
+       AND NOT i.indisprimary
+  LOOP
+    EXECUTE format('DROP INDEX IF EXISTS public.%I', idx.index_name);
+  END LOOP;
+END $;
+
 CREATE OR REPLACE FUNCTION public.vault_cosmic_signers_import(
   p_token text,
   p_signers jsonb
