@@ -203,6 +203,9 @@ BEGIN
     RETURN v_result;
   ELSIF p_rpc = 'vault_cosmic_values_manage' THEN
     PERFORM public.vault_assert_session(p_token, true);
+    IF NOT EXISTS (
+      SELECT 1 FROM public.vault_pet_catalog WHERE id = (p_params->>'p_pet_id')::uuid
+    ) THEN RAISE EXCEPTION 'pet_not_found'; END IF;
     INSERT INTO public.vault_cosmic_values
       (pet_id, cosmic_value, source, in_game_value, in_game_value_source, in_game_value_timestamp, updated_at)
     VALUES (
