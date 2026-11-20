@@ -935,7 +935,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       ) : (
         <div className="vault-pet-grid">
-          {filtered.map((pet) => <PetCard key={pet.id} pet={pet} onOpen={setDetail} signatures={data.signatures} catalog={data.catalog} />)}
+          {filtered.map((pet) => <PetCard key={pet.id} pet={pet} onOpen={setDetail} />)}
         </div>
       )}
 
