@@ -3151,7 +3151,7 @@ function VaultShell() {
       <header className="vault-nav">
         <div className="vault-nav-inner">
           <a className="vault-brand" href="/" title="Back to the main site">
-            <span className="logo-mark"><img src="/image.png" alt="NANZ" /></span>
+            <span className="logo-mark vault-logo-mark" aria-hidden="true"><svg viewBox="0 0 64 48" className="vault-logo-svg"><path d="M4 8.5C11 4 17 6 21 14l7.2 15.2c1.2 2.5 3.5 2.5 4.7-.1L41 12.8C45 4.8 52 4.8 60 9l-8.2 26.2c-2.5 8-11.4 10.2-17.1 3.9L31 35.2l-3.8 4.1c-5.5 5.8-14.3 3.8-17.1-3.3L4 8.5Z" /></svg></span>
             <span className="vault-brand-text">
               <span className="vault-brand-title">NANZO</span>
               <span className="vault-brand-sub">SIGNED VAULT</span>
