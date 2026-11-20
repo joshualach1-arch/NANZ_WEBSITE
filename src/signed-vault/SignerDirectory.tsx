@@ -36,7 +36,6 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [verification, setVerification] = useState('all');
-  const [minSignatures, setMinSignatures] = useState(0);
   const [sort, setSort] = useState<'name' | 'signatures'>('name');
   const [editor, setEditor] = useState<'new' | Signer | null>(null);
   const [importingCosmic, setImportingCosmic] = useState(false);
@@ -56,20 +55,20 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
           || (signer.display_name ?? '').toLowerCase().includes(q))) return false;
         if (category !== 'all' && !(signer.roles ?? []).includes(category as SignerRole)) return false;
         if (verification !== 'all' && signer.verification_status !== verification) return false;
-        if (signer.signature_count < minSignatures) return false;
         return true;
       })
       .sort((a, b) => sort === 'name'
         ? a.signer_name.localeCompare(b.signer_name)
         : b.signature_count - a.signature_count);
-  }, [data.signers, query, category, verification, minSignatures, sort]);
+  }, [data.signers, query, category, verification, sort]);
 
   return (
     <div>
       <div className="vault-section-head">
         <div>
           <span className="vault-kicker">Shared registry</span>
-          <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length} known signers</h3>
+          <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length.toLocaleString('en-US')} signer records</h3>
+          <div className="vault-note">Each Roblox account is a separate record, even when display names match.</div>
         </div>
         {isOwner && (
           <div className="vault-row" style={{ gap: 8 }}>
@@ -125,12 +124,6 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
-          <select className="vault-select" style={{ maxWidth: 150 }} value={minSignatures} onChange={(event) => setMinSignatures(Number(event.target.value))}>
-            <option value={0}>Any records</option>
-            <option value={1}>1+ records</option>
-            <option value={3}>3+ records</option>
-            <option value={5}>5+ records</option>
-          </select>
           <select className="vault-select" style={{ maxWidth: 150 }} value={sort} onChange={(event) => setSort(event.target.value as 'name' | 'signatures')}>
             <option value="name">Sort: A–Z</option>
             <option value="signatures">Sort: records</option>
@@ -149,7 +142,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
             <button
               key={signer.id}
               className="vault-signer-card"
-              style={{ border: 'none', filter: ownedSignerIds.has(signer.id) ? 'none' : 'grayscale(1)', opacity: ownedSignerIds.has(signer.id) ? 1 : 0.58 }}
+              style={{ border: 'none' }}
               onClick={() => onOpenSigner(signer.id)}
             >
               <div className="vault-signer-avatar">
@@ -158,9 +151,8 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
                   : signer.signer_name.slice(0, 2).toUpperCase()}
               </div>
               <div className="vault-signer-name">{signer.display_name || signer.signer_name}</div>
-              {signer.roblox_username && signer.roblox_username !== signer.signer_name && (
-                <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}</div>
-              )}
+              <div className="vault-note" style={{ marginTop: 2 }}>{signer.signer_name}</div>
+              {signer.roblox_username && <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>}
               <div className="vault-row" style={{ gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
         {signer.cosmic_exclusive_value != null && <span className="vault-pill vault-pill-gray">Exclusive {formatValue(signer.cosmic_exclusive_value, '')}</span>}
         {signer.cosmic_huge_value != null && <span className="vault-pill vault-pill-gray">Huge {formatValue(signer.cosmic_huge_value, '')}</span>}
