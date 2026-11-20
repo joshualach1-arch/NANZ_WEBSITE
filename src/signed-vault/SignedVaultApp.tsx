@@ -243,42 +243,23 @@ export function StatCard({ label, value, hint, gold }: { label: string; value: s
   );
 }
 
-function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: (pet: VaultPet) => void; signatures?: SignatureRecord[]; catalog?: CatalogPet[] }) {
+function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => void }) {
   const isVerified = pet.verification_status === 'verified' || pet.verification_status === 'community_verified';
-  const signatureValue = signatures ? petSignatureValue(pet, signatures) : 0;
-  const catalogValue = catalog?.find((entry) => entry.id === pet.pet_id)?.cosmic_value;
-  const rawPetValue = pet.cosmic_value ?? catalogValue ?? null;
-  const petValue = rawPetValue == null ? null : Number(rawPetValue);
-  const combined = (petValue ?? 0) + signatureValue;
+  const isSigned = Boolean(pet.signer_id && pet.signed_status !== 'not_signed');
+  const variantClass = String(pet.variant || 'normal').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
   return (
-    <button className={`vault-pet-card${pet.signer_id && pet.signed_status !== 'not_signed' ? ' vault-pet-card-signed' : ''}`} onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
+    <button className={`vault-pet-card vault-pet-card-refined${isSigned ? ' vault-pet-card-signed' : ''}`} onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
       <div className="vault-pet-media">
-        {pet.pet_image
-          ? <img src={pet.pet_image} alt={pet.pet_name} loading="lazy" />
-          : <Sparkles size={40} />}
-      </div>
-      <div className="vault-pet-badges">
-        {pet.variant !== 'normal' && (
-          <span className={`vault-variant-tag vault-variant-${pet.variant}`}>{variantLabelWide[pet.variant] ?? pet.variant}</span>
-        )}
-        {pet.signer_id && pet.signed_status !== 'not_signed' && <span className="vault-rainbow-signed"><span>✦</span> SIGNED BY {pet.signer_name || 'UNKNOWN SIGNER'}</span>}
-        {!pet.signer_id || pet.signed_status === 'not_signed'
-          ? <span className="vault-status-unassigned">NOT SIGNED</span>
-          : <span className={`vault-status-verified ${isVerified ? 'is-verified' : 'is-unverified'}`}>
-              {pet.signed_status === 'manual_review' ? 'NEEDS REVIEW' : isVerified ? 'VERIFIED' : 'UNVERIFIED'}
-            </span>}
+        {pet.pet_image ? <img src={pet.pet_image} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={40} />}
+        {pet.variant !== 'normal' && <span className={`vault-variant-tag vault-variant-${variantClass}`}>{variantLabelWide[pet.variant] ?? pet.variant}</span>}
       </div>
       <div className="vault-pet-body">
         <div className="vault-pet-name">{pet.nickname || pet.pet_name}</div>
-        <div className="vault-pet-meta">
-          <span className={pet.signer_id && pet.signed_status !== 'not_signed' ? 'vault-signer-name-rainbow' : ''}>
-            {pet.signer_name ?? 'Unknown signer'}
-          </span>
-        </div>
-        <div className="vault-value-breakdown">
-          <span><small>Pet value</small><b>{petValue != null ? formatValue(petValue, '') : 'Not available'}</b></span>
-          <span><small>Signature value</small><b>{signatureValue > 0 ? formatValue(signatureValue, '') : '—'}</b></span>
-          <span className="vault-value-total"><small>Combined</small><b>{petValue != null || signatureValue > 0 ? formatValue(combined, '') : 'Not available'}</b></span>
+        <div className="vault-pet-card-footer">
+          {isSigned
+            ? <span className="vault-rainbow-signed">✦ SIGNED BY {pet.signer_name || 'UNKNOWN SIGNER'}</span>
+            : <span className="vault-status-unassigned">NOT SIGNED</span>}
+          {isSigned && <span className={`vault-status-verified ${isVerified ? 'is-verified' : 'is-unverified'}`}>{isVerified ? 'VERIFIED' : pet.signed_status === 'manual_review' ? 'NEEDS REVIEW' : 'UNVERIFIED'}</span>}
         </div>
       </div>
     </button>
@@ -585,38 +566,6 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
         />
       </div>
 
-      {stats && (
-        <div className="vault-card" style={{ marginTop: 18 }}>
-          <div className="vault-section-head" style={{ marginBottom: 12 }}>
-            <div>
-              <span className="vault-kicker">Signed pets by category</span>
-              <h3 style={{ margin: '4px 0 0', fontSize: 16, fontWeight: 800 }}>Counted by actual verification status</h3>
-            </div>
-          </div>
-          <div className="vault-category-grid">
-            {CATEGORY_KEYS.map((key) => (
-              <div key={key} className="vault-category-cell">
-                <span className="vault-category-name">{CATEGORY_LABELS[key]}</span>
-                <span className="vault-category-count">
-                  <strong>{categoryCounts[key].verified}</strong>
-                  <em> verified</em>
-                </span>
-                <span className="vault-category-count vault-category-muted">
-                  {categoryCounts[key].unverified} unverified
-                </span>
-              </div>
-            ))}
-          </div>
-          {stats.progress && (
-            <div className="vault-note" style={{ marginTop: 12 }}>
-              Collection completion: {stats.progress.total_signable > 0
-                ? `${Math.round((stats.progress.collected_verified / stats.progress.total_signable) * 100)}%`
-                : '—'} ({stats.progress.collected_verified} of {stats.progress.total_signable} signable pets verified
-              {stats.progress.collected_unverified > 0 ? `, ${stats.progress.collected_unverified} owned but unverified` : ''})
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="vault-section-head" style={{ marginTop: 22 }}>
         <div>
