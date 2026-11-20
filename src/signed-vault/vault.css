@@ -111,3 +111,19 @@
   background: linear-gradient(145deg, rgba(77,124,255,.13), rgba(132,92,255,.08));
 }
 .vault-value-breakdown .vault-value-total b { color: #a9c0ff; }
+
+
+.vault-advanced-filters > summary {
+  cursor: pointer;
+  color: #aebee8;
+  font-size: 12px;
+  font-weight: 750;
+  list-style-position: inside;
+  padding: 4px 0;
+}
+.vault-advanced-filters[open] > summary { margin-bottom: 8px; color: #dce6ff; }
+@media (max-width: 720px) {
+  .vault-value-breakdown { gap: 5px; }
+  .vault-value-breakdown > span { padding: 6px; }
+  .vault-value-breakdown b { font-size: 10.5px; }
+}
