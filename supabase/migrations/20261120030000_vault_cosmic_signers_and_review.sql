@@ -88,7 +88,6 @@ BEGIN
         cosmic_demand = coalesce(nullif(v_item->>'demand','')::numeric, cosmic_demand),
         roblox_user_id = coalesce(nullif(v_item->>'roblox_user_id','')::bigint, roblox_user_id),
         avatar_url = coalesce(nullif(v_item->>'avatar_url',''), avatar_url),
-        profile_url = coalesce(nullif(v_item->>'profile_url',''), profile_url),
         data_source = CASE WHEN data_source = 'manual' THEN data_source ELSE 'cosmic_values' END,
         updated_at = now()
       WHERE id = v_signer;
