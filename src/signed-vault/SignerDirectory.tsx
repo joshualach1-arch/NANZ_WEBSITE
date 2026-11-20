@@ -229,16 +229,6 @@ export function SignerDetailPage({ data, signerId, onBack }: {
   const signatures = data.signatures.filter((record) => record.signer_id === signer.id);
   const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id) : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id);
-  const ownedSignatureKeys = new Set(signatures.map((record) => `${record.pet_id}:${record.variant}`));
-  const missingSignaturePets = data.catalog.filter((pet) => {
-    const category = String(pet.category ?? '').toLowerCase();
-    const tracked = category.startsWith('huge') || category.startsWith('exclusive') || category.startsWith('titanic')
-      || category.startsWith('gargantuan') || category.startsWith('gigantuan')
-      || pet.is_huge || pet.is_exclusive || pet.is_titanic || pet.is_gargantuan;
-    return tracked && !ownedSignatureKeys.has(`${pet.id}:normal`);
-  });
-  const verifiedCount = signatures.filter((record) => record.verification_status === 'verified' || record.verification_status === 'community_verified').length;
-  const unverifiedCount = signatures.length - verifiedCount;
   const totalValue = signatures.reduce((sum, record) => sum + (record.verification_status === 'verified' || record.verification_status === 'community_verified' ? Number(record.signature_value ?? 0) : 0), 0);
 
   return (
@@ -289,18 +279,14 @@ export function SignerDetailPage({ data, signerId, onBack }: {
         </div>
       </div>
 
-      <div className="vault-stat-grid" style={{ marginTop: 16 }}>
-        <StatCard label="Known signatures" value={String(signatures.length)} />
-        <StatCard label="Verified" value={String(verifiedCount)} />
-        <StatCard label="Unverified" value={String(unverifiedCount)} />
-        <StatCard label="Missing from signer catalog" value={String(missingSignaturePets.length)} />
-        <StatCard label="Verified signature value" value={totalValue > 0 ? formatValue(totalValue) : '—'} gold />
-        <StatCard label="Cosmic Exclusive" value={signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'} />
-        <StatCard label="Cosmic Huge" value={signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'} />
-        <StatCard label="Cosmic Titanic" value={signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'} />
-        <StatCard label="Cosmic Demand" value={signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'} />
-        <StatCard label="In your collection" value={String(myPets.length)} />
-        {data.is_owner && <StatCard label="In collector 2 vault" value={String(ownerPets.length)} />}
+      <div className="vault-signer-metric-grid" style={{ marginTop: 18 }}>
+        <div className="vault-signer-metric-feature"><span>VERIFIED SIGNATURE VALUE</span><strong>{totalValue > 0 ? formatValue(totalValue) : '—'}</strong></div>
+        <div className="vault-signer-metric"><span>COSMIC EXCLUSIVE</span><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
+        <div className="vault-signer-metric"><span>COSMIC HUGE</span><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
+        <div className="vault-signer-metric"><span>COSMIC TITANIC</span><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
+        <div className="vault-signer-metric"><span>COSMIC DEMAND</span><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></div>
+        <div className="vault-signer-metric"><span>IN YOUR COLLECTION</span><strong>{myPets.length}</strong></div>
+        {data.is_owner && <div className="vault-signer-metric"><span>IN COLLECTOR 2 VAULT</span><strong>{ownerPets.length}</strong></div>}
       </div>
 
       <div className="vault-section-head">
@@ -312,7 +298,7 @@ export function SignerDetailPage({ data, signerId, onBack }: {
       <div className="vault-table-wrap">
         <table className="vault-table">
           <thead>
-            <tr><th>Pet</th><th>Variant</th><th>Signature</th><th>Value</th><th>Status</th><th>Source</th></tr>
+            <tr><th>Pet</th><th>Variant</th><th>Signature</th><th>Signature value</th></tr>
           </thead>
           <tbody>
             {signatures.map((record) => {
@@ -321,42 +307,20 @@ export function SignerDetailPage({ data, signerId, onBack }: {
                 <tr key={record.id}>
                   <td style={{ fontWeight: 600, color: 'var(--text)' }}>{pet?.pet_name ?? 'Unknown pet'}</td>
                   <td>{variantLabel[record.variant]}</td>
-                  <td>{record.signature_name ?? '—'}</td>
+                  <td><span className="vault-signature-name-rainbow">{record.signature_name || signer.display_name || signer.signer_name}</span></td>
                   <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 700 }}>
                     {record.signature_value != null ? formatValue(record.signature_value) : '—'}
                   </td>
-                  <td>
-                    <span className={`vault-pill ${verificationTone[record.verification_status ?? 'unverified']}`}>
-                      {verificationLabels[record.verification_status ?? 'unverified']}
-                    </span>
-                  </td>
-                  <td><span className="vault-pill vault-pill-gray">{record.source ?? 'manual'}</span></td>
+
                 </tr>
               );
             })}
             {signatures.length === 0 && (
-              <tr><td colSpan={6} style={{ color: 'var(--text4)' }}>No signature records for this signer yet.</td></tr>
+              <tr><td colSpan={4} style={{ color: 'var(--text4)' }}>No signature records for this signer yet.</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="vault-signature-status-legend">
-        <span className="vault-verification-badge vault-pill-green"><BadgeCheck size={11} /> Verified / community verified</span>
-        <span className="vault-verification-badge vault-pill-gold">Unverified</span>
-        <span className="vault-verification-badge vault-pill-red">Needs review</span>
-        <span className="vault-verification-badge vault-pill-gray">Not collected</span>
-      </div>
-      <div className="vault-card vault-missing-signatures">
-        <div className="vault-section-head"><div><span className="vault-kicker">Collection gaps</span><h3 style={{ margin: '4px 0 0', fontSize: 16 }}>Pets without this signature</h3></div><span className="vault-pill vault-pill-gray">{missingSignaturePets.length} missing</span></div>
-        <div className="vault-missing-signature-list">
-          {missingSignaturePets.slice(0, 18).map((pet) => <div key={pet.id}><span>{pet.display_name || pet.pet_name}</span><small>{pet.category}</small></div>)}
-          {missingSignaturePets.length === 0 && <div className="vault-note">No missing tracked pets found in the current catalog.</div>}
-        </div>
-      </div>
-      <p className="vault-note" style={{ marginTop: 10, fontSize: 11.5 }}>
-        Only verified and community-verified signatures contribute to verified signature value. Unverified records are shown separately and are not treated as confirmed valuations.
-      </p>
-
       {data.is_owner && editOpen && (
         <SignerEditor data={data} signer={signer} onClose={() => setEditOpen(false)} onSaved={async () => { setEditOpen(false); }} />
       )}
