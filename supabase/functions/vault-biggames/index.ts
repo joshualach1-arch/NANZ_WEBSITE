@@ -344,7 +344,7 @@ Deno.serve(async (req: Request) => {
         const item = asRecord(raw);
         const id = String(item.id ?? item.displayName ?? "").toLowerCase();
         if (id !== "diamonds" && id !== "diamond") return sum;
-        const amount = Number(item.count ?? item.amount ?? item.rawData && asRecord(item.rawData)._am ?? 0);
+        const amount = Number(item.count ?? item.amount ?? asRecord(item.rawData)._am ?? 0);
         return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
       }, 0);
       const records: Record<string, unknown>[] = [];
