@@ -196,6 +196,18 @@ BEGIN
       p_params->>'p_notes'
     ) INTO v_result;
     RETURN v_result;
+  ELSIF p_rpc = 'vault_cosmic_values_manage' THEN
+    PERFORM public.vault_assert_session(p_token, true);
+    UPDATE public.vault_cosmic_values
+       SET in_game_value = nullif(p_params->>'p_in_game_value','')::numeric,
+           in_game_value_source = nullif(p_params->>'p_in_game_value_source',''),
+           in_game_value_timestamp = CASE WHEN nullif(p_params->>'p_in_game_value','') IS NULL THEN NULL ELSE now() END,
+           updated_at = now()
+     WHERE pet_id = (p_params->>'p_pet_id')::uuid;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'pet_value_row_not_found';
+    END IF;
+    RETURN jsonb_build_object('updated', true);
   END IF;
   RAISE EXCEPTION 'unknown_rpc';
 END;
