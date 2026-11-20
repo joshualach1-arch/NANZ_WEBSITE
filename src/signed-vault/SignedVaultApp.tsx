@@ -423,10 +423,10 @@ const CATEGORY_LABELS: Record<CategoryKey, string> = {
 
 function petCategory(pet: VaultPet): CategoryKey | null {
   const category = String(pet.pet_category ?? '').trim().toLowerCase();
-  if (category === 'huge') return 'huge';
-  if (category === 'exclusive') return 'exclusive';
-  if (category === 'titanic') return 'titanic';
-  if (category === 'gargantuan' || category === 'gigantuan') return 'gargantuan';
+  if (category.startsWith('huge')) return 'huge';
+  if (category.startsWith('exclusive')) return 'exclusive';
+  if (category.startsWith('titanic')) return 'titanic';
+  if (category.startsWith('gargantuan') || category.startsWith('gigantuan')) return 'gargantuan';
   return null;
 }
 
@@ -790,6 +790,9 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [detail, setDetail] = useState<VaultPet | null>(null);
   const [busy, setBusy] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [collectionMode, setCollectionMode] = useState<'owned' | 'missing'>('owned');
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [presetPetId, setPresetPetId] = useState<string | null>(null);
 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [variantFilter, setVariantFilter] = useState('all');
@@ -820,7 +823,17 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
     setDetail(null);
   };
 
-  const categories = useMemo(() => [...new Set(pets.map((pet) => pet.pet_category))].sort(), [pets]);
+  const categories = useMemo(() => ['Huge', 'Exclusive', 'Titanic', 'Gargantuan'], []);
+  const ownedPetIds = useMemo(() => new Set(pets.map((pet) => pet.pet_id)), [pets]);
+  const missingCatalog = useMemo(() => data.catalog.filter((pet) => {
+    const category = String(pet.category ?? '').trim().toLowerCase();
+    const tracked = ['huge', 'huge pet', 'exclusive', 'exclusive pet', 'titanic', 'titanic pet', 'gargantuan', 'gargantuan pet', 'gigantuan', 'gigantuan pet'].includes(category)
+      || pet.is_huge || pet.is_exclusive || pet.is_titanic || pet.is_gargantuan;
+    if (!tracked || ownedPetIds.has(pet.id)) return false;
+    if (categoryFilter !== 'all' && !category.includes(categoryFilter.toLowerCase())) return false;
+    const q = catalogSearch.trim().toLowerCase();
+    return !q || pet.pet_name.toLowerCase().includes(q) || String(pet.display_name ?? '').toLowerCase().includes(q);
+  }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, categoryFilter, catalogSearch]);
   const signersList = useMemo(
     () => [...new Map(pets.filter((pet) => pet.signer_id).map((pet) => [pet.signer_id!, pet.signer_name!])).entries()],
     [pets]
@@ -875,13 +888,18 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       </div>
 
+      <div className="vault-row" style={{ marginBottom: 14, gap: 8 }}>
+        <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}>Owned · {pets.length}</button>
+        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}>Missing · {missingCatalog.length}</button>
+      </div>
       <div className="vault-card" style={{ marginBottom: 16 }}>
+        {collectionMode === 'missing' && <div className="vault-field" style={{ marginBottom: 12 }}><span className="vault-label">Find a missing pet</span><input className="vault-input" placeholder="Search catalog…" value={catalogSearch} onChange={(event) => setCatalogSearch(event.target.value)} /></div>}
         <div className="vault-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
           <div className="vault-field">
             <span className="vault-label">Category</span>
             <select className="vault-select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
               <option value="all">All</option>
-              {categories.map((entry) => <option key={entry} value={entry}>{entry}</option>)}
+              {categories.map((entry) => <option key={entry} value={entry.toLowerCase()}>{entry}</option>)}
             </select>
           </div>
           <div className="vault-field">
@@ -938,7 +956,10 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       </div>
 
-      {pets.length === 0 ? (
+      {collectionMode === 'missing' ? (
+        missingCatalog.length === 0 ? <div className="vault-empty"><div className="vault-empty-title">No missing pets found</div><div>Your tracked catalog is fully collected for these filters.</div></div> :
+        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Add to collection +</span></div><div className="vault-pet-value">{formatValue(pet.cosmic_value)}</div></div></button>)}</div>
+      ) : pets.length === 0 ? (
         <div className="vault-empty">
           <div className="vault-empty-title">Empty collection</div>
           <div>Add a signed pet to start tracking this collection.</div>
@@ -957,10 +978,12 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
       {addOpen && (
         <AddPetModal
           data={data}
-          presetPetId={null}
-          onClose={() => setAddOpen(false)}
+          presetPetId={presetPetId}
+          onClose={() => { setAddOpen(false); setPresetPetId(null); }}
           onSubmit={async () => {
             await onRefresh();
+            setCollectionMode('owned');
+            setPresetPetId(null);
           }}
         />
       )}
