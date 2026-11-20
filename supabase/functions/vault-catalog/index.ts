@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
         });
         if (overview.ok) {
           const overviewText = (await overview.text()).replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
-          const countMatch = overviewText.match(/([\d,]+)\\s+signatures/i);
+          const countMatch = overviewText.match(/([\d,]+)\s+signatures/i);
           if (countMatch) expectedSigners = Number(countMatch[1].replace(/,/g, ""));
         }
       } catch {
