@@ -12,6 +12,11 @@ import {
   Sparkles,
   Tag,
   TrendingUp,
+  Layers,
+  ChartNoAxesColumnIncreasing,
+  Coins,
+  Target,
+  Settings as SettingsIcon,
   UserRoundX,
   X,
 } from 'lucide-react';
@@ -234,12 +239,15 @@ function DeniedScreen() {
 
 /* ── shared UI bits ──────────────────────────────────────────────── */
 
-export function StatCard({ label, value, hint, gold }: { label: string; value: string; hint?: string; gold?: boolean }) {
+export function StatCard({ label, value, hint, gold, icon }: { label: string; value: string; hint?: string; gold?: boolean; icon?: React.ReactNode }) {
   return (
-    <div className={`vault-card${gold ? ' vault-card-gold' : ''}`}>
-      <div className="vault-stat-label">{label}</div>
-      <div className="vault-stat-value">{value}</div>
-      {hint && <div className="vault-stat-hint">{hint}</div>}
+    <div className={`vault-card vault-overview-stat-card${gold ? ' vault-card-gold' : ''}`}>
+      {icon && <div className="vault-overview-stat-icon">{icon}</div>}
+      <div className="vault-overview-stat-copy">
+        <div className="vault-stat-label">{label}</div>
+        <div className="vault-stat-value">{value}</div>
+        {hint && <div className="vault-stat-hint">{hint}</div>}
+      </div>
     </div>
   );
 }
@@ -544,27 +552,23 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
     ?? (data.roblox_accounts ?? [])[0];
 
   return (
-    <div>
-      <div className="vault-stat-grid">
-        <StatCard label="Collection size" value={String(data.pets.length)} hint={`${verifiedPets.length} verified · ${unverifiedPets.length} unverified`} />
-        <StatCard label="Collection value" value={formatValue(totalValue)} hint="verified signature values only" gold />
-        <StatCard label="Invested" value={formatValue(spent)} hint="total purchase price" />
-        <StatCard
-          label={profit >= 0 ? 'Profit' : 'Loss'}
-          value={`${profit >= 0 ? '+' : ''}${formatValue(profit)}`}
-          hint={pctReturn !== null ? `${pctReturn >= 0 ? '+' : ''}${pctReturn.toFixed(1)}% return` : 'no purchases recorded yet'}
-        />
+    <div className="vault-overview-page">
+      <div className="vault-stat-grid vault-overview-primary-stats">
+        <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.pets.length)} hint={\`\${verifiedPets.length} verified · \${unverifiedPets.length} unverified\`} />
+        <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(totalValue)} hint="verified signature values only" />
+        <StatCard icon={<Coins size={38} strokeWidth={2.6} />} label="Invested" value={formatValue(spent)} hint="total purchase price" />
+        <StatCard icon={<TrendingUp size={38} strokeWidth={2.6} />} label={profit >= 0 ? 'Profit' : 'Loss'} value={\`\${profit >= 0 ? '+' : ''}\${formatValue(profit)}\`} hint={pctReturn !== null ? \`\${pctReturn >= 0 ? '+' : ''}\${pctReturn.toFixed(1)}% return\` : 'no purchases recorded yet'} />
       </div>
 
 
-      <div className="vault-section-head" style={{ marginTop: 22 }}>
+      <div className="vault-section-head vault-overview-connection-head" style={{ marginTop: 22 }}>
         <div>
           <span className="vault-kicker">Collection</span>
           <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Connection &amp; health</h3>
         </div>
-        <button className="vault-btn vault-btn-sm" onClick={() => onNavigate('settings')}>Settings</button>
+        <button className="vault-btn vault-btn-sm vault-overview-settings" onClick={() => onNavigate('settings')}><SettingsIcon size={17} /> Settings</button>
       </div>
-      <div className="vault-card">
+      <div className="vault-card vault-overview-connection-shell">
         <div className="vault-collection-summary">
           <div className="vault-summary-identity">
             {roblox?.avatar_url
@@ -596,17 +600,17 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
 
       {otherStats && (
         <>
-          <div className="vault-section-head">
+          <div className="vault-section-head vault-overview-second-head">
             <div>
               <span className="vault-kicker">Second collector</span>
               <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Collector 2 at a glance</h3>
             </div>
           </div>
-          <div className="vault-stat-grid">
-            <StatCard label="Collection size" value={String(data.other_pets?.length ?? 0)} />
-            <StatCard label="Collection value" value={formatValue(otherStats.totalValue)} />
-            <StatCard label="Invested" value={formatValue(otherStats.spent)} />
-            <StatCard label="Missing" value={String(otherStats.missing)} />
+          <div className="vault-stat-grid vault-overview-secondary-stats">
+            <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.other_pets?.length ?? 0)} />
+            <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(otherStats.totalValue)} />
+            <StatCard icon={<Coins size={38} strokeWidth={2.6} />} label="Invested" value={formatValue(otherStats.spent)} />
+            <StatCard icon={<Target size={38} strokeWidth={2.6} />} label="Missing" value={String(otherStats.missing)} />
           </div>
         </>
       )}
@@ -3170,9 +3174,9 @@ function VaultShell() {
         
       </header>
 
-      <main className="vault-main">
+      <main className={\`vault-main\${tab === 'overview' ? ' vault-overview-main' : ''}\`}>
         {tab !== 'signers' && (
-          <div style={{ marginBottom: 22 }}>
+          <div className={tab === 'overview' ? 'vault-overview-hero' : undefined} style={{ marginBottom: 22 }}>
             <span className="vault-kicker">Signed Vault</span>
             <h1 className="vault-title">{vaultTabs.find((entry) => entry.id === tab)?.label ?? 'Overview'}</h1>
             <p className="vault-subtitle">
