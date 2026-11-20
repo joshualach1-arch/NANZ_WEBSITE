@@ -443,3 +443,31 @@
   .vault-value-breakdown { gap:4px!important; }
   .vault-value-breakdown > span { padding:7px 5px!important; }
 }
+
+
+/* Final visual cleanup requested by collector */
+.vault-pet-card-refined { border-radius:20px!important; background:linear-gradient(155deg,#17233d 0%,#0b1222 100%)!important; }
+.vault-pet-card-refined .vault-pet-media { position:relative; overflow:hidden; background:#080e1b; padding:9px; }
+.vault-pet-card-refined .vault-pet-media img { display:block; width:100%; aspect-ratio:1/1; object-fit:contain; border-radius:12px; }
+.vault-pet-card-refined .vault-pet-body { padding:15px 16px 17px!important; }
+.vault-pet-card-refined .vault-pet-name { font-size:18px!important; line-height:1.25; }
+.vault-pet-card-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.vault-pet-card-footer .vault-rainbow-signed { display:inline-flex; align-items:center; max-width:100%; padding:7px 10px; border-radius:9px; background:rgba(16,22,40,.82); border:1px solid rgba(125,135,255,.22); font-size:10px; font-weight:900; letter-spacing:.055em; }
+.vault-pet-card-footer .vault-status-unassigned, .vault-pet-card-footer .vault-status-verified { display:inline-flex; align-items:center; padding:7px 10px; border-radius:9px; font-size:10px; font-weight:900; }
+.vault-pet-card-refined .vault-variant-tag { position:absolute!important; top:17px!important; left:17px!important; z-index:4; padding:7px 12px!important; border-radius:9px!important; font-size:11px!important; letter-spacing:.1em; box-shadow:0 5px 18px rgba(0,0,0,.35); }
+.vault-pet-card-refined .vault-variant-shiny { color:#ffdce7!important; background:linear-gradient(120deg,#7e2346,#241529 75%)!important; border:1px solid #fa689a!important; box-shadow:0 0 18px rgba(255,76,137,.22),inset 0 0 12px rgba(255,255,255,.06)!important; }
+.vault-pet-card-refined .vault-variant-golden { color:#fff0bb!important; background:linear-gradient(120deg,#8a621b,#2b2110 75%)!important; border:1px solid #e7bd58!important; }
+.vault-pet-card-refined .vault-variant-rainbow, .vault-pet-card-refined .vault-variant-rainbow_shiny { color:#fff!important; background:linear-gradient(110deg,#a92f63,#a96a24,#237d68,#3159a1,#7646a4)!important; background-size:220% 100%!important; border:1px solid rgba(255,255,255,.55)!important; animation:rainbowFlow 5s linear infinite; }
+.vault-signer-metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:11px; }
+.vault-signer-metric, .vault-signer-metric-feature { min-width:0; padding:17px 18px; border:1px solid rgba(130,155,205,.14); border-radius:15px; background:linear-gradient(145deg,rgba(20,31,53,.92),rgba(10,16,29,.98)); }
+.vault-signer-metric span, .vault-signer-metric-feature span { display:block; color:#8d9fbe; font-size:10px; font-weight:850; letter-spacing:.09em; line-height:1.4; }
+.vault-signer-metric strong, .vault-signer-metric-feature strong { display:block; margin-top:10px; color:#f2f5ff; font-size:clamp(19px,2vw,27px); font-weight:850; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.vault-signer-metric-feature { grid-column:span 2; background:linear-gradient(120deg,rgba(35,58,103,.9),rgba(19,29,52,.98)); border-color:rgba(105,145,255,.34); }
+.vault-signer-metric-feature strong { font-size:clamp(25px,3vw,36px); }
+.vault-signer-page .vault-table-wrap { border:1px solid rgba(125,150,205,.16); border-radius:16px; overflow:hidden; background:rgba(10,16,29,.8); }
+.vault-signer-page .vault-table { width:100%; border-collapse:separate; border-spacing:0; }
+.vault-signer-page .vault-table th { padding:14px 16px; color:#8195b9; background:#111c32; font-size:10px; letter-spacing:.1em; }
+.vault-signer-page .vault-table td { padding:16px; border-top:1px solid rgba(125,150,205,.1); }
+.vault-signature-name-rainbow { display:inline-block; color:#fff; font-weight:850; background:linear-gradient(90deg,#ff6b8a,#ffcb69,#7ee2a8,#74c5ff,#c49aff,#ff6b8a); background-size:250% auto; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:rainbowFlow 5s linear infinite; }
+@media(max-width:850px) { .vault-signer-metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .vault-signer-metric-feature { grid-column:span 2; } }
+@media(max-width:520px) { .vault-pet-card-refined .vault-pet-media { padding:6px; } .vault-pet-card-refined .vault-pet-body { padding:12px!important; } .vault-pet-card-footer { align-items:flex-start; flex-direction:column; } .vault-signer-metric-grid { gap:8px; } .vault-signer-metric,.vault-signer-metric-feature { padding:13px; } }
