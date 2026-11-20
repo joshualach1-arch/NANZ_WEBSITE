@@ -166,8 +166,6 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
         {signer.cosmic_huge_value != null && <span className="vault-pill vault-pill-gray">Huge {formatValue(signer.cosmic_huge_value, '')}</span>}
         {signer.cosmic_titanic_value != null && <span className="vault-pill vault-pill-gray">Titanic {formatValue(signer.cosmic_titanic_value, '')}</span>}
         {signer.cosmic_demand != null && <span className="vault-pill vault-pill-gray">Demand {signer.cosmic_demand}/10</span>}
-      </div>
-
                 {(signer.roles ?? []).slice(0, 3).map((role) => (
                   <span key={role} className="vault-pill vault-pill-gray">{signerRoleLabels[role]}</span>
                 ))}
