@@ -170,10 +170,10 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
               <div className="vault-note" style={{ marginTop: 2 }}>{signer.signer_name}</div>
               {signer.roblox_username && <div className="vault-note" style={{ marginTop: 2 }}>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>}
               <div className="vault-row" style={{ gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
-        {signer.cosmic_exclusive_value != null && <span className="vault-pill vault-pill-gray">Exclusive {formatValue(signer.cosmic_exclusive_value, '')}</span>}
-        {signer.cosmic_huge_value != null && <span className="vault-pill vault-pill-gray">Huge {formatValue(signer.cosmic_huge_value, '')}</span>}
-        {signer.cosmic_titanic_value != null && <span className="vault-pill vault-pill-gray">Titanic {formatValue(signer.cosmic_titanic_value, '')}</span>}
-        {signer.cosmic_demand != null && <span className="vault-pill vault-pill-gray">Demand {signer.cosmic_demand}/10</span>}
+        <span className="vault-signer-cosmic-value"><small>Cosmic Exclusive</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></span>
+        <span className="vault-signer-cosmic-value"><small>Cosmic Huge</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></span>
+        <span className="vault-signer-cosmic-value"><small>Cosmic Titanic</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></span>
+        <span className="vault-signer-cosmic-value"><small>Cosmic Demand</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></span>
                 {(signer.roles ?? []).slice(0, 3).map((role) => (
                   <span key={role} className="vault-pill vault-pill-gray">{signerRoleLabels[role]}</span>
                 ))}
