@@ -180,7 +180,9 @@ GRANT EXECUTE ON FUNCTION public.vault_unknown_signer_assign(text,uuid,text,text
 
 CREATE OR REPLACE FUNCTION public.vault_manage(p_token text, p_rpc text, p_params jsonb DEFAULT '{}'::jsonb)
 RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
   v_result jsonb;
 BEGIN
@@ -193,10 +195,10 @@ BEGIN
       nullif(p_params->>'p_signature_value','')::numeric,
       p_params->>'p_notes'
     ) INTO v_result;
-    RETURN jsonb_build_object('result', v_result);
+    RETURN v_result;
   END IF;
   RAISE EXCEPTION 'unknown_rpc';
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.vault_manage(text,text,jsonb) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.vault_manage(text,text,jsonb) TO service_role;
