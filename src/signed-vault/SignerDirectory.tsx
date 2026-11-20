@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  ArrowLeft, BadgeCheck, Check, ExternalLink, Pencil, Plus, Search, ShieldAlert, Trash2, X, Youtube,
+  ArrowLeft, BadgeCheck, Check, ChevronRight, ExternalLink, Layers3, Pencil, Plus, Search, ShieldAlert, Trash2, UserRound, Box, X, Youtube,
 } from 'lucide-react';
 import {
   VaultApiError, formatDate, formatValue, readStoredToken, rpcCall, importCosmicSigners,
@@ -70,137 +70,85 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
 
   return (
     <div className="vault-signer-page">
-      <div className="vault-section-head">
+      <div className="vault-signers-hero">
         <div>
-          <span className="vault-kicker">Shared registry</span>
-          <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length.toLocaleString('en-US')} signer records</h3>
-          <div className="vault-note">Each Roblox account is a separate record, even when display names match.</div>
-          <div className="vault-signer-counts">
-            <div><small>In your collection</small><strong>{ownedSignerCount}</strong></div>
-            <div><small>Not collected yet</small><strong>{missingSignerCount}</strong></div>
-            <div><small>Total signer accounts</small><strong>{data.signers.length}</strong></div>
-          </div>
+          <span className="vault-signers-eyebrow">SIGNED VAULT</span>
+          <h2>Signers</h2>
+          <p>Your signed pets, signer records and trade history in one place.</p>
+        </div>
+        <div className="vault-signers-hero-mark" aria-hidden="true" />
+      </div>
+      <div className="vault-signers-toolbar">
+        <div className="vault-signers-stats">
+          <div className="vault-signers-stat"><UserRound size={31} /><div><strong>{data.signers.length.toLocaleString('en-US')}</strong><span>Total Signers</span></div></div>
+          <div className="vault-signers-stat"><Layers3 size={32} /><div><strong>{ownedSignerCount}</strong><span>In Your Collection</span></div></div>
+          <div className="vault-signers-stat"><Box size={31} /><div><strong>{missingSignerCount}</strong><span>Not Collected Yet</span></div></div>
         </div>
         {isOwner && (
-          <div className="vault-row" style={{ gap: 8 }}>
-            <button
-              className="vault-btn vault-btn-sm"
-              disabled={importingCosmic}
-              onClick={() => {
-                setImportingCosmic(true);
-                setImportError(null);
-                setImportSummary(null);
-                void importCosmicSigners()
-                  .then(async (result) => {
-                    setImportSummary(
-                      `Cosmic Values import ${result.source_complete === false ? 'incomplete' : 'complete'} · ${Number(result.unique_signers ?? 0)} distinct Roblox accounts${result.expected_signers != null ? ` / ${Number(result.expected_signers)} published` : ''} from ${Number(result.source_rows ?? 0)} source rows · ${Number(result.added ?? 0)} added · ${Number(result.updated ?? 0)} updated · ${Number(result.skipped ?? 0)} skipped. Same display names remain separate when the Roblox accounts differ.`
-                    );
-                    await onRefresh();
-                  })
-                  .catch((err) => setImportError(err instanceof Error ? err.message : 'Signer import failed.'))
-                  .finally(() => setImportingCosmic(false));
-              }}
-            >
-              {importingCosmic ? 'Importing…' : 'Import Cosmic Values'}
-            </button>
-            <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => setEditor('new')}>
-              <Plus size={13} /> Add signer
-            </button>
+          <div className="vault-signers-actions">
+            <button className="vault-btn vault-btn-sm vault-signers-import" disabled={importingCosmic} onClick={() => {
+              setImportingCosmic(true); setImportError(null); setImportSummary(null);
+              void importCosmicSigners()
+                .then(async (result) => {
+                  setImportSummary(`Cosmic Values import ${result.source_complete === false ? 'incomplete' : 'complete'} · ${Number(result.unique_signers ?? 0)} distinct Roblox accounts${result.expected_signers != null ? ` / ${Number(result.expected_signers)} published` : ''} from ${Number(result.source_rows ?? 0)} source rows · ${Number(result.added ?? 0)} added · ${Number(result.updated ?? 0)} updated · ${Number(result.skipped ?? 0)} skipped. Same display names remain separate when the Roblox accounts differ.`);
+                  await onRefresh();
+                })
+                .catch((err) => setImportError(err instanceof Error ? err.message : 'Signer import failed.'))
+                .finally(() => setImportingCosmic(false));
+            }}>{importingCosmic ? 'Importing…' : '↓  Import Cosmic Values'}</button>
+            <button className="vault-btn vault-btn-gold vault-btn-sm vault-signers-add" onClick={() => setEditor('new')}><Plus size={17} /> Add Signer</button>
           </div>
         )}
       </div>
-
       {importSummary && <div className="vault-success" style={{ marginBottom: 12 }}>{importSummary}</div>}
       {importError && <div className="vault-error" style={{ marginBottom: 12 }}>{importError}</div>}
-      <div className="vault-card" style={{ marginBottom: 16 }}>
-        <div className="vault-row" style={{ flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 200 }}>
-            <Search size={14} style={{ position: 'absolute', left: 10, top: 11, color: 'var(--text4)' }} />
-            <input
-              className="vault-input" style={{ paddingLeft: 30 }}
-              placeholder="Search name, @username, display name…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-          <select className="vault-select" style={{ maxWidth: 190 }} value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="all">All categories</option>
-            {roleOptions.map((role) => (
-              <option key={role} value={role}>{signerRoleLabels[role]}</option>
-            ))}
-          </select>
-          <select className="vault-select" style={{ maxWidth: 180 }} value={ownership} onChange={(event) => setOwnership(event.target.value as 'all' | 'owned' | 'missing')}>
-            <option value="all">All signers</option>
-            <option value="owned">I have signatures ({ownedSignerCount})</option>
-            <option value="missing">I don't have signatures ({missingSignerCount})</option>
-          </select>
-          <select className="vault-select" style={{ maxWidth: 180 }} value={verification} onChange={(event) => setVerification(event.target.value)}>
-            <option value="all">Any verification</option>
-            {Object.entries(verificationLabels).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-          <select className="vault-select" style={{ maxWidth: 150 }} value={sort} onChange={(event) => setSort(event.target.value as 'name' | 'signatures')}>
-            <option value="name">Sort: A–Z</option>
-            <option value="signatures">Sort: records</option>
-          </select>
-        </div>
+      <div className="vault-signers-filter-panel">
+        <div className="vault-signers-search"><Search size={18} /><input placeholder="Search name, @username or display name..." value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search signers" /></div>
+        <select className="vault-select" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <option value="all">All Categories</option>{roleOptions.map((role) => <option key={role} value={role}>{signerRoleLabels[role]}</option>)}
+        </select>
+        <select className="vault-select" value={ownership} onChange={(event) => setOwnership(event.target.value as 'all' | 'owned' | 'missing')}>
+          <option value="all">All Signers</option><option value="owned">I have signatures ({ownedSignerCount})</option><option value="missing">I don't have signatures ({missingSignerCount})</option>
+        </select>
+        <select className="vault-select" value={verification} onChange={(event) => setVerification(event.target.value)}>
+          <option value="all">Any Verification</option>{Object.entries(verificationLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+        </select>
+        <select className="vault-select" value={sort} onChange={(event) => setSort(event.target.value as 'name' | 'signatures')}>
+          <option value="name">Sort: A–Z</option><option value="signatures">Sort: Records</option>
+        </select>
       </div>
-
       {filtered.length === 0 ? (
-        <div className="vault-empty">
-          <div className="vault-empty-title">No signers match</div>
-          <div>Adjust the search or filters.</div>
-        </div>
+        <div className="vault-empty"><div className="vault-empty-title">No signers match</div><div>Adjust the search or filters.</div></div>
       ) : (
         <div className="vault-signer-grid">
           {filtered.map((signer) => (
-            <button
-              key={signer.id}
-              className="vault-signer-card"
-              style={{ border: 'none' }}
-              onClick={() => onOpenSigner(signer.id)}
-            >
+            <button key={signer.id} className="vault-signer-card" onClick={() => onOpenSigner(signer.id)}>
               <div className="vault-signer-card-top">
-            <div className="vault-signer-card-identity">
-              <div className="vault-signer-avatar">
-                {signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" /> : signer.signer_name.slice(0, 2).toUpperCase()}
+                <div className="vault-signer-card-identity">
+                  <div className="vault-signer-avatar">{signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" /> : signer.signer_name.slice(0, 2).toUpperCase()}</div>
+                  <div className="vault-signer-card-names">
+                    <div className="vault-signer-name">{signer.display_name || signer.signer_name}</div>
+                    <div className="vault-note">@{signer.roblox_username || signer.signer_name}</div>
+                    <div className="vault-signer-card-badges">
+                      <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}><span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'OWNED' : 'MISSING'}</span>
+                      <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>{verificationLabels[signer.verification_status ?? 'unverified']}</span>
+                    </div>
+                  </div>
+                </div>
+                <span className="vault-signer-open"><ChevronRight size={19} /></span>
               </div>
-              <div className="vault-signer-card-names">
-                <div className={`vault-signer-name${ownedSignerIds.has(signer.id) ? ' vault-signer-name-rainbow' : ''}`}>{signer.display_name || signer.signer_name}</div>
-                <div className="vault-note">@{signer.roblox_username || signer.signer_name}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</div>
+              <div className="vault-signer-metrics">
+                <div><small>EXCLUSIVE</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
+                <div><small>HUGE</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
+                <div><small>TITANIC</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
+                <div><small>DEMAND</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></div>
               </div>
-            </div>
-            <div className="vault-signer-card-status">
-              <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}>
-                <span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'OWNED' : 'MISSING'}
-              </span>
-              <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>{verificationLabels[signer.verification_status ?? 'unverified']}</span>
-            </div>
-          </div>
-          <div className="vault-signer-metrics">
-            <div><small>EXCLUSIVE</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
-            <div><small>HUGE</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
-            <div><small>TITANIC</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
-            <div><small>DEMAND</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></div>
-          </div>
-          <div className="vault-signer-card-footer">
-            <span>{signer.signature_count} signatures</span>
-            <span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span>
-          </div>
+              <div className="vault-signer-card-footer"><span>{signer.signature_count} signatures</span><span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span></div>
             </button>
           ))}
         </div>
       )}
-
-      {editor && (
-        <SignerEditor
-          data={data}
-          signer={editor === 'new' ? null : editor}
-          onClose={() => setEditor(null)}
-          onSaved={onRefresh}
-        />
-      )}
+      {editor && <SignerEditor data={data} signer={editor === 'new' ? null : editor} onClose={() => setEditor(null)} onSaved={onRefresh} />}
     </div>
   );
 }
