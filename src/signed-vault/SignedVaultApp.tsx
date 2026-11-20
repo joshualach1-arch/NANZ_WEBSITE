@@ -434,7 +434,9 @@ function petCategory(pet: VaultPet): CategoryKey | null {
 
 function isTrackedCategory(value: string | null | undefined): boolean {
   const category = String(value ?? '').trim().toLowerCase();
-  return ['huge', 'huge pet', 'exclusive', 'exclusive pet', 'titanic', 'titanic pet', 'gargantuan', 'gargantuan pet', 'gigantuan', 'gigantuan pet'].includes(category);
+  return category.startsWith('huge') || category.startsWith('exclusive')
+    || category.startsWith('titanic') || category.startsWith('gargantuan')
+    || category.startsWith('gigantuan');
 }
 
 function eventLabel(event: ActivityEvent): { title: string; meta: string } {
@@ -830,10 +832,17 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const ownedPetIds = useMemo(() => new Set(pets.map((pet) => pet.pet_id)), [pets]);
   const missingCatalog = useMemo(() => data.catalog.filter((pet) => {
     const category = String(pet.category ?? '').trim().toLowerCase();
-    const tracked = ['huge', 'huge pet', 'exclusive', 'exclusive pet', 'titanic', 'titanic pet', 'gargantuan', 'gargantuan pet', 'gigantuan', 'gigantuan pet'].includes(category)
-      || pet.is_huge || pet.is_exclusive || pet.is_titanic || pet.is_gargantuan;
+    const tracked = category.startsWith('huge') || category.startsWith('exclusive')
+      || category.startsWith('titanic') || category.startsWith('gargantuan')
+      || category.startsWith('gigantuan') || pet.is_huge || pet.is_exclusive
+      || pet.is_titanic || pet.is_gargantuan;
     if (!tracked || ownedPetIds.has(pet.id)) return false;
-    if (categoryFilter !== 'all' && !category.includes(categoryFilter.toLowerCase())) return false;
+    const matchesCategory = categoryFilter === 'all'
+      || (categoryFilter === 'huge' && (category.startsWith('huge') || pet.is_huge))
+      || (categoryFilter === 'exclusive' && (category.startsWith('exclusive') || pet.is_exclusive))
+      || (categoryFilter === 'titanic' && (category.startsWith('titanic') || pet.is_titanic))
+      || (categoryFilter === 'gargantuan' && (category.startsWith('gargantuan') || category.startsWith('gigantuan') || pet.is_gargantuan));
+    if (!matchesCategory) return false;
     const q = catalogSearch.trim().toLowerCase();
     return !q || pet.pet_name.toLowerCase().includes(q) || String(pet.display_name ?? '').toLowerCase().includes(q);
   }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, categoryFilter, catalogSearch]);
@@ -844,7 +853,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
   const filtered = useMemo(() => {
     let list = pets.filter((pet) => {
-      if (categoryFilter !== 'all' && !String(pet.pet_category ?? '').toLowerCase().startsWith(categoryFilter)) return false;
+      if (categoryFilter !== 'all' && petCategory(pet) !== categoryFilter) return false;
       const q = petSearch.trim().toLowerCase();
       if (q && !pet.pet_name.toLowerCase().includes(q) && !(pet.nickname ?? '').toLowerCase().includes(q) && !(pet.signer_name ?? '').toLowerCase().includes(q)) return false;
       if (variantFilter !== 'all' && pet.variant !== variantFilter) return false;
@@ -893,9 +902,9 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       </div>
 
-      <div className="vault-row" style={{ marginBottom: 14, gap: 8 }}>
-        <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}>Owned · {pets.length}</button>
-        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}>Missing · {missingCatalog.length}</button>
+      <div className="vault-collection-switch">
+        <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}><span>Owned collection</span><b>{pets.length}</b></button>
+        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}><span>Missing catalog</span><b>{missingCatalog.length}</b></button>
       </div>
       <div className="vault-row" style={{ gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
         {['all', ...categories.map((entry) => entry.toLowerCase())].map((entry) => (
