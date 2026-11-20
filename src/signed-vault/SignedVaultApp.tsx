@@ -3163,15 +3163,17 @@ function VaultShell() {
       </header>
 
       <main className="vault-main">
-        <div style={{ marginBottom: 22 }}>
-          <span className="vault-kicker">Signed Vault</span>
-          <h1 className="vault-title">{vaultTabs.find((entry) => entry.id === tab)?.label ?? 'Overview'}</h1>
-          <p className="vault-subtitle">
-            {data.is_owner
-              ? 'Your signed pets, signer records and trade history in one place.'
-              : 'Your collection, signer records and trade history.'}
-          </p>
-        </div>
+        {tab !== 'signers' && (
+          <div style={{ marginBottom: 22 }}>
+            <span className="vault-kicker">Signed Vault</span>
+            <h1 className="vault-title">{vaultTabs.find((entry) => entry.id === tab)?.label ?? 'Overview'}</h1>
+            <p className="vault-subtitle">
+              {data.is_owner
+                ? 'Your signed pets, signer records and trade history in one place.'
+                : 'Your collection, signer records and trade history.'}
+            </p>
+          </div>
+        )}
 
         {tab === 'overview' && <OverviewTab data={data} onNavigate={navigate} />}
         {tab === 'collection' && <CollectionTab data={data} onRefresh={refresh} isOwner={data.is_owner} />}
