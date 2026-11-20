@@ -251,7 +251,7 @@ function PetCard({ pet, onOpen, signatures, catalog }: { pet: VaultPet; onOpen: 
   const petValue = rawPetValue == null ? null : Number(rawPetValue);
   const combined = (petValue ?? 0) + signatureValue;
   return (
-    <button className="vault-pet-card" onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
+    <button className={`vault-pet-card${pet.signer_id && pet.signed_status !== 'not_signed' ? ' vault-pet-card-signed' : ''}`} onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
       <div className="vault-pet-media">
         {pet.pet_image
           ? <img src={pet.pet_image} alt={pet.pet_name} loading="lazy" />
