@@ -523,22 +523,6 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
   const profit = totalValue - spent;
   const pctReturn = spent > 0 ? (profit / spent) * 100 : null;
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<CategoryKey, { verified: number; unverified: number }> = {
-      huge: { verified: 0, unverified: 0 },
-      exclusive: { verified: 0, unverified: 0 },
-      titanic: { verified: 0, unverified: 0 },
-      gargantuan: { verified: 0, unverified: 0 },
-    };
-    for (const pet of data.pets) {
-      const key = petCategory(pet);
-      if (!key) continue;
-      const isVerified = pet.verification_status === 'verified' || pet.verification_status === 'community_verified';
-      counts[key][isVerified ? 'verified' : 'unverified'] += 1;
-    }
-    return counts;
-  }, [data.pets]);
-
   const otherStats = data.other_pets ? computeStats({ ...data, pets: data.other_pets }, data.other_pets) : null;
 
   const recentPets = useMemo(
