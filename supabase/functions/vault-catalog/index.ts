@@ -157,9 +157,80 @@ Deno.serve(async (req: Request) => {
         } else deduped.set(key, { ...row });
       }
 
+      // Resolve up to 100 Roblox usernames per request, then fetch headshots in batches.
+      const signerRows = [...deduped.values()];
+      const robloxIds = new Map<string, { id: number; displayName: string }>();
+      for (let offset = 0; offset < signerRows.length; offset += 100) {
+        const batch = signerRows.slice(offset, offset + 100);
+        try {
+          const resolveRes = await fetch("https://users.roblox.com/v1/usernames/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({
+              usernames: batch.map((row) => String(row.roblox_username)),
+              excludeBannedUsers: false,
+            }),
+            signal: AbortSignal.timeout(12000),
+          });
+          if (resolveRes.ok) {
+            const payload = asRecord(await resolveRes.json().catch(() => ({})));
+            for (const raw of (Array.isArray(payload.data) ? payload.data : [])) {
+              const user = asRecord(raw);
+              const id = Number(user.id);
+              const username = String(user.name ?? "").toLowerCase();
+              if (Number.isFinite(id) && id > 0 && username) {
+                robloxIds.set(username, { id, displayName: String(user.displayName ?? user.name) });
+              }
+            }
+          }
+        } catch {
+          // Name/value import can still proceed; avatars fall back to initials.
+        }
+      }
+
+      const avatarById = new Map<number, string>();
+      const resolvedIds = [...robloxIds.values()].map((row) => row.id);
+      for (let offset = 0; offset < resolvedIds.length; offset += 100) {
+        const batch = resolvedIds.slice(offset, offset + 100);
+        try {
+          const thumbUrl = new URL("https://thumbnails.roblox.com/v1/users/avatar-headshot");
+          thumbUrl.searchParams.set("userIds", batch.join(","));
+          thumbUrl.searchParams.set("size", "150x150");
+          thumbUrl.searchParams.set("format", "Png");
+          thumbUrl.searchParams.set("isCircular", "false");
+          const thumbRes = await fetch(thumbUrl.toString(), {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(12000),
+          });
+          if (thumbRes.ok) {
+            const payload = asRecord(await thumbRes.json().catch(() => ({})));
+            for (const raw of (Array.isArray(payload.data) ? payload.data : [])) {
+              const thumb = asRecord(raw);
+              const id = Number(thumb.targetId);
+              if (Number.isFinite(id) && typeof thumb.imageUrl === "string") {
+                avatarById.set(id, thumb.imageUrl);
+              }
+            }
+          }
+        } catch {
+          // Thumbnails are optional; do not block the signer/value import.
+        }
+      }
+
+      for (const row of signerRows) {
+        const username = String(row.roblox_username ?? "").toLowerCase();
+        const resolved = robloxIds.get(username);
+        if (resolved) {
+          row.roblox_user_id = resolved.id;
+          row.display_name = resolved.displayName;
+          row.profile_url = "https://www.roblox.com/users/" + resolved.id + "/profile";
+          row.avatar_url = avatarById.get(resolved.id) ?? null;
+        }
+      }
+
       const signerRes = await supabase.rpc("vault_cosmic_signers_import", {
         p_token: token,
-        p_signers: [...deduped.values()],
+        p_signers: signerRows,
       });
       if (signerRes.error) return json({ error: signerRes.error.message ?? "cosmic_signer_import_failed" }, 500);
       return json({ status: "ok", source_rows: allRows.length, unique_signers: deduped.size, ...asRecord(signerRes.data) });
