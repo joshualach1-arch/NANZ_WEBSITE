@@ -60,12 +60,13 @@ BEGIN
 
     IF v_signer IS NULL THEN
       INSERT INTO public.vault_signers
-        (signer_name, roblox_username, display_name, profile_url, avatar_url,
+        (signer_name, roblox_username, roblox_user_id, display_name, profile_url, avatar_url,
          is_developer, is_partner, is_creator, verification_status, data_source,
          cosmic_exclusive_value, cosmic_huge_value, cosmic_titanic_value, cosmic_demand)
       VALUES
-        (v_name, v_username, nullif(v_item->>'roblox_user_id','')::bigint, coalesce(v_item->>'display_name', v_name),
-         nullif(v_item->>'profile_url',''), nullif(v_item->>'avatar_url',''), coalesce((v_item->'roles') ? 'big_games_developer', false),
+        (v_name, v_username, nullif(v_item->>'roblox_user_id','')::bigint,
+         coalesce(v_item->>'display_name', v_name), nullif(v_item->>'profile_url',''),
+         nullif(v_item->>'avatar_url',''), coalesce((v_item->'roles') ? 'big_games_developer', false),
          coalesce((v_item->'roles') ? 'big_games_partner', false),
          false, 'unverified', 'cosmic_values',
          nullif(v_item->>'exclusive_value','')::numeric,
@@ -78,9 +79,7 @@ BEGIN
       UPDATE public.vault_signers SET
         signer_name = v_name,
         display_name = coalesce(display_name, v_name),
-        profile_url = CASE WHEN nullif(v_item->>'roblox_user_id','') IS NOT NULL
-          THEN 'https://www.roblox.com/users/' || (v_item->>'roblox_user_id') || '/profile'
-          ELSE profile_url END,
+        profile_url = coalesce(nullif(v_item->>'profile_url',''), profile_url),
         is_developer = is_developer OR coalesce((v_item->'roles') ? 'big_games_developer', false),
         is_partner = is_partner OR coalesce((v_item->'roles') ? 'big_games_partner', false),
         cosmic_exclusive_value = coalesce(nullif(v_item->>'exclusive_value','')::numeric, cosmic_exclusive_value),
