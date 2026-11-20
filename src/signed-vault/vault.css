@@ -1376,3 +1376,12 @@
   .vault-overview-connection-shell .vault-summary-identity .vault-note { font-size:12px!important; }
   .vault-overview-latest .vault-pet-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important; }
 }
+
+
+.vault-app:has(.vault-overview-page) .vault-brand .logo-mark:after { content:none!important;display:none!important; }
+.vault-app:has(.vault-overview-page) .vault-logo-svg {
+  display:block!important;width:56px;height:44px;overflow:visible;
+}
+.vault-app:has(.vault-overview-page) .vault-logo-svg path {
+  fill:#f044a5;filter:drop-shadow(0 0 5px rgba(255,74,179,.9)) drop-shadow(0 0 13px rgba(236,42,153,.62));
+}
