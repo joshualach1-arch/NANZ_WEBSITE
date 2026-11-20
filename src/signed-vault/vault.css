@@ -1335,11 +1335,18 @@
   border:1px solid rgba(105,121,171,.3)!important;box-shadow:0 3px 12px rgba(0,0,0,.2)!important;
   color:#f5f6fc!important;font-size:10px!important;letter-spacing:.035em;white-space:nowrap;
 }
-.vault-overview-latest .vault-signed-by-star { color:#f5f6fc;font-size:13px;line-height:1; }
+.vault-overview-latest .vault-signed-by-pen {
+  flex:0 0 auto;color:#f5f6fc!important;stroke-width:2.7;filter:drop-shadow(0 0 3px rgba(240,75,169,.28));
+}
 .vault-overview-latest .vault-signed-by-label { color:#f0f2fa!important;font-size:10px!important;font-weight:900; }
 .vault-overview-latest .vault-signer-name-aura {
-  color:#f5f6fc!important;background:none!important;-webkit-text-fill-color:#f5f6fc!important;
-  text-shadow:none!important;filter:none!important;font-size:10px!important;font-weight:800;
+  display:inline-block!important;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px!important;font-weight:950!important;letter-spacing:.025em;
+  background:linear-gradient(100deg,#ff48b8 0%,#ff7d8f 16%,#ffc45d 30%,#f7f36d 42%,#6be99b 56%,#45d8e9 70%,#7796ff 83%,#d17bff 94%,#ff48b8 100%)!important;
+  background-size:300% 100%!important;background-position:0% 50%;
+  -webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important;
+  animation:vaultSignerAura 4.4s linear infinite!important;
+  filter:drop-shadow(0 0 4px rgba(255,72,184,.45)) drop-shadow(0 0 9px rgba(73,213,255,.2))!important;
 }
 .vault-overview-latest .vault-status-unassigned {
   padding:7px 11px!important;border-radius:9px!important;
