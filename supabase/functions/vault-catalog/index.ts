@@ -117,6 +117,23 @@ Deno.serve(async (req: Request) => {
       const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
 
+      // Read Cosmic Values' own signature count so the import can report whether
+      // every currently published record was retrieved (never hardcode 207).
+      let expectedSigners: number | null = null;
+      try {
+        const overview = await fetch("https://petsimulatorvalues.com/index.php/sign", {
+          headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault data importer" },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (overview.ok) {
+          const overviewText = (await overview.text()).replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
+          const countMatch = overviewText.match(/([\d,]+)\\s+signatures/i);
+          if (countMatch) expectedSigners = Number(countMatch[1].replace(/,/g, ""));
+        }
+      } catch {
+        // The detailed category pages remain the primary import source.
+      }
+
       const categories = [
         { type: "BIG Games Staff", role: "big_games_developer" },
         { type: "BIG Games Dev", role: "big_games_developer" },
@@ -159,6 +176,7 @@ Deno.serve(async (req: Request) => {
 
       // Resolve up to 100 Roblox usernames per request, then fetch headshots in batches.
       const signerRows = [...deduped.values()];
+      const sourceComplete = expectedSigners == null || signerRows.length === expectedSigners;
       const robloxIds = new Map<string, { id: number; displayName: string }>();
       for (let offset = 0; offset < signerRows.length; offset += 100) {
         const batch = signerRows.slice(offset, offset + 100);
@@ -233,7 +251,14 @@ Deno.serve(async (req: Request) => {
         p_signers: signerRows,
       });
       if (signerRes.error) return json({ error: signerRes.error.message ?? "cosmic_signer_import_failed" }, 500);
-      return json({ status: "ok", source_rows: allRows.length, unique_signers: deduped.size, ...asRecord(signerRes.data) });
+      return json({
+        status: "ok",
+        source_rows: allRows.length,
+        unique_signers: deduped.size,
+        expected_signers: expectedSigners,
+        source_complete: sourceComplete,
+        ...asRecord(signerRes.data),
+      });
     }
 
     if (action === "catalog_import") {
