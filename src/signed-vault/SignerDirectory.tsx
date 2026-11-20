@@ -40,6 +40,10 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
   const [sort, setSort] = useState<'name' | 'signatures'>('name');
   const [editor, setEditor] = useState<'new' | Signer | null>(null);
 
+  const ownedSignerIds = useMemo(() => new Set(
+    data.pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').map((pet) => pet.signer_id as string)
+  ), [data.pets]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return data.signers
@@ -115,7 +119,12 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
       ) : (
         <div className="vault-signer-grid">
           {filtered.map((signer) => (
-            <button key={signer.id} className="vault-signer-card" style={{ border: 'none' }} onClick={() => onOpenSigner(signer.id)}>
+            <button
+              key={signer.id}
+              className="vault-signer-card"
+              style={{ border: 'none', filter: ownedSignerIds.has(signer.id) ? 'none' : 'grayscale(1)', opacity: ownedSignerIds.has(signer.id) ? 1 : 0.58 }}
+              onClick={() => onOpenSigner(signer.id)}
+            >
               <div className="vault-signer-avatar">
                 {signer.avatar_url
                   ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" />
@@ -131,6 +140,9 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner }: {
                 ))}
               </div>
               <div className="vault-note" style={{ marginTop: 6 }}>{signer.signature_count} signatures</div>
+              <span className={`vault-pill vault-pill-xs ${ownedSignerIds.has(signer.id) ? 'vault-pill-green' : 'vault-pill-gray'}`}>
+                {ownedSignerIds.has(signer.id) ? 'In your collection' : 'Not collected'}
+              </span>
               <span className={`vault-pill ${verificationTone[signer.verification_status ?? 'unverified']}`} style={{ marginTop: 6 }}>
                 {signer.verification_status === 'verified' && <BadgeCheck size={11} />}
                 {verificationLabels[signer.verification_status ?? 'unverified']}
