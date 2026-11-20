@@ -1345,11 +1345,19 @@
   padding:7px 11px!important;border-radius:9px!important;
 }
 @media(max-width:1250px) {
-  .vault-overview-page .vault-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important; }
-  .vault-overview-page .vault-overview-stat-card { min-height:132px; }
-  .vault-overview-page .vault-overview-stat-value { font-size:30px!important; }
+  .vault-overview-page .vault-stat-grid { grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important; }
+  .vault-overview-page .vault-overview-stat-card { min-height:126px;padding:15px 13px!important;gap:12px!important; }
+  .vault-overview-page .vault-overview-stat-icon { flex-basis:40px;width:40px;height:46px; }
+  .vault-overview-page .vault-overview-stat-icon svg { width:34px;height:34px; }
+  .vault-overview-page .vault-stat-label { font-size:10px!important; }
+  .vault-overview-page .vault-stat-value { font-size:24px!important; }
+  .vault-overview-page .vault-stat-hint { font-size:11px!important;white-space:normal; }
   .vault-overview-connection-shell .vault-summary-avatar { width:76px!important;height:76px!important;flex-basis:76px; }
-  .vault-overview-latest .vault-pet-grid { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+  .vault-overview-latest .vault-pet-grid { grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:10px!important; }
+  .vault-overview-latest .vault-pet-body { padding:9px!important; }
+  .vault-overview-latest .vault-pet-name { font-size:12px!important; }
+  .vault-overview-latest .vault-signed-by { font-size:8px!important;padding:6px!important; }
+  .vault-overview-latest .vault-signed-by-label,.vault-overview-latest .vault-signer-name-aura { font-size:8px!important; }
 }
 @media(max-width:700px) {
   .vault-overview-main { padding-top:24px!important; }
