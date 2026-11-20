@@ -554,10 +554,10 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
   return (
     <div className="vault-overview-page">
       <div className="vault-stat-grid vault-overview-primary-stats">
-        <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.pets.length)} hint={\`\${verifiedPets.length} verified · \${unverifiedPets.length} unverified\`} />
+        <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.pets.length)} hint={`${verifiedPets.length} verified · ${unverifiedPets.length} unverified`} />
         <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(totalValue)} hint="verified signature values only" />
         <StatCard icon={<Coins size={38} strokeWidth={2.6} />} label="Invested" value={formatValue(spent)} hint="total purchase price" />
-        <StatCard icon={<TrendingUp size={38} strokeWidth={2.6} />} label={profit >= 0 ? 'Profit' : 'Loss'} value={\`\${profit >= 0 ? '+' : ''}\${formatValue(profit)}\`} hint={pctReturn !== null ? \`\${pctReturn >= 0 ? '+' : ''}\${pctReturn.toFixed(1)}% return\` : 'no purchases recorded yet'} />
+        <StatCard icon={<TrendingUp size={38} strokeWidth={2.6} />} label={profit >= 0 ? 'Profit' : 'Loss'} value={`${profit >= 0 ? '+' : ''}${formatValue(profit)}`} hint={pctReturn !== null ? `${pctReturn >= 0 ? '+' : ''}${pctReturn.toFixed(1)}% return` : 'no purchases recorded yet'} />
       </div>
 
 
@@ -3174,7 +3174,7 @@ function VaultShell() {
         
       </header>
 
-      <main className={\`vault-main\${tab === 'overview' ? ' vault-overview-main' : ''}\`}>
+      <main className={`vault-main${tab === 'overview' ? ' vault-overview-main' : ''}`}>
         {tab !== 'signers' && (
           <div className={tab === 'overview' ? 'vault-overview-hero' : undefined} style={{ marginBottom: 22 }}>
             <span className="vault-kicker">Signed Vault</span>
