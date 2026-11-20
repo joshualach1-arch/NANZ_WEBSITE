@@ -3180,9 +3180,13 @@ function VaultShell() {
         {tab === 'scanner' && <InventoryScannerTab onRefresh={refresh} isOwner={data.is_owner} />}
         {tab === 'missing' && <MissingTab data={data} />}
         {tab === 'signers' && (
-          route.signerId
-            ? <SignerDetailPage data={data} signerId={route.signerId} onBack={() => navigate('signers')} />
-            : <SignerGallery data={data} onOpenSigner={(id) => navigate('signers', id)} onRefresh={refresh} isOwner={data.is_owner} />
+          <SignerGallery
+            data={data}
+            selectedSignerId={route.signerId}
+            onOpenSigner={(id) => navigate('signers', id || undefined)}
+            onRefresh={refresh}
+            isOwner={data.is_owner}
+          />
         )}
         {tab === 'acquisitions' && (
           <AcquisitionsPage isOwner={data.is_owner} myCollectorNo={data.me} onRefresh={refresh} />
