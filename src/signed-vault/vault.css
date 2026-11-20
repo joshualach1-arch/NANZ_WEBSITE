@@ -710,3 +710,112 @@
 .vault-profile-signatures .vault-table-wrap{margin-top:8px}
 .vault-profile-signatures .vault-table{min-width:600px}
 @media(max-width:700px){.vault-signer-modal-backdrop{padding:10px}.vault-signer-modal{max-height:calc(100vh - 20px);border-radius:21px}.vault-signer-modal-scroll{max-height:calc(100vh - 20px);padding:62px 16px 18px}.vault-profile-hero{align-items:flex-start;flex-direction:column;padding-right:0}.vault-profile-identity{gap:14px}.vault-profile-avatar{width:78px;height:78px;flex-basis:78px;border-radius:18px}.vault-profile-main h2{font-size:23px}.vault-profile-rank{width:100%;min-height:75px}.vault-profile-rank strong{font-size:30px}.vault-profile-actions{grid-template-columns:1fr}.vault-profile-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.vault-profile-stat{padding:12px;min-height:82px}.vault-profile-stat strong{font-size:21px}.vault-profile-content-grid{grid-template-columns:1fr}.vault-profile-tabs button{font-size:10px;gap:4px}}
+
+
+/* Signature profile modal — final collector presentation */
+.vault-signer-modal-refined {
+  width: min(1120px,100%);
+  border-color: rgba(237,61,145,.19);
+  background:
+    radial-gradient(ellipse at 100% 100%,rgba(222,35,130,.12),transparent 29%),
+    linear-gradient(145deg,#141722 0%,#0e111b 56%,#0b0e17 100%);
+  box-shadow:0 35px 110px rgba(0,0,0,.68),0 0 65px rgba(220,40,132,.08);
+}
+.vault-signer-modal-refined:before {
+  content:"";position:absolute;z-index:0;right:0;top:0;width:40%;height:245px;pointer-events:none;
+  background:linear-gradient(132deg,transparent 42%,rgba(226,38,132,.03) 58%,rgba(226,38,132,.2) 78%,transparent 79%),
+             linear-gradient(132deg,transparent 57%,rgba(226,38,132,.12) 72%,transparent 73%);
+}
+.vault-signer-modal-refined .vault-signer-modal-scroll { position:relative;z-index:1;padding:42px 32px 34px; }
+.vault-profile-hero-refined { position:relative;min-height:190px;padding:8px 48px 28px 4px; }
+.vault-profile-hero-refined .vault-profile-avatar {
+  width:112px;height:112px;flex-basis:112px;border:2px solid #ed3d91;border-radius:24px;
+  box-shadow:0 0 0 1px rgba(237,61,145,.15),0 0 24px rgba(237,61,145,.22);
+}
+.vault-profile-hero-refined .vault-profile-main h2 { margin:0 0 7px;font-size:36px;letter-spacing:-.045em; }
+.vault-profile-hero-refined .vault-profile-main p { font-size:15px; }
+.vault-profile-hero-refined .vault-profile-badges { margin-top:14px; }
+.vault-profile-hero-refined .vault-profile-role { padding:7px 12px;font-size:10px;letter-spacing:.035em;text-transform:uppercase; }
+.vault-profile-verification { color:#aab5c9;border-color:rgba(160,175,204,.18);background:rgba(127,145,176,.1); }
+.vault-profile-verification.is-verified { color:#76e2b6;border-color:rgba(65,206,151,.26);background:rgba(42,180,127,.1); }
+.vault-profile-links { display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:14px; }
+.vault-profile-links a,.vault-profile-links button {
+  display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:#aebbd5;
+  font:inherit;font-size:13px;text-decoration:none;cursor:pointer;
+}
+.vault-profile-links a:hover,.vault-profile-links button:hover { color:#f28cbe; }
+.vault-profile-stat-grid-refined {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;margin:0 0 34px;
+}
+.vault-profile-stat-grid-refined .vault-profile-stat {
+  min-height:112px;padding:20px 24px;border-radius:18px;
+  background:linear-gradient(145deg,rgba(27,31,44,.96),rgba(15,19,29,.98));
+  border-color:rgba(147,160,188,.13);
+}
+.vault-profile-stat-grid-refined .vault-profile-stat-featured {
+  grid-column:span 2;
+  background:linear-gradient(115deg,rgba(117,35,86,.35),rgba(24,27,40,.98) 70%);
+  border-color:#d93691;
+  box-shadow:inset 1px 0 rgba(255,255,255,.08),0 0 24px rgba(217,54,145,.06);
+}
+.vault-profile-stat-grid-refined .vault-profile-stat span { color:#a5b4cf;font-size:11px;letter-spacing:.075em; }
+.vault-profile-stat-grid-refined .vault-profile-stat strong { font-size:31px; }
+.vault-known-signatures { margin-top:4px; }
+.vault-known-signatures-kicker {
+  margin:0 0 6px 22px;color:#d68af3;font-size:13px;font-weight:900;letter-spacing:.09em;
+}
+.vault-known-signatures h3 {
+  margin:0 0 0 16px;color:#f6f5fb;font-size:clamp(30px,4vw,40px);line-height:1.05;
+  font-style:italic;font-weight:1000;letter-spacing:-.045em;text-transform:uppercase;
+  transform:skewX(-5deg);
+}
+.vault-known-signatures-underline {
+  width:310px;max-width:52%;height:9px;margin:4px 0 16px 170px;
+  background:linear-gradient(90deg,transparent 0%,#ec159d 12%,#ff25bc 55%,rgba(236,21,157,0) 100%);
+  clip-path:polygon(0 75%,36% 10%,42% 40%,100% 0,43% 65%,35% 47%,0 100%);
+  filter:drop-shadow(0 0 5px rgba(255,25,181,.85));
+}
+.vault-known-signatures-table {
+  overflow:hidden;border:1px solid rgba(147,160,188,.15);border-radius:17px;
+  background:rgba(12,16,26,.62);
+}
+.vault-known-signatures-table .vault-table { min-width:620px; }
+.vault-known-signatures-table .vault-table th {
+  padding:15px 20px;background:rgba(34,39,55,.82);color:#aab8d1;
+  font-size:11px;font-weight:850;letter-spacing:.075em;text-transform:uppercase;
+}
+.vault-known-signatures-table .vault-table td { padding:17px 20px;border-top:1px solid rgba(147,160,188,.12);font-size:14px; }
+.vault-known-signatures-empty { color:#8995aa!important;text-align:center;padding:25px!important; }
+.vault-signature-name-rainbow {
+  position:relative;display:inline-block;font-weight:950;letter-spacing:-.025em;
+  background:linear-gradient(100deg,#ff3bbd 0%,#ff5c8a 15%,#ffb347 29%,#f9ef65 42%,#55e68a 56%,#35d9e9 70%,#668bff 83%,#c56bff 94%,#ff3bbd 100%);
+  background-size:300% 100%;background-position:0% 50%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  animation:signatureAuraFlow 4.2s linear infinite;
+  filter:drop-shadow(0 0 5px rgba(255,65,194,.5)) drop-shadow(0 0 11px rgba(76,220,255,.24));
+}
+.vault-signature-name-rainbow:after {
+  content:"";position:absolute;left:4%;right:4%;bottom:-5px;height:2px;border-radius:50%;
+  background:linear-gradient(90deg,#ff38c8,#ffb34e,#70ed83,#39d9ef,#9c6bff,#ff38c8);
+  background-size:250% 100%;opacity:.78;filter:blur(2px);
+  animation:signatureAuraFlow 3.2s linear infinite;
+}
+@keyframes signatureAuraFlow { from {background-position:0% 50%} to {background-position:300% 50%} }
+@media(prefers-reduced-motion:reduce) {
+  .vault-signature-name-rainbow,.vault-signature-name-rainbow:after { animation:none; }
+}
+@media(max-width:700px) {
+  .vault-signer-modal-refined .vault-signer-modal-scroll { padding:60px 16px 22px; }
+  .vault-profile-hero-refined { min-height:0;padding:0 0 22px; }
+  .vault-profile-hero-refined .vault-profile-avatar { width:78px;height:78px;flex-basis:78px;border-radius:18px; }
+  .vault-profile-hero-refined .vault-profile-main h2 { font-size:24px; }
+  .vault-profile-stat-grid-refined { grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:25px; }
+  .vault-profile-stat-grid-refined .vault-profile-stat { min-height:82px;padding:13px; }
+  .vault-profile-stat-grid-refined .vault-profile-stat-featured { grid-column:span 2; }
+  .vault-profile-stat-grid-refined .vault-profile-stat span { font-size:9px; }
+  .vault-profile-stat-grid-refined .vault-profile-stat strong { font-size:23px; }
+  .vault-known-signatures-kicker { margin-left:8px;font-size:11px; }
+  .vault-known-signatures h3 { margin-left:5px;font-size:29px; }
+  .vault-known-signatures-underline { margin-left:90px; }
+}
