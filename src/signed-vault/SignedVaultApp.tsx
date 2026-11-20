@@ -598,22 +598,7 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
         </div>
       </div>
 
-      {otherStats && (
-        <>
-          <div className="vault-section-head vault-overview-second-head">
-            <div>
-              <span className="vault-kicker">Second collector</span>
-              <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Collector 2 at a glance</h3>
-            </div>
-          </div>
-          <div className="vault-stat-grid vault-overview-secondary-stats">
-            <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.other_pets?.length ?? 0)} />
-            <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(otherStats.totalValue)} />
-            <StatCard icon={<Coins size={38} strokeWidth={2.6} />} label="Invested" value={formatValue(otherStats.spent)} />
-            <StatCard icon={<Target size={38} strokeWidth={2.6} />} label="Missing" value={String(otherStats.missing)} />
-          </div>
-        </>
-      )}
+
 
       <section className="vault-overview-latest">
         <div className="vault-section-head vault-overview-section-head">
