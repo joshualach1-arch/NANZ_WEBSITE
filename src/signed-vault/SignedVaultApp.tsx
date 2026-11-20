@@ -2166,16 +2166,12 @@ function UnknownSignerReview({ pets, onSaved, owner }: {
     setError(null);
     setMessage(null);
     try {
-      await vaultCall('manage', {
-        rpc: 'vault_unknown_signer_assign',
-        token: readStoredToken() ?? '',
-        params: {
-          p_pet_entry_id: activePet.id,
-          p_roblox_username: username.trim().replace(/^@/, ''),
-          p_variant: variant,
-          p_signature_value: signatureValue.trim() ? Number(signatureValue) : null,
-          p_notes: notes.trim() || null,
-        },
+      await rpcCall('vault_unknown_signer_assign', readStoredToken() ?? '', {
+        p_pet_entry_id: activePet.id,
+        p_roblox_username: username.trim().replace(/^@/, ''),
+        p_variant: variant,
+        p_signature_value: signatureValue.trim() ? Number(signatureValue) : null,
+        p_notes: notes.trim() || null,
       });
       await onSaved();
       setActivePet(null);
