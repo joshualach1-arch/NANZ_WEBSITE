@@ -1421,6 +1421,8 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
   const [editPet, setEditPet] = useState<CatalogPet | null>(null);
   const [value, setValue] = useState('');
   const [demand, setDemand] = useState('');
+  const [inGameValue, setInGameValue] = useState('');
+  const [inGameSource, setInGameSource] = useState('manual_in_game_check');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [snapshots, setSnapshots] = useState<CostSnapshot[] | null>(null);
@@ -1458,6 +1460,8 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
     setEditPet(pet);
     setValue(pet.cosmic_value != null ? String(pet.cosmic_value) : '');
     setDemand(pet.demand != null ? String(pet.demand) : '');
+    setInGameValue(pet.in_game_value != null ? String(pet.in_game_value) : '');
+    setInGameSource(pet.in_game_value_source ?? 'manual_in_game_check');
     setError(null);
   };
 
@@ -1471,6 +1475,11 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
         p_pet_id: editPet.id,
         p_pet_value: value.trim() ? Number(value) : null,
         p_calculation_method: 'manual',
+      });
+      await rpcCall('vault_cosmic_values_manage', readStoredToken() ?? '', {
+        p_pet_id: editPet.id,
+        p_in_game_value: inGameValue.trim() ? Number(inGameValue) : null,
+        p_in_game_value_source: inGameSource.trim() || 'manual_in_game_check',
       });
       setEditPet(null);
       await onRefresh();
@@ -1612,7 +1621,7 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
       <div className="vault-table-wrap">
         <table className="vault-table">
           <thead>
-            <tr><th>Pet</th><th>Owned</th><th>Cosmic value</th><th>Demand</th><th>Source</th><th>Last update</th>{isOwner && <th />}</tr>
+            <tr><th>Pet</th><th>Owned</th><th>Cosmic value</th><th>Demand</th><th>In-game value</th><th>Source</th><th>Last update</th>{isOwner && <th />}</tr>
           </thead>
           <tbody>
             {data.catalog.map((pet) => {
@@ -1622,7 +1631,11 @@ function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: (
                   <td style={{ color: 'var(--text)', fontWeight: 600 }}>{pet.pet_name}</td>
                   <td className="vault-num">{ownedCount > 0 ? `×${ownedCount}` : '—'}</td>
                   <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 700 }}>{formatValue(pet.cosmic_value)}</td>
-                  <td className="vault-num">{pet.demand ?? '—'}/10</td>
+                  <td className="vault-num">{pet.demand != null ? `${pet.demand}/10` : '—'}</td>
+                  <td className="vault-num" title={pet.in_game_value_source ?? 'Not recorded'}>
+                    {pet.in_game_value != null ? formatValue(pet.in_game_value, '') : '—'}
+                    {pet.in_game_value_timestamp && <div className="vault-note">{formatDate(pet.in_game_value_timestamp)}</div>}
+                  </td>
                   <td><span className="vault-pill vault-pill-gray">{pet.value_source ?? 'manual'}</span></td>
                   <td><span className="vault-note">{snapList.length > 0 ? formatDate(snapList[snapList.length - 1].captured_at) : '—'}</span></td>
                   {isOwner && (
