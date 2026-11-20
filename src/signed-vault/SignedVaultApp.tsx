@@ -422,17 +422,18 @@ const CATEGORY_LABELS: Record<CategoryKey, string> = {
 };
 
 function petCategory(pet: VaultPet): CategoryKey | null {
-  if (pet.pet_category === 'huge') return 'huge';
-  if (pet.pet_category === 'exclusive') return 'exclusive';
-  if (pet.pet_category === 'titanic') return 'titanic';
-  if (pet.pet_category === 'gargantuan') return 'gargantuan';
+  const category = String(pet.pet_category ?? '').trim().toLowerCase();
+  if (category === 'huge') return 'huge';
+  if (category === 'exclusive') return 'exclusive';
+  if (category === 'titanic') return 'titanic';
+  if (category === 'gargantuan' || category === 'gigantuan') return 'gargantuan';
   return null;
 }
 
 function isTrackedCategory(value: string | null | undefined): boolean {
   const category = String(value ?? '').trim().toLowerCase();
   return category === 'huge' || category === 'exclusive' || category === 'titanic'
-    || category === 'gargantuan' || category === 'gigantuan' || category === 'gigantuan';
+    || category === 'gargantuan' || category === 'gigantuan';
 }
 
 function eventLabel(event: ActivityEvent): { title: string; meta: string } {
