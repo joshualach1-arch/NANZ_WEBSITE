@@ -159,6 +159,30 @@ Deno.serve(async (req: Request) => {
       vault_snapshots_get: ["token", "p_collector_no"],
     };
 
+    // Route signer assignment through the dedicated SECURITY DEFINER dispatcher.
+    // This also supports clients still sending the legacy { action: "manage", rpc, params } envelope.
+    if (rpcName === "vault_unknown_signer_assign") {
+      const petEntryId = String(params.p_pet_entry_id ?? "").trim();
+      const robloxUsername = String(params.p_roblox_username ?? "").trim().replace(/^@/, "");
+      if (!petEntryId || !robloxUsername) {
+        return json({ error: "signer_assignment_invalid" }, 400);
+      }
+      const { data, error } = await supabase.rpc("vault_manage", {
+        p_token: token,
+        p_rpc: "vault_unknown_signer_assign",
+        p_params: {
+          p_pet_entry_id: petEntryId,
+          p_roblox_username: robloxUsername,
+          p_variant: params.p_variant ?? null,
+          p_signature_value: params.p_signature_value ?? null,
+          p_notes: params.p_notes ?? null,
+        },
+      });
+      const err = rpcError({ data, error });
+      if (err) return err;
+      return json({ status: "ok", result: data });
+    }
+
     if (!(rpcName in allowed)) return json({ error: "unknown_rpc" }, 400);
 
     const args: Record<string, unknown> = { p_token: token };
