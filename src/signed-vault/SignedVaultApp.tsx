@@ -6,6 +6,7 @@ import {
   Lock,
   LogOut,
   Plus,
+  Pencil,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -244,7 +245,6 @@ export function StatCard({ label, value, hint, gold }: { label: string; value: s
 }
 
 function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => void }) {
-  const isVerified = pet.verification_status === 'verified' || pet.verification_status === 'community_verified';
   const isSigned = Boolean(pet.signer_id && pet.signed_status !== 'not_signed');
   const variantClass = String(pet.variant || 'normal').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
   return (
@@ -257,9 +257,12 @@ function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => vo
         <div className="vault-pet-name">{pet.nickname || pet.pet_name}</div>
         <div className="vault-pet-card-footer">
           {isSigned
-            ? <span className="vault-rainbow-signed">✦ SIGNED BY {pet.signer_name || 'UNKNOWN SIGNER'}</span>
+            ? <span className="vault-signed-by">
+                <Pencil size={11} strokeWidth={2.5} aria-hidden="true" />
+                <span className="vault-signed-by-label">SIGNED BY</span>
+                <span className="vault-signer-name-aura">{pet.signer_name || 'UNKNOWN SIGNER'}</span>
+              </span>
             : <span className="vault-status-unassigned">NOT SIGNED</span>}
-          {isSigned && <span className={`vault-status-verified ${isVerified ? 'is-verified' : 'is-unverified'}`}>{isVerified ? 'VERIFIED' : pet.signed_status === 'manual_review' ? 'NEEDS REVIEW' : 'UNVERIFIED'}</span>}
         </div>
       </div>
     </button>
