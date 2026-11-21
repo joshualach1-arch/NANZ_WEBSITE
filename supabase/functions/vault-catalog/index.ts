@@ -83,6 +83,31 @@ function parseCosmicStatus(value: string): string | null {
   return null;
 }
 
+
+function parseCosmicPetRows(html: string): Record<string, unknown>[] {
+  const decode = (s: string) => s
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const text = decode(html);
+  const rows: Record<string, unknown>[] = [];
+  const pattern = /((?:(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,90}?)\s+VARIANT\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+VALUE\s+(?:(?:[▲▼=]\s*)?[\d,.]+\s*[KMBT]?\s*\|\s*)?([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/C)\s+DEMAND\s+(?:N\/?A|\d+\s*(?:\/\s*10|OUT\s+OF\s+10))/gi;
+  for (const match of text.matchAll(pattern)) {
+    const fullName = match[1].replace(/\s+/g, " ").trim();
+    const variantRaw = match[2].replace(/\s+/g, " ").toLowerCase();
+    const variant = variantRaw === "normal" ? "normal" : variantRaw === "golden" ? "golden"
+      : variantRaw === "rainbow" ? "rainbow" : variantRaw === "shiny" ? "shiny" : "rainbow_shiny";
+    const baseName = fullName.replace(/^(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+/i, "").trim();
+    const rawValue = match[3].trim();
+    const value = parseCosmicValue(rawValue);
+    const status = parseCosmicStatus(rawValue) ?? (/^O\/C$/i.test(rawValue) ? "oc" : null);
+    if (baseName && (value != null || status != null)) rows.push({ pet_name: baseName, variant, value, status, source_name: fullName });
+  }
+  return rows;
+}
+
 function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
@@ -222,6 +247,39 @@ Deno.serve(async (req: Request) => {
         unique_signers: signerRows.length,
         ...asRecord(updateRes.data),
       });
+    }
+
+
+    if (action === "cosmic_pet_values_import") {
+      const session = await supabase.rpc("vault_assert_session", { p_token: token });
+      if (session.error) return json({ error: "vault_access_denied" }, 401);
+      const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
+      if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
+      const categories = ["Huges", "Exclusives", "Titanics", "Gargantuans"];
+      const allRows: Record<string, unknown>[] = [];
+      for (const category of categories) {
+        for (let page = 1; page <= 200; page++) {
+          const url = new URL("https://petsimulatorvalues.com/values.php");
+          url.searchParams.set("category", category);
+          url.searchParams.set("page", String(page));
+          const res = await fetch(url.toString(), {
+            headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault pet values refresh" },
+            signal: AbortSignal.timeout(20000),
+          });
+          if (!res.ok) return json({ error: "cosmic_pet_values_fetch_failed", category, page }, 502);
+          const html = await res.text();
+          const rows = parseCosmicPetRows(html);
+          if (rows.length === 0) break;
+          allRows.push(...rows);
+          if (!html.includes("Next")) break;
+        }
+      }
+      const byKey = new Map<string, Record<string, unknown>>();
+      for (const row of allRows) byKey.set(`${String(row.pet_name).toLowerCase()}::${String(row.variant)}`, row);
+      const values = [...byKey.values()];
+      const importRes = await supabase.rpc("vault_cosmic_pet_values_import", { p_token: token, p_values: values });
+      if (importRes.error) return json({ error: importRes.error.message ?? "cosmic_pet_values_import_failed" }, 500);
+      return json({ status: "ok", source_rows: allRows.length, unique_values: values.length, ...asRecord(importRes.data) });
     }
 
     if (action === "catalog_import") {
