@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowDownUp, Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Scale, ShieldCheck, Search, Coins, Calculator, X, Check } from 'lucide-react';
+import { ArrowDownUp, Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Scale, ShieldCheck, Search, Coins, Calculator, X, Check, ScanSearch } from 'lucide-react';
 import { formatValue, variantLabelWide, type VaultData, type Variant } from './vaultApi';
 import { ScreenshotTradeAnalyzer } from './ScreenshotTradeAnalyzer';
 
