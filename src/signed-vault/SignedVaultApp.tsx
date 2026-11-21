@@ -1,6 +1,7 @@
 import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
+  BadgeCheck,
   Check,
   Gem,
   Lock,
@@ -743,6 +744,10 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
   const pets = (view === data.me ? data.pets : (data.other_pets ?? []))
     .filter((pet) => isTrackedCategory(pet.pet_category));
+  const signedPets = pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed');
+  const collectionValue = pets.reduce((sum, pet) => sum + getOwnedPetValue(data, pet), 0);
+  const investedValue = pets.reduce((sum, pet) => sum + Number(pet.purchase_price ?? 0), 0);
+  const collectionProfit = collectionValue - investedValue;
 
   const run = async (params: Record<string, unknown>) => {
     setBusy(true);
@@ -802,7 +807,20 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   },  [pets, data.signatures, categoryFilter, petSearch, variantFilter, signerFilter, minValue, maxValue, acquiredFrom, acquiredTo, verificationFilter, sort]);
 
   return (
-    <div>
+    <div className="vault-collection-page">
+      <section className="vault-collection-hero">
+        <div className="vault-collection-hero-copy">
+          <span className="vault-kicker">SIGNED VAULT / YOUR INVENTORY</span>
+          <h1 className="vault-title">My <span>Collection</span></h1>
+          <p className="vault-subtitle">Your signed pets, Cosmic values and collection performance in one place.</p>
+        </div>
+        <div className="vault-collection-hero-stats">
+          <div className="vault-collection-hero-stat is-pink"><small><BadgeCheck size={14} /> SIGNED PETS</small><strong>{signedPets.length}</strong><span>in your collection</span></div>
+          <div className="vault-collection-hero-stat is-blue"><small><Gem size={14} /> COLLECTION VALUE</small><strong>{formatValue(collectionValue)}</strong><span>current estimated value</span></div>
+          <div className="vault-collection-hero-stat is-violet"><small><Coins size={14} /> INVESTED</small><strong>{formatValue(investedValue)}</strong><span>total purchase price</span></div>
+          <div className={`vault-collection-hero-stat ${collectionProfit >= 0 ? 'is-green' : 'is-red'}`}><small><TrendingUp size={14} /> {collectionProfit >= 0 ? 'PROFIT' : 'LOSS'}</small><strong>{collectionProfit >= 0 ? '+' : ''}{formatValue(collectionProfit)}</strong><span>collection value minus invested</span></div>
+        </div>
+      </section>
       {showScanner && <div style={{ marginBottom: 18 }}><InventoryScannerTab onRefresh={onRefresh} isOwner={isOwner} /></div>}
       <div className="vault-section-head">
         <div className="vault-row">
