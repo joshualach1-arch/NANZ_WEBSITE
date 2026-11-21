@@ -1501,3 +1501,41 @@
   from { background-position:0% 50%; }
   to { background-position:100% 50%; }
 }
+
+
+/* Owned signers: prominent card treatment and continuously animated rainbow names */
+.vault-app .vault-signer-card.is-owned-signer {
+  position:relative;
+  border-color:rgba(255,72,190,.78)!important;
+  background:
+    radial-gradient(ellipse at 8% 0%,rgba(255,58,174,.18),transparent 48%),
+    linear-gradient(145deg,rgba(29,19,42,.98),rgba(11,15,28,.99))!important;
+  box-shadow:0 0 0 1px rgba(255,92,195,.12),0 0 24px rgba(238,49,165,.16),0 12px 30px rgba(0,0,0,.25)!important;
+}
+.vault-app .vault-signer-card.is-owned-signer:after {
+  content:"IN YOUR COLLECTION";
+  position:absolute;top:12px;right:56px;
+  padding:5px 9px;border-radius:999px;
+  color:#ffd7f0;background:rgba(219,42,145,.16);
+  border:1px solid rgba(255,105,199,.42);
+  font-size:9px;font-weight:900;letter-spacing:.09em;
+  pointer-events:none;
+}
+.vault-app .vault-owned-signer-name {
+  display:inline-block;
+  background:linear-gradient(90deg,#ff315f 0%,#ff8b25 12%,#ffe34d 24%,#67ef62 36%,#17e5c8 48%,#28baff 60%,#665dff 72%,#bb50ff 84%,#ff43bd 94%,#ff315f 100%);
+  background-size:260% 100%;
+  background-position:0% 50%;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  animation:nanzoOwnedSignerRainbow 3.1s linear infinite;
+  filter:saturate(1.4) drop-shadow(0 0 5px rgba(255,65,190,.48)) drop-shadow(0 0 10px rgba(54,178,255,.25));
+  will-change:background-position;
+}
+@keyframes nanzoOwnedSignerRainbow {
+  from { background-position:0% 50%; }
+  to { background-position:260% 50%; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .vault-app .vault-owned-signer-name { animation:none; }
+}
