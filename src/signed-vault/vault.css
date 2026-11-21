@@ -2432,3 +2432,33 @@
 .vault-collection-page .vault-pet-card-refined .vault-variant-card-media .vault-shine-sweep {
   width:42%;
 }
+
+
+/* Match My Signed Collection pet artwork exactly to the six Choose Variant swatches. */
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-height:0!important;aspect-ratio:1/1!important;padding:16px!important;
+  margin:9px 9px 0!important;border:0!important;border-radius:22px!important;
+  background:transparent!important;overflow:hidden!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .vault-variant-swatch {
+  position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;height:100%!important;min-height:0!important;aspect-ratio:1/1!important;
+  padding:12px!important;border-radius:22px!important;overflow:hidden!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .vault-variant-swatch img {
+  display:block!important;width:100%!important;height:100%!important;aspect-ratio:1/1!important;
+  object-fit:contain!important;padding:0!important;border-radius:0!important;
+  filter:drop-shadow(0 5px 7px rgba(0,0,0,.4))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .variant-golden img {
+  filter:sepia(.42) saturate(1.6) hue-rotate(350deg) drop-shadow(0 5px 8px rgba(255,190,60,.25))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .variant-shiny img,
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .variant-golden-shiny img,
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .variant-rainbow-shiny img {
+  filter:brightness(1.14) contrast(1.06) drop-shadow(0 5px 8px rgba(190,220,255,.3))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-collection-variant-media .vault-shine-sweep {
+  width:42%!important;
+}
