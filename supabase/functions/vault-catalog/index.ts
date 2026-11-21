@@ -24,6 +24,16 @@ const API_BASE = "https://ps99.biggamesapi.io";
 // carry signatures are imported: Huge, Exclusive, Titanic, Gargantuan.
 const IMPORT_CATEGORIES = new Set(["Huge", "Exclusive", "Titanic", "Gargantuan"]);
 
+function normalizePetCategory(pet: PetRow): string | null {
+  const raw = String(pet.category ?? "").trim().toLowerCase();
+  const config = asRecord(pet.configData);
+  if (raw.includes("gargantuan") || config.gargantuan === true) return "Gargantuan";
+  if (raw.includes("titanic") || config.titanic === true) return "Titanic";
+  if (raw.includes("huge") || config.huge === true) return "Huge";
+  if (raw.includes("exclusive") || config.exclusive === true) return "Exclusive";
+  return null;
+}
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -45,8 +55,8 @@ function thumbnailUrl(pet: PetRow): string | null {
 
 function buildItem(pet: PetRow): Record<string, unknown> {
   const configData = asRecord(pet.configData);
-  const category = pet.category ?? "Other";
-  const isHuge = category === "Huge" || Boolean(configData.huge);
+  const category = normalizePetCategory(pet) ?? "Other";
+  const isHuge = category === "Huge";
   return {
     external_id: pet.configName,
     pet_name: pet.configName,
@@ -384,17 +394,26 @@ Deno.serve(async (req: Request) => {
       const payload = asRecord(await res.json().catch(() => ({})));
       if (payload.status !== "ok") return json({ error: "catalog_fetch_failed" }, 502);
       const data = Array.isArray(payload.data) ? (payload.data as PetRow[]) : [];
-      const items = data
-        .filter((pet) => pet.configName && IMPORT_CATEGORIES.has(pet.category ?? ""))
-        .map(buildItem);
+      const categoryCounts: Record<string, number> = { Huge: 0, Exclusive: 0, Titanic: 0, Gargantuan: 0 };
+      const items = data.flatMap((pet) => {
+        if (!pet.configName) return [];
+        const category = normalizePetCategory(pet);
+        if (!category || !IMPORT_CATEGORIES.has(category)) return [];
+        categoryCounts[category] += 1;
+        return [buildItem(pet)];
+      });
+
+      if (items.length === 0) {
+        return json({ error: "catalog_empty_after_category_filter", total_in_source: data.length, source_categories: [...new Set(data.map((pet) => String(pet.category ?? "unknown")))] }, 502);
+      }
 
       const importRes = await supabase.rpc("vault_catalog_import", {
         p_token: token,
         p_items: items,
       });
-      if (importRes.error) return json({ error: importRes.error.message ?? "import_failed" }, 500);
+      if (importRes.error) return json({ error: importRes.error.message ?? "import_failed", total_in_source: data.length, selected_for_import: items.length, category_counts: categoryCounts }, 500);
 
-      return json({ status: "ok", total_in_source: data.length, ...importRes.data });
+      return json({ status: "ok", total_in_source: data.length, selected_for_import: items.length, category_counts: categoryCounts, ...asRecord(importRes.data) });
     }
 
     return json({ error: "unknown_action" }, 400);
