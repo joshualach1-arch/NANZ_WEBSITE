@@ -263,8 +263,9 @@ function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => vo
   const variantClass = String(pet.variant || 'normal').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
   return (
     <button className={`vault-pet-card vault-pet-card-refined${isSigned ? ' vault-pet-card-signed' : ''}`} onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
-      <div className="vault-pet-media">
+      <div className={`vault-pet-media vault-variant-card-media variant-${variantClass}`}>
         {pet.pet_image ? <img src={pet.pet_image} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={40} />}
+        {['shiny', 'golden_shiny', 'rainbow_shiny'].includes(pet.variant) && <span className="vault-shine-sweep" aria-hidden="true" />}
         {pet.variant !== 'normal' && <span className={`vault-variant-tag vault-variant-${variantClass}`}>{variantLabelWide[pet.variant] ?? pet.variant}</span>}
       </div>
       <div className="vault-pet-body">

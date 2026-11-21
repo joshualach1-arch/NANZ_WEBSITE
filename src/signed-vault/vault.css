@@ -2402,3 +2402,33 @@
 .vault-variant-option .vault-shine-sweep{width:42%}
 @media(max-width:560px){.vault-variant-preview{grid-template-columns:94px minmax(0,1fr)}.vault-variant-art img{height:94px}.vault-variant-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.vault-shine-sweep{animation:none;left:35%;opacity:.45}}
+
+
+/* Signed collection: render the owned pet variant with the same art treatment as Choose pet variant. */
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media {
+  background:radial-gradient(circle,rgba(81,110,175,.25),rgba(8,13,24,.9))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-golden {
+  background:linear-gradient(135deg,rgba(255,190,61,.26),rgba(65,42,14,.7))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-rainbow,
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-rainbow-shiny {
+  background:linear-gradient(115deg,rgba(255,80,115,.32),rgba(255,190,75,.25),rgba(95,220,155,.25),rgba(80,160,255,.3),rgba(185,105,255,.3))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-golden-shiny {
+  background:linear-gradient(135deg,rgba(255,191,65,.28),rgba(52,38,24,.7))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media img {
+  object-fit:contain!important;filter:drop-shadow(0 5px 7px rgba(0,0,0,.4))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-golden img {
+  filter:sepia(.42) saturate(1.6) hue-rotate(350deg) drop-shadow(0 5px 8px rgba(255,190,60,.25))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-shiny img,
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-golden-shiny img,
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media.variant-rainbow-shiny img {
+  filter:brightness(1.14) contrast(1.06) drop-shadow(0 5px 8px rgba(190,220,255,.3))!important;
+}
+.vault-collection-page .vault-pet-card-refined .vault-variant-card-media .vault-shine-sweep {
+  width:42%;
+}
