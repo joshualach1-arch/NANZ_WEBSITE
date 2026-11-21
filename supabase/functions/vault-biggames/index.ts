@@ -325,20 +325,26 @@ Deno.serve(async (req: Request) => {
       const tradeEntries = Array.isArray(tradeData.entries) ? tradeData.entries as Record<string, unknown>[] : [];
       const boothEntries = Array.isArray(boothData.entries) ? boothData.entries as Record<string, unknown>[] : [];
 
-      const catalogRes = await supabase.from("vault_pet_catalog").select("id, pet_name, category");
+      const catalogRes = await supabase.from("vault_pet_catalog").select("id, pet_name, display_name, external_id, category");
       if (catalogRes.error) return json({ error: "catalog_lookup_failed" }, 500);
-      const catalog = new Map((catalogRes.data ?? []).map((row: Record<string, unknown>) => [String(row.pet_name).toLowerCase(), row]));
+      const catalog = new Map<string, Record<string, unknown>>();
+      for (const row of (catalogRes.data ?? []) as Record<string, unknown>[]) {
+        for (const alias of [row.pet_name, row.display_name, row.external_id]) {
+          const key = String(alias ?? "").trim().toLowerCase();
+          if (key) catalog.set(key, row);
+        }
+      }
       const isTrackedPet = (item: Record<string, unknown>) => {
-        const name = String(item.id ?? item.displayName ?? "").trim();
-        const row = catalog.get(name.toLowerCase());
+        const candidates = [item.displayName, item.id, item.name].map((v) => String(v ?? "").trim().toLowerCase()).filter(Boolean);
+        const row = candidates.map((name) => catalog.get(name)).find(Boolean);
         if (!row) return null;
         const category = String(row.category ?? "");
         return ["Huge", "Exclusive", "Titanic", "Gargantuan"].includes(category) ? row : null;
       };
       const itemName = (item: Record<string, unknown>) => String(item.id ?? item.displayName ?? "Unknown Pet");
       const itemVariant = (item: Record<string, unknown>) => {
-        const v = String(item.variant ?? "Regular").toLowerCase().replace(/ /g, "_");
-        return ({ regular: "normal", shiny: "shiny", golden: "golden", rainbow: "rainbow", shiny_golden: "golden", shiny_rainbow: "rainbow" } as Record<string,string>)[v] ?? "normal";
+        const v = String(item.variant ?? "Regular").toLowerCase().replace(/[\s-]+/g, "_");
+        return ({ regular: "normal", normal: "normal", shiny: "shiny", golden: "golden", rainbow: "rainbow", shiny_golden: "golden_shiny", golden_shiny: "golden_shiny", shiny_rainbow: "rainbow_shiny", rainbow_shiny: "rainbow_shiny" } as Record<string,string>)[v] ?? "normal";
       };
       const diamondAmount = (items: unknown[]) => items.reduce((sum, raw) => {
         const item = asRecord(raw);
