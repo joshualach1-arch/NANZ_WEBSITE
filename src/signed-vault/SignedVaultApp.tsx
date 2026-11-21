@@ -31,6 +31,7 @@ import {
   fetchSnapshots,
   fetchValueHistory,
   fetchData,
+  fetchCosmicPetImportProgress,
   fetchChecklist,
   formatDate,
   formatValue,
@@ -735,6 +736,23 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [importingCosmicPets, setImportingCosmicPets] = useState(false);
   const [cosmicPetImportMessage, setCosmicPetImportMessage] = useState<string | null>(null);
   const [cosmicPetImportError, setCosmicPetImportError] = useState<string | null>(null);
+  const [cosmicPetImportProgress, setCosmicPetImportProgress] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (!importingCosmicPets) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const progress = await fetchCosmicPetImportProgress();
+        if (active) setCosmicPetImportProgress(progress);
+      } catch (error) {
+        if (active) setCosmicPetImportError(error instanceof Error ? error.message : 'Could not read import progress.');
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => { void poll(); }, 1500);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [importingCosmicPets]);
   const [collectionMode, setCollectionMode] = useState<'owned' | 'missing'>('owned');
   const [catalogSearch, setCatalogSearch] = useState('');
   const [petSearch, setPetSearch] = useState('');
@@ -820,7 +838,19 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       </section>
       {cosmicPetImportMessage && <div className="vault-success" style={{ marginBottom: 12 }}>{cosmicPetImportMessage}</div>}
-      {cosmicPetImportError && <div className="vault-error" style={{ marginBottom: 12 }}>{cosmicPetImportError}</div>}
+      {cosmicPetImportError && <div className="vault-error" role="alert" style={{ marginBottom: 12, whiteSpace: "pre-wrap" }}><strong>Cosmic Values import failed</strong><br />{cosmicPetImportError}</div>}
+      {importingCosmicPets && (() => {
+        const p = cosmicPetImportProgress ?? {};
+        const total = Math.max(1, Number(p.category_total ?? 4));
+        const done = Math.min(total, Number(p.category_index ?? 0));
+        const percent = Math.round((done / total) * 100);
+        return <div className="vault-card" role="status" aria-live="polite" style={{ marginBottom: 12, padding: 14 }}>
+          <div className="vault-row" style={{ justifyContent: "space-between", gap: 8 }}><strong>Cosmic Values import</strong><strong>{percent}%</strong></div>
+          <div style={{ height: 9, background: "rgba(148,163,184,.2)", borderRadius: 99, overflow: "hidden", margin: "10px 0" }}><div style={{ height: "100%", width: percent + "%", background: "linear-gradient(90deg,#ec4899,#8b5cf6)", transition: "width .25s ease" }} /></div>
+          <div style={{ fontSize: 12, opacity: .85 }}>{String(p.message ?? "Connecting to Cosmic Values…")}{p.category ? " · Page " + Number(p.page ?? 0) : ""}{" · "}{done}/{total} categories completed{" · "}{Number(p.source_rows ?? 0).toLocaleString()} rows collected</div>
+          {p.error && <div className="vault-error" style={{ marginTop: 8 }}>{String(p.error)}</div>}
+        </div>;
+      })()}
       {showScanner && <div style={{ marginBottom: 18 }}><InventoryScannerTab onRefresh={onRefresh} isOwner={isOwner} /></div>}
       <div className="vault-section-head">
         <div className="vault-row">
@@ -835,7 +865,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
         <div className="vault-row" style={{ gap: 8, flexWrap: 'wrap' }}>
           {isOwner && <button className="vault-btn vault-btn-sm" disabled={importingCosmicPets} onClick={() => {
-            setImportingCosmicPets(true); setCosmicPetImportMessage(null); setCosmicPetImportError(null);
+            setImportingCosmicPets(true); setCosmicPetImportMessage(null); setCosmicPetImportError(null); setCosmicPetImportProgress(null);
             void importCosmicPetValues()
               .then(async (result) => {
                 setCosmicPetImportMessage('Cosmic Values updated · ' + Number(result.updated ?? 0) + ' existing pet variants matched · ' + Number(result.skipped ?? 0) + ' unmatched values skipped. Pet catalog and collection records were not changed.');
