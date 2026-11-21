@@ -2528,3 +2528,51 @@
 @media(max-width:600px){.tc-hero{padding:22px;min-height:140px}.tc-hero-icon{width:52px;height:52px}.tc-modebar{align-items:flex-start;flex-direction:column}.tc-item-values{grid-template-columns:1fr 1fr}.tc-demand-field{grid-column:1/-1}.tc-result{padding:16px}.tc-result-grid{grid-template-columns:1fr 1fr}.tc-side-head{padding:15px}.tc-items{padding:9px}}
 
 .tc-direction{display:inline-flex;margin-top:10px;padding:6px 9px;border-radius:7px;font-size:9px;font-weight:950;letter-spacing:1px}.tc-direction-up{color:#53e0b7;background:rgba(57,214,166,.1);border:1px solid rgba(57,214,166,.24)}.tc-direction-down{color:#ff789e;background:rgba(239,91,139,.1);border:1px solid rgba(239,91,139,.24)}.tc-direction-even{color:#edc77b;background:rgba(237,199,123,.1);border:1px solid rgba(237,199,123,.2)}
+
+/* Trade Lab searchable builder + explicit calculation */
+.tc-builder{padding:14px;border-bottom:1px solid rgba(126,145,190,.14);background:linear-gradient(180deg,rgba(20,29,49,.72),rgba(10,16,29,.5));display:flex;flex-direction:column;gap:10px}
+.tc-builder-title,.tc-added-heading{display:flex;align-items:center;gap:8px;color:#aebbd2;font-size:9px;font-weight:950;letter-spacing:1.2px}
+.tc-builder-title svg{color:#e85ba9}
+.tc-search-wrap{position:relative;display:flex;align-items:center;gap:9px;min-width:0;height:42px;padding:0 11px;border:1px solid #2b3854;border-radius:10px;background:#080f1e;color:#91a4c9}
+.tc-search-wrap:focus-within{border-color:#d84a9c;box-shadow:0 0 0 3px rgba(216,74,156,.1)}
+.tc-search-wrap>input{width:100%;min-width:0;height:100%;border:0;outline:0;background:transparent;color:#f2f5ff;font-size:12px}
+.tc-search-wrap>input::placeholder{color:#7786a2}
+.tc-search-wrap>button{display:grid;place-items:center;border:0;background:transparent;color:#aab8d2;cursor:pointer}
+.tc-search-results{position:absolute;z-index:30;top:calc(100% + 6px);left:0;right:0;max-height:270px;overflow:auto;padding:5px;border:1px solid #394767;border-radius:11px;background:#111a2c;box-shadow:0 18px 42px rgba(0,0,0,.5)}
+.tc-search-results button{display:flex;align-items:center;gap:9px;width:100%;min-height:39px;padding:6px 8px;border:0;border-radius:7px;background:transparent;color:#e6ecfa;text-align:left;font-size:11px;cursor:pointer}
+.tc-search-results button:hover{background:rgba(224,65,159,.13)}
+.tc-search-results button img{width:28px;height:28px;object-fit:contain}
+.tc-search-results button span{flex:1}
+.tc-search-results button small{color:#8493af;font-size:9px}
+.tc-search-results p{margin:10px;color:#95a3bd;font-size:11px}
+.tc-builder-row{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:9px}
+.tc-builder-row>select,.tc-builder-row label select{width:100%;height:42px;padding:0 10px;border:1px solid #2b3854;border-radius:10px;background:#080f1e;color:#e3eafa;font-size:11px}
+.tc-builder-values{grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.tc-builder-values label{display:flex;flex-direction:column;gap:5px;color:#8d9bb5;font-size:8px;font-weight:900;letter-spacing:.8px}
+.tc-add-selected{display:flex;align-items:center;justify-content:center;gap:7px;height:42px;padding:0 18px;border:1px solid rgba(234,76,169,.5);border-radius:10px;background:linear-gradient(135deg,#e83b9a,#b72c83);color:white;font-size:11px;font-weight:900;cursor:pointer;box-shadow:0 7px 20px rgba(207,43,139,.18)}
+.tc-add-selected:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+.tc-selected-preview{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;background:rgba(74,105,169,.1);color:#e7edfb;font-size:10px}
+.tc-selected-preview small{color:#91a1bd;text-align:right}
+.tc-added-heading{justify-content:space-between;padding:13px 14px 0}
+.tc-added-heading small{color:#8492ac;font-size:9px;font-weight:600;letter-spacing:0}
+.tc-added-item{background:linear-gradient(110deg,rgba(28,38,60,.65),rgba(8,14,26,.8))}
+.tc-added-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tc-added-info strong{color:#f0f3fc;font-size:12px;overflow-wrap:anywhere}
+.tc-added-info span{color:#b3c0d8;font-size:9px}
+.tc-added-info small{color:#e875b8;font-size:9px;overflow-wrap:anywhere}
+.tc-empty-items{padding:22px 12px;text-align:center;color:#7786a2;font-size:10px;line-height:1.6;border:1px dashed rgba(126,145,190,.18);border-radius:10px}
+.tc-demand-field select{width:100%;height:31px;padding:0 5px;border:1px solid #263149;border-radius:7px;background:#0a1020;color:#dce4f5;font-size:10px}
+.tc-gems-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-top:1px solid rgba(126,145,190,.14);background:rgba(7,12,23,.45)}
+.tc-gems-row>div{display:flex;align-items:center;gap:8px;color:#d9c17e;font-size:9px;font-weight:950;letter-spacing:.8px}
+.tc-gems-row label{display:flex;align-items:center;gap:6px;width:min(190px,50%);height:34px;padding:0 9px;border:1px solid rgba(211,179,103,.28);border-radius:8px;background:#0a1020}
+.tc-gems-row input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#f5f2e8;font-size:11px;font-weight:800}
+.tc-gems-row small{color:#9d936f;font-size:9px}
+.tc-side-totals{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tc-calculate-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 19px;border:1px solid rgba(220,73,159,.3);border-radius:15px;background:linear-gradient(100deg,rgba(40,22,48,.85),rgba(14,22,40,.95));box-shadow:0 10px 35px rgba(0,0,0,.14)}
+.tc-calculate-bar>div{display:flex;align-items:center;gap:10px;color:#ee73bd}
+.tc-calculate-bar>div span{display:flex;flex-direction:column;gap:3px}
+.tc-calculate-bar>div b{color:#f1f4fd;font-size:12px}
+.tc-calculate-bar>div small{color:#8e9bb5;font-size:10px}
+.tc-calculate-bar>button{display:flex;align-items:center;justify-content:center;gap:9px;min-height:43px;padding:0 22px;border:0;border-radius:10px;background:linear-gradient(110deg,#ef399b,#b52e91);color:white;font-size:11px;font-weight:950;letter-spacing:.6px;cursor:pointer;box-shadow:0 8px 24px rgba(222,48,151,.25)}
+#tc-results{scroll-margin-top:24px}
+@media(max-width:600px){.tc-builder-row{grid-template-columns:1fr}.tc-builder-values{grid-template-columns:1fr auto}.tc-selected-preview{flex-direction:column}.tc-selected-preview small{text-align:left}.tc-calculate-bar{align-items:stretch;flex-direction:column}.tc-calculate-bar>button{width:100%}}
