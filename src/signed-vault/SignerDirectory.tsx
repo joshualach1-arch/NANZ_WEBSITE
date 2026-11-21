@@ -180,7 +180,7 @@ export function SignerDetailPage({ data, signerId, onBack }: {
   );
   const signatures = data.signatures.filter((record) => record.signer_id === signer.id);
   const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id) : [];
-  const myPets = data.pets.filter((pet) => pet.signer_id === signer.id);
+  const myPets = data.pets.filter((pet) => pet.signer_id === signer.id && pet.signed_status !== 'not_signed');
   const hasOwnedPets = myPets.length > 0;
   const totalValue = myPets.reduce((sum, pet) => {
     const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
