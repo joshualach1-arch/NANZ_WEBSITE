@@ -6,7 +6,16 @@ type Side = 'give' | 'get';
 type TradeItem = { id: string; petId: string; signerId: string; variant: Variant; signatureValue: string; hugeValue: string; demand: number };
 const variants: Variant[] = ['normal', 'golden', 'rainbow', 'shiny', 'golden_shiny', 'rainbow_shiny'];
 const money = (value: number) => formatValue(Number.isFinite(value) ? value : 0, '');
-const num = (value: string) => Math.max(0, Number(value) || 0);
+// Accept compact PS99 values such as 800M, 20B or 1.5T as well as full numbers.
+const num = (value: string) => {
+  const normalized = String(value ?? '').trim().replace(/,/g, '').replace(/\\s+/g, '');
+  if (!normalized) return 0;
+  const match = normalized.match(/^([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+))(K|M|B|T|Q)?$/i);
+  if (!match) return Math.max(0, Number(normalized) || 0);
+  const amount = Number(match[1]);
+  const multiplier = ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12, Q: 1e15 } as Record<string, number>)[(match[2] || '').toUpperCase()] || 1;
+  return Math.max(0, amount * multiplier);
+};
 const rarityFactor = (demand: number) => 1 + (demand - 5) * 0.04;
 const makeId = () => `trade-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -80,15 +89,15 @@ function TradeSide({ side, title, subtitle, items, data, gems, onGems, onAdd, on
             <div className="tc-added-info"><strong>{p?.display_name || p?.pet_name || 'Unknown pet'}</strong><span>{variantLabelWide[item.variant] || item.variant}</span><small>{s ? `✦ ${s.display_name || s.signer_name}` : 'No signature · Unsigned'}</small></div>
             <button className="tc-remove" onClick={() => onRemove(item.id)} title="Remove pet"><Trash2 size={16}/></button></div>
           <div className="tc-item-values">
-            <label><span>PET / HUGE VALUE</span><div><input type="number" min="0" value={item.hugeValue} onChange={(e) => onChange(item.id,{hugeValue:e.target.value})}/><small>Gems</small></div></label>
-            <label><span>SIGNATURE VALUE</span><div><input type="number" min="0" value={item.signatureValue} onChange={(e) => onChange(item.id,{signatureValue:e.target.value})} placeholder="0"/><small>Gems</small></div></label>
+            <label><span>PET / HUGE VALUE</span><div><input type="text" inputMode="decimal" value={item.hugeValue} onChange={(e) => onChange(item.id,{hugeValue:e.target.value})} placeholder="e.g. 800M"/><small>Gems</small></div></label>
+            <label><span>SIGNATURE VALUE</span><div><input type="text" inputMode="decimal" value={item.signatureValue} onChange={(e) => onChange(item.id,{signatureValue:e.target.value})} placeholder="e.g. 20B"/><small>Gems</small></div></label>
             <label className="tc-demand-field"><span>DEMAND</span><select value={item.demand} onChange={(e)=>onChange(item.id,{demand:Number(e.target.value)})}>{Array.from({length:10},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}/10</option>)}</select></label>
           </div>
         </article>;
       })}
       {items.length === 0 && <div className="tc-empty-items">No pets added yet. Search a pet above to build this side of the trade.</div>}
     </div>
-    <div className="tc-gems-row"><div><Coins size={17}/><span>ADD GEMS TO THIS SIDE?</span></div><label><input type="number" min="0" value={gems} onChange={(e)=>onGems(e.target.value)} placeholder="0"/><small>Gems</small></label></div>
+    <div className="tc-gems-row"><div><Coins size={17}/><span>ADD GEMS TO THIS SIDE?</span></div><label><input type="text" inputMode="decimal" value={gems} onChange={(e)=>onGems(e.target.value)} placeholder="e.g. 800M or 20B"/><small>Gems</small></label></div>
     <div className="tc-side-totals"><div><span>PET VALUE</span><strong>{money(petTotal)}</strong></div><div><span>SIGNATURE VALUE</span><strong>{money(sigTotal)}</strong></div><div><span>GEMS</span><strong>{money(num(gems))}</strong></div></div>
   </section>;
 }
