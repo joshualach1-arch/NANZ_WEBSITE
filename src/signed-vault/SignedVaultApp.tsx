@@ -753,7 +753,14 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
     const supported = ['huge', 'exclusive', 'titanic', 'gargantuan'].some((name) => category.includes(name))
       || pet.is_huge === true || pet.is_exclusive === true || pet.is_titanic === true || pet.is_gargantuan === true;
     if (!supported || ownedPetIds.has(pet.id)) return false;
-    if (missingCategoryFilter !== 'all' && !category.includes(missingCategoryFilter)) return false;
+    if (missingCategoryFilter !== 'all') {
+      const flagMatch = missingCategoryFilter === 'huge' ? pet.is_huge === true
+        : missingCategoryFilter === 'exclusive' ? pet.is_exclusive === true
+        : missingCategoryFilter === 'titanic' ? pet.is_titanic === true
+        : missingCategoryFilter === 'gargantuan' ? pet.is_gargantuan === true
+        : false;
+      if (!category.includes(missingCategoryFilter) && !flagMatch) return false;
+    }
     const q = catalogSearch.trim().toLowerCase();
     return !q || pet.pet_name.toLowerCase().includes(q) || String(pet.display_name ?? '').toLowerCase().includes(q);
   }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, catalogSearch, missingCategoryFilter]);
