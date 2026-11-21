@@ -340,18 +340,22 @@ Deno.serve(async (req: Request) => {
         const progressIndex = finishedCategory
           ? Math.min(99, (categoryIndex + 1) * 20)
           : Math.min(99, categoryIndex * 20 + 5 + Math.min(14, page));
+        const allFinished = categoryIndex === categories.length - 1 && finishedCategory;
         await writeProgress({
-          status: "running", stage: finishedCategory ? "category_complete" : "fetching",
-          category, category_index: progressIndex, category_total: 100,
+          status: allFinished ? "completed" : "running",
+          stage: allFinished ? "completed" : finishedCategory ? "category_complete" : "fetching",
+          category, category_index: allFinished ? 100 : progressIndex, category_total: 100,
           page, source_rows: rows.length,
-          message: rows.length === 0
-            ? `No more rows in ${category}; category finished`
-            : finishedCategory
-              ? `Finished ${category}; saved ${rows.length} rows from final page`
-              : `Saved ${category}, page ${page} (${rows.length} rows)`,
+          message: allFinished
+            ? "Cosmic Values import completed successfully"
+            : rows.length === 0
+              ? `No more rows in ${category}; category finished`
+              : finishedCategory
+                ? `Finished ${category}; saved ${rows.length} rows from final page`
+                : `Saved ${category}, page ${page} (${rows.length} rows)`,
           error: null,
         });
-        return json({ status: "ok", category, page, source_rows: rows.length, has_more: hasMore, category_finished: finishedCategory });
+        return json({ status: "ok", category, page, source_rows: rows.length, has_more: hasMore, category_finished: finishedCategory, all_finished: allFinished });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         await writeProgress({
