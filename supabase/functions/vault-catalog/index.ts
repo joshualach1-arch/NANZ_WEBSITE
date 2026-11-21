@@ -104,43 +104,41 @@ function parseCosmicStatus(value: string): string | null {
 
 
 function parseCosmicPetRows(html: string): Record<string, unknown>[] {
-  const decode = (s: string) => s
+  // Parse Cosmic's AJAX feed, whose records have an explicit
+  // "Variant ... Value ..." sequence. Do not parse the rendered values.php
+  // page: its adjacent change/RAP numbers can be mistaken for the actual value.
+  const text = html
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(new RegExp("<script[\\s\\S]*?</script>", "gi"), " ")
     .replace(new RegExp("<style[\\s\\S]*?</style>", "gi"), " ")
-    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const text = decode(html);
+    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
+  const pattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\\b[A-Z0-9 .,'’&()\\-]{0,100}?)\\s+Variant\\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\\s+SHINY|SHINY\\s+GOLDEN|RAINBOW\\s+SHINY|SHINY\\s+RAINBOW)\\s+Value\\s+([\\d,.]+\\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\\b/gi;
 
-  const add = (sourceNameRaw: string, variantRaw: string, rawValue: string) => {
-    const sourceName = sourceNameRaw.replace(/\s+/g, " ").trim();
-    const normalizedVariant = variantRaw.replace(/\s+/g, " ").toLowerCase();
-    const variant = normalizedVariant === "normal" ? "normal"
-      : normalizedVariant === "golden" ? "golden"
-      : normalizedVariant === "rainbow" ? "rainbow"
-      : normalizedVariant === "shiny" ? "shiny"
-      : normalizedVariant === "golden shiny" || normalizedVariant === "shiny golden" ? "golden_shiny"
+  for (const match of text.matchAll(pattern)) {
+    const sourceName = match[1].replace(/\\s+/g, " ").trim();
+    const variantText = match[2].replace(/\\s+/g, " ").toLowerCase();
+    const variant = variantText === "normal" ? "normal"
+      : variantText === "golden" ? "golden"
+      : variantText === "rainbow" ? "rainbow"
+      : variantText === "shiny" ? "shiny"
+      : variantText === "golden shiny" || variantText === "shiny golden" ? "golden_shiny"
       : "rainbow_shiny";
-    const petName = sourceName.replace(/^(?:GOLDEN|RAINBOW|SHINY)\s+/i, "").trim();
-    const valueText = rawValue.trim();
+
+    // Cosmic prefixes variant labels to the base pet name. The catalog stores
+    // the base identity, so remove every leading variant prefix before matching.
+    const petName = sourceName.replace(/^(?:(?:GOLDEN|RAINBOW|SHINY)\\s+)+/i, "").trim();
+    const valueText = match[3].trim();
     const value = parseCosmicValue(valueText);
-    const status = parseCosmicStatus(valueText) ?? (/^O\/?C$/i.test(valueText) ? "oc" : null);
+    const status = parseCosmicStatus(valueText) ?? (/^O\\/?C$/i.test(valueText) ? "oc" : null);
     const key = `${petName.toLowerCase()}::${variant}`;
-    if (!petName || seen.has(key) || (value == null && status == null)) return;
+    if (!petName || seen.has(key) || (value == null && status == null)) continue;
     seen.add(key);
     rows.push({ pet_name: petName, variant, value, status, source_name: sourceName });
-  };
-
-  // Standard values.php rows, e.g. "Huge Anime Unicorn Normal 650M ...".
-  const standardPattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\s+SHINY|SHINY\s+GOLDEN|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\b/gi;
-  for (const match of text.matchAll(standardPattern)) add(match[1], match[2], match[3]);
-
-  // AJAX response rows, e.g. "HUGE CAT Variant Normal Value 12.5B Demand 6/10".
-  // This is the text format returned by Cosmic's ajax_load_items.php endpoint.
-  const ajaxPattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+Variant\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+Value\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\b/gi;
-  for (const match of text.matchAll(ajaxPattern)) add(match[1], match[2], match[3]);
+  }
 
   return rows;
 }
@@ -318,7 +316,7 @@ Deno.serve(async (req: Request) => {
       };
 
       try {
-        const url = new URL("https://petsimulatorvalues.com/values.php");
+        const url = new URL("https://petsimulatorvalues.com/ajax_load_items.php");
         url.searchParams.set("category", category);
         url.searchParams.set("page", String(page));
         await writeProgress({
@@ -335,7 +333,9 @@ Deno.serve(async (req: Request) => {
         if (!res.ok) throw new Error(`Cosmic source returned HTTP ${res.status} for ${category}, page ${page}`);
         const html = await res.text();
         const rows = parseCosmicPetRows(html);
-        const hasMore = rows.length > 0 && html.includes("Next");
+        // Cosmic's AJAX feed returns up to 50 records per page and does not
+        // reliably include the HTML pager markup.
+        const hasMore = rows.length >= 50;
 
         if (rows.length > 0) {
           const unique = new Map<string, Record<string, unknown>>();
