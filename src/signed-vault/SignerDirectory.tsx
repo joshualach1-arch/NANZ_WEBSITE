@@ -43,6 +43,50 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   const [importingCosmic, setImportingCosmic] = useState(false);
   const [importSummary, setImportSummary] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const exportSignatureChecklist = (format: 'html' | 'csv') => {
+    const ownedKeys = new Set(data.pets
+      .filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed')
+      .map((pet) => `${pet.signer_id}|${pet.pet_id}|${pet.variant}`));
+    const rows = data.signatures.map((record) => {
+      const pet = data.catalog.find((entry) => entry.id === record.pet_id);
+      const owned = ownedKeys.has(`${record.signer_id}|${record.pet_id}|${record.variant}`);
+      const signer = data.signers.find((entry) => entry.id === record.signer_id);
+      return {
+        signer: signer?.display_name || signer?.signer_name || 'Unknown signer',
+        username: signer?.roblox_username || '',
+        pet: pet?.display_name || pet?.pet_name || 'Unknown pet',
+        variant: variantLabel[record.variant] || record.variant,
+        signature: record.signature_name || signer?.display_name || signer?.signer_name || '',
+        status: owned ? 'OWNED' : 'MISSING',
+        value: record.signature_value == null ? '' : String(record.signature_value),
+      };
+    }).sort((a, b) => a.signer.localeCompare(b.signer) || a.pet.localeCompare(b.pet));
+    const ownedCount = rows.filter((row) => row.status === 'OWNED').length;
+    const missingCount = rows.length - ownedCount;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] || char));
+    if (format === 'csv') {
+      const quote = (value: string) => '"' + value.replace(/"/g, '""') + '"';
+      const csv = [['Signer','Roblox Username','Pet','Variant','Signature','Ownership','Signature Value'], ...rows.map((row) => [row.signer,row.username,row.pet,row.variant,row.signature,row.status,row.value])]
+        .map((line) => line.map((value) => quote(String(value))).join(',')).join('\r\n');
+      const blob = new Blob(['\\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = `NANZO-Signature-Checklist-${stamp}.csv`; link.click(); URL.revokeObjectURL(url);
+      return;
+    }
+    const body = rows.map((row) => `<tr><td>${escapeHtml(row.signer)}<small>@${escapeHtml(row.username)}</small></td><td>${escapeHtml(row.pet)}</td><td>${escapeHtml(row.variant)}</td><td>${escapeHtml(row.signature)}</td><td class="${row.status === 'OWNED' ? 'owned' : 'missing'}">${row.status}</td></tr>`).join('');
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>NANZO Signature Checklist</title><style>
+      *{box-sizing:border-box}body{margin:0;padding:48px;background:#080b16;color:#f4f6ff;font:14px Inter,Arial,sans-serif}
+      main{max-width:1200px;margin:auto}.eyebrow{color:#f34aa0;letter-spacing:3px;font-weight:800;font-size:11px}
+      h1{font-size:38px;margin:10px 0}p{color:#9da9c1}.stats{display:flex;gap:12px;margin:28px 0}.stat{background:#141a2b;border:1px solid #293149;border-radius:14px;padding:18px 24px;min-width:180px}.stat b{display:block;font-size:26px}.stat span{color:#9da9c1;font-size:12px}
+      table{width:100%;border-collapse:collapse;background:#101625;border:1px solid #293149;border-radius:14px;overflow:hidden}th,td{text-align:left;padding:14px;border-bottom:1px solid #252d40}th{color:#a9b7d1;font-size:10px;letter-spacing:1px}small{display:block;color:#8996b0;margin-top:4px}.owned{color:#5ee0b0;font-weight:800}.missing{color:#ff75a9;font-weight:800}
+      @media print{body{background:white;color:#111;padding:20px}table,.stat{background:white;color:#111}.stats{break-inside:avoid}}
+    </style></head><body><main><div class="eyebrow">NANZO SIGNED VAULT</div><h1>Signature Ownership Checklist</h1><p>Exported ${stamp} · Known signature records and collection ownership</p><div class="stats"><div class="stat"><b>${rows.length}</b><span>Known signatures</span></div><div class="stat"><b class="owned">${ownedCount}</b><span>Collected</span></div><div class="stat"><b class="missing">${missingCount}</b><span>Missing</span></div></div><table><thead><tr><th>SIGNER</th><th>PET</th><th>VARIANT</th><th>SIGNATURE</th><th>STATUS</th></tr></thead><tbody>${body}</tbody></table></main></body></html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = `NANZO-Signature-Checklist-${stamp}.html`; link.click(); URL.revokeObjectURL(url);
+  };
+
 
   const ownedSignerIds = useMemo(() => new Set(
     data.pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').map((pet) => pet.signer_id as string)
@@ -89,9 +133,11 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
           <div className="vault-signers-stat"><Layers3 size={32} /><div><strong>{ownedSignerCount}</strong><span>In Your Collection</span></div></div>
           <div className="vault-signers-stat"><Box size={31} /><div><strong>{missingSignerCount}</strong><span>Not Collected Yet</span></div></div>
         </div>
-        {isOwner && (
-          <div className="vault-signers-actions">
-            <button className="vault-btn vault-btn-sm vault-signers-import" disabled={importingCosmic} onClick={() => {
+        <div className="vault-signers-actions">
+          <button className="vault-btn vault-btn-sm" onClick={() => exportSignatureChecklist('html')}>↓ Export Checklist</button>
+          <button className="vault-btn vault-btn-sm" onClick={() => exportSignatureChecklist('csv')}>↓ Export CSV</button>
+          {isOwner && <>
+          <button className="vault-btn vault-btn-sm vault-signers-import" disabled={importingCosmic} onClick={() => {
               setImportingCosmic(true); setImportError(null); setImportSummary(null);
               void importCosmicSigners()
                 .then(async (result) => {
@@ -102,8 +148,8 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
                 .finally(() => setImportingCosmic(false));
             }}>{importingCosmic ? 'Importing…' : '↓  Update Cosmic Values'}</button>
             <button className="vault-btn vault-btn-gold vault-btn-sm vault-signers-add" onClick={() => setEditor('new')}><Plus size={17} /> Add Signer</button>
-          </div>
-        )}
+          </>}
+        </div>
       </div>
       {importSummary && <div className="vault-success" style={{ marginBottom: 12 }}>{importSummary}</div>}
       {importError && <div className="vault-error" style={{ marginBottom: 12 }}>{importError}</div>}
