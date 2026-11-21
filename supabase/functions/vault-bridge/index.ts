@@ -154,6 +154,8 @@ Deno.serve(async (req: Request) => {
       vault_notifications_manage: ["token", "p_action", "p_notification_id"],
       vault_acquisition_manage: ["token", "p_acquisition_id", "p_purchase_price", "p_currency", "p_acquisition_type", "p_acquired_at", "p_notes"],
       vault_acquisitions_get: ["token", "p_collector_no"],
+      vault_trade_groups_get: ["token", "p_collector_no"],
+      vault_trade_group_update: ["token", "p_group_id", "p_total_gems", "p_allocations"],
       vault_activity_feed: ["token", "p_collector_no", "p_limit"],
       vault_stats_get: ["token", "p_collector_no"],
       vault_snapshots_get: ["token", "p_collector_no"],
