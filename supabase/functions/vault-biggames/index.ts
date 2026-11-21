@@ -327,15 +327,16 @@ Deno.serve(async (req: Request) => {
 
       const catalogRes = await supabase.from("vault_pet_catalog").select("id, pet_name, display_name, external_id, category");
       if (catalogRes.error) return json({ error: "catalog_lookup_failed" }, 500);
+      const normalizePetAlias = (value: unknown) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
       const catalog = new Map<string, Record<string, unknown>>();
       for (const row of (catalogRes.data ?? []) as Record<string, unknown>[]) {
         for (const alias of [row.pet_name, row.display_name, row.external_id]) {
-          const key = String(alias ?? "").trim().toLowerCase();
-          if (key) catalog.set(key, row);
+          const key = normalizePetAlias(alias);
+          if (key && !catalog.has(key)) catalog.set(key, row);
         }
       }
       const isTrackedPet = (item: Record<string, unknown>) => {
-        const candidates = [item.displayName, item.id, item.name].map((v) => String(v ?? "").trim().toLowerCase()).filter(Boolean);
+        const candidates = [item.displayName, item.id, item.name].map(normalizePetAlias).filter(Boolean);
         const row = candidates.map((name) => catalog.get(name)).find(Boolean);
         if (!row) return null;
         const category = String(row.category ?? "");
@@ -390,7 +391,7 @@ Deno.serve(async (req: Request) => {
           const pets = received.filter((item) => isTrackedPet(item));
           if (!pets.length) continue;
           const otherParty = asRecord(entry.otherParty);
-          const counterparty = String(otherParty.displayName ?? otherParty.uid ?? "");
+          const counterparty = String(otherParty.displayName ?? "");
           const baseFingerprint = fingerprintFor(source, timestamp, counterparty, given, received);
           const occurrence = seenTransactions.get(baseFingerprint) ?? 0;
           seenTransactions.set(baseFingerprint, occurrence + 1);
