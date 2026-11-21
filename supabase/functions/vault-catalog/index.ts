@@ -91,6 +91,10 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
       huge_value: parseCosmicValue(match[4]),
       titanic_value: parseCosmicValue(match[5]),
       demand: /\d+\/10/.test(match[6]) ? Number(match[6].split("/")[0]) : null,
+      exclusive_status: /^SOON$/i.test(match[3].trim()) ? "soon" : /^N\\/?A$/i.test(match[3].trim()) ? "na" : null,
+      huge_status: /^SOON$/i.test(match[4].trim()) ? "soon" : /^N\\/?A$/i.test(match[4].trim()) ? "na" : null,
+      titanic_status: /^SOON$/i.test(match[5].trim()) ? "soon" : /^N\\/?A$/i.test(match[5].trim()) ? "na" : null,
+      demand_status: /^N\\/?A$/i.test(match[6].trim()) ? "na" : null,
       source: "cosmic_values",
       profile_url: null,
       avatar_url: null,
@@ -110,29 +114,12 @@ Deno.serve(async (req: Request) => {
 
 
     if (action === "cosmic_signer_import") {
-      // Cosmic Values publishes separate, paginated signer lists. We only ingest
-      // explicitly published profile/value data; unknown or "SOON" values remain null.
+      // Values-only refresh: signer records are already imported. Never create,
+      // rename, merge, or change signer roles/identity in this workflow.
       const session = await supabase.rpc("vault_assert_session", { p_token: token });
       if (session.error) return json({ error: "vault_access_denied" }, 401);
       const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
-
-      // Read Cosmic Values' own signature count so the import can report whether
-      // every currently published record was retrieved (never hardcode 207).
-      let expectedSigners: number | null = null;
-      try {
-        const overview = await fetch("https://petsimulatorvalues.com/index.php/sign", {
-          headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault data importer" },
-          signal: AbortSignal.timeout(15000),
-        });
-        if (overview.ok) {
-          const overviewText = (await overview.text()).replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
-          const countMatch = overviewText.match(/([\d,]+)\s+signatures/i);
-          if (countMatch) expectedSigners = Number(countMatch[1].replace(/,/g, ""));
-        }
-      } catch {
-        // The detailed category pages remain the primary import source.
-      }
 
       const categories = [
         { type: "BIG Games Staff", role: "big_games_developer" },
@@ -141,13 +128,13 @@ Deno.serve(async (req: Request) => {
       ];
       const allRows: Record<string, unknown>[] = [];
       for (const group of categories) {
-        for (let page = 1; page <= 10; page++) {
+        for (let page = 1; page <= 20; page++) {
           const url = new URL("https://petsimulatorvalues.com/values.php");
           url.searchParams.set("category", "Signatures");
           url.searchParams.set("sigtype", group.type);
           url.searchParams.set("page", String(page));
           const res = await fetch(url.toString(), {
-            headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault data importer" },
+            headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault values refresh" },
             signal: AbortSignal.timeout(20000),
           });
           if (!res.ok) return json({ error: "cosmic_signer_fetch_failed", type: group.type, page }, 502);
@@ -159,25 +146,26 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const deduped = new Map<string, Record<string, unknown>>();
+      // Combine role duplicates by Roblox username only. Different usernames
+      // with identical signer names remain separate records.
+      const byUsername = new Map<string, Record<string, unknown>>();
       for (const row of allRows) {
         const username = String(row.roblox_username ?? "").replace(/^@/, "").trim();
-        const key = username.toLowerCase() || String(row.signer_name ?? "").toLowerCase();
+        const key = username.toLowerCase();
         if (!key) continue;
-        const existing = deduped.get(key);
+        const existing = byUsername.get(key);
         if (existing) {
           const roles = new Set([...(existing.roles as string[]), ...(row.roles as string[])]);
           existing.roles = [...roles];
-          for (const field of ["exclusive_value", "huge_value", "titanic_value", "demand"]) {
+          for (const field of ["exclusive_value", "huge_value", "titanic_value", "demand",
+            "exclusive_status", "huge_status", "titanic_status", "demand_status"]) {
             if (existing[field] == null && row[field] != null) existing[field] = row[field];
           }
-        } else deduped.set(key, { ...row });
+        } else byUsername.set(key, { ...row });
       }
 
-      // Resolve up to 100 Roblox usernames per request, then fetch headshots in batches.
-      const signerRows = [...deduped.values()];
-      const sourceComplete = expectedSigners == null || signerRows.length === expectedSigners;
-      const robloxIds = new Map<string, { id: number; displayName: string }>();
+      const signerRows = [...byUsername.values()];
+      const robloxIds = new Map<string, number>();
       for (let offset = 0; offset < signerRows.length; offset += 100) {
         const batch = signerRows.slice(offset, offset + 100);
         try {
@@ -196,68 +184,30 @@ Deno.serve(async (req: Request) => {
               const user = asRecord(raw);
               const id = Number(user.id);
               const username = String(user.name ?? "").toLowerCase();
-              if (Number.isFinite(id) && id > 0 && username) {
-                robloxIds.set(username, { id, displayName: String(user.displayName ?? user.name) });
-              }
+              if (Number.isFinite(id) && id > 0 && username) robloxIds.set(username, id);
             }
           }
         } catch {
-          // Name/value import can still proceed; avatars fall back to initials.
-        }
-      }
-
-      const avatarById = new Map<number, string>();
-      const resolvedIds = [...robloxIds.values()].map((row) => row.id);
-      for (let offset = 0; offset < resolvedIds.length; offset += 100) {
-        const batch = resolvedIds.slice(offset, offset + 100);
-        try {
-          const thumbUrl = new URL("https://thumbnails.roblox.com/v1/users/avatar-headshot");
-          thumbUrl.searchParams.set("userIds", batch.join(","));
-          thumbUrl.searchParams.set("size", "150x150");
-          thumbUrl.searchParams.set("format", "Png");
-          thumbUrl.searchParams.set("isCircular", "false");
-          const thumbRes = await fetch(thumbUrl.toString(), {
-            headers: { Accept: "application/json" },
-            signal: AbortSignal.timeout(12000),
-          });
-          if (thumbRes.ok) {
-            const payload = asRecord(await thumbRes.json().catch(() => ({})));
-            for (const raw of (Array.isArray(payload.data) ? payload.data : [])) {
-              const thumb = asRecord(raw);
-              const id = Number(thumb.targetId);
-              if (Number.isFinite(id) && typeof thumb.imageUrl === "string") {
-                avatarById.set(id, thumb.imageUrl);
-              }
-            }
-          }
-        } catch {
-          // Thumbnails are optional; do not block the signer/value import.
+          // Username matching remains available if Roblox resolution is offline.
         }
       }
 
       for (const row of signerRows) {
         const username = String(row.roblox_username ?? "").toLowerCase();
-        const resolved = robloxIds.get(username);
-        if (resolved) {
-          row.roblox_user_id = resolved.id;
-          row.display_name = resolved.displayName;
-          row.profile_url = "https://www.roblox.com/users/" + resolved.id + "/profile";
-          row.avatar_url = avatarById.get(resolved.id) ?? null;
-        }
+        const userId = robloxIds.get(username);
+        if (userId) row.roblox_user_id = userId;
       }
 
-      const signerRes = await supabase.rpc("vault_cosmic_signers_import", {
+      const updateRes = await supabase.rpc("vault_cosmic_signer_values_import", {
         p_token: token,
         p_signers: signerRows,
       });
-      if (signerRes.error) return json({ error: signerRes.error.message ?? "cosmic_signer_import_failed" }, 500);
+      if (updateRes.error) return json({ error: updateRes.error.message ?? "cosmic_signer_values_import_failed" }, 500);
       return json({
         status: "ok",
         source_rows: allRows.length,
-        unique_signers: deduped.size,
-        expected_signers: expectedSigners,
-        source_complete: sourceComplete,
-        ...asRecord(signerRes.data),
+        unique_signers: signerRows.length,
+        ...asRecord(updateRes.data),
       });
     }
 
