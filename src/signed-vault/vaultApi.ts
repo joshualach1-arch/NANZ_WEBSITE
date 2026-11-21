@@ -58,6 +58,11 @@ export type Signer = {
   cosmic_huge_value?: number | null;
   cosmic_titanic_value?: number | null;
   cosmic_demand?: number | null;
+  cosmic_exclusive_status?: string | null;
+  cosmic_huge_status?: string | null;
+  cosmic_titanic_status?: string | null;
+  cosmic_demand_status?: string | null;
+  cosmic_values_updated_at?: string | null;
   display_name?: string | null;
   profile_url?: string | null;
   roles?: SignerRole[];
