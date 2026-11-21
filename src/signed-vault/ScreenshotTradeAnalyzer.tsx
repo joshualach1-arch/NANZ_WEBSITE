@@ -48,7 +48,9 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
   const analyze=async()=>{
     if(!token){setError('Your vault session expired. Sign in again.');return;}
     if(!files.length){setError('Upload at least one screenshot first.');return;}
-    const uploadBytes=files.reduce((sum,file)=>sum+Math.floor(file.data.length*0.75),0);\n    if(uploadBytes>4.5*1024*1024){setError('The selected screenshots are too large for one request. Remove a few images or upload smaller screenshots (maximum 4.5 MB combined).');return;}\n    setBusy(true);setError('');setAnalysis(null);setImported(false);
+    const uploadBytes=files.reduce((sum,file)=>sum+Math.floor(file.data.length*0.75),0);
+    if(uploadBytes>4.5*1024*1024){setError('The selected screenshots are too large for one request. Remove a few images or upload smaller screenshots (maximum 4.5 MB combined).');return;}
+    setBusy(true);setError('');setAnalysis(null);setImported(false);
     const {data:response,error:invokeError}=await supabase.functions.invoke('screenshot-trade-analyzer',{body:{
       token,images:files.map(f=>({name:f.file.name,data:f.data})),
       petCatalog:data.catalog.map(p=>p.display_name||p.pet_name).slice(0,1800),
