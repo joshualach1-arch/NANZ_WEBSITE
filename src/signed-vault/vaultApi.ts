@@ -385,8 +385,8 @@ export async function correctAcquisition(token: string, acquisitionId: string, p
 }
 
 
-export async function importCosmicPetValues(): Promise<Record<string, unknown>> {
-  return await vaultCall('cosmic-pet-values-import');
+export async function importCosmicPetValues(category: string, page: number): Promise<Record<string, unknown>> {
+  return await vaultCall('cosmic-pet-values-import', { category, page });
 }
 
 export async function fetchCosmicPetImportProgress(): Promise<Record<string, unknown>> {
