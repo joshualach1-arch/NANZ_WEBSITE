@@ -63,11 +63,24 @@ function buildItem(pet: PetRow): Record<string, unknown> {
 
 function parseCosmicValue(value: string | null): number | null {
   if (!value || /^SOON$/i.test(value.trim()) || /^N\/?A$/i.test(value.trim())) return null;
-  const normalized = value.trim().replace(/,/g, "").toUpperCase();
+  // Cosmic sometimes renders a space between the number and suffix (e.g. "800 M").
+  const normalized = value.trim().replace(/,/g, "").replace(/\s+/g, "").toUpperCase();
   const match = normalized.match(/^(\d+(?:\.\d+)?)([KMBT])?$/);
   if (!match) return null;
   const factor: Record<string, number> = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
   return Number(match[1]) * (factor[match[2] ?? ""] ?? 1);
+}
+
+function parseCosmicDemand(value: string): number | null {
+  const match = value.trim().match(/^(\d+)\s*(?:\/\s*10|out\s+of\s+10)$/i);
+  return match ? Number(match[1]) : null;
+}
+
+function parseCosmicStatus(value: string): string | null {
+  const normalized = value.trim().toUpperCase().replace(/\s+/g, "");
+  if (normalized === "SOON") return "soon";
+  if (normalized === "N/A" || normalized === "NA") return "na";
+  return null;
 }
 
 function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
@@ -78,7 +91,7 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
   const rows: Record<string, unknown>[] = [];
   // Parse the rendered signer text without depending on the site's CSS classes.
   const text = decode(html);
-  const pattern = /(?:Staff|Partner|Dev)\s+(.{1,60}?)\s+@([A-Za-z0-9_]{3,20})\s+Exclusive\s+([\d,.]+\s*[KMBT]?|SOON|N[/]?A)\s+Huge\s+([\d,.]+\s*[KMBT]?|SOON|N[/]?A)\s+Titanic\s+([\d,.]+\s*[KMBT]?|SOON|N[/]?A)\s+Demand\s+(N\/?A|\d+\/10)/gi;
+  const pattern = /(?:Staff|Partner|Dev)\s+(.{1,60}?)\s+@([A-Za-z0-9_]{3,20})\s+Exclusive\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A)\s+Huge\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A)\s+Titanic\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A)\s+Demand\s+(N\/?A|\d+\s*(?:\/\s*10|out\s+of\s+10))/gi;
   for (const match of text.matchAll(pattern)) {
     const signerName = match[1].replace(/\s+/g, " ").trim();
     const username = match[2];
@@ -90,11 +103,11 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
       exclusive_value: parseCosmicValue(match[3]),
       huge_value: parseCosmicValue(match[4]),
       titanic_value: parseCosmicValue(match[5]),
-      demand: /\d+\/10/.test(match[6]) ? Number(match[6].split("/")[0]) : null,
-      exclusive_status: /^SOON$/i.test(match[3].trim()) ? "soon" : /^N[/]?A$/i.test(match[3].trim()) ? "na" : null,
-      huge_status: /^SOON$/i.test(match[4].trim()) ? "soon" : /^N[/]?A$/i.test(match[4].trim()) ? "na" : null,
-      titanic_status: /^SOON$/i.test(match[5].trim()) ? "soon" : /^N[/]?A$/i.test(match[5].trim()) ? "na" : null,
-      demand_status: /^N[/]?A$/i.test(match[6].trim()) ? "na" : null,
+      demand: parseCosmicDemand(match[6]),
+      exclusive_status: parseCosmicStatus(match[3]),
+      huge_status: parseCosmicStatus(match[4]),
+      titanic_status: parseCosmicStatus(match[5]),
+      demand_status: parseCosmicStatus(match[6]),
       source: "cosmic_values",
       profile_url: null,
       avatar_url: null,
