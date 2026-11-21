@@ -203,10 +203,10 @@ export function SignerDetailPage({ data, signerId, onBack }: {
 
           <div className="vault-profile-stat-grid vault-profile-stat-grid-refined">
             <div className="vault-profile-stat vault-profile-stat-featured"><span>VERIFIED SIGNATURE VALUE</span><strong>{totalValue > 0 ? formatValue(totalValue) : '—'}</strong></div>
-            <div className="vault-profile-stat"><span>COSMIC EXCLUSIVE</span><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
-            <div className="vault-profile-stat"><span>COSMIC HUGE</span><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
-            <div className="vault-profile-stat"><span>COSMIC TITANIC</span><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
-            <div className="vault-profile-stat"><span>COSMIC DEMAND</span><strong>{signer.cosmic_demand != null ? signer.cosmic_demand + '/10' : '—'}</strong></div>
+            <div className="vault-profile-stat"><span>COSMIC EXCLUSIVE</span><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : signer.cosmic_exclusive_status === 'soon' ? 'SOON' : signer.cosmic_exclusive_status === 'na' ? 'N/A' : '—'}</strong></div>
+            <div className="vault-profile-stat"><span>COSMIC HUGE</span><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : signer.cosmic_huge_status === 'soon' ? 'SOON' : signer.cosmic_huge_status === 'na' ? 'N/A' : '—'}</strong></div>
+            <div className="vault-profile-stat"><span>COSMIC TITANIC</span><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : signer.cosmic_titanic_status === 'soon' ? 'SOON' : signer.cosmic_titanic_status === 'na' ? 'N/A' : '—'}</strong></div>
+            <div className="vault-profile-stat"><span>COSMIC DEMAND</span><strong>{signer.cosmic_demand != null ? signer.cosmic_demand + '/10' : signer.cosmic_demand_status === 'na' ? 'N/A' : '—'}</strong></div>
             <div className="vault-profile-stat"><span>IN YOUR COLLECTION</span><strong>{myPets.length}</strong></div>
             {data.is_owner && <div className="vault-profile-stat"><span>IN COLLECTOR 2 VAULT</span><strong>{ownerPets.length}</strong></div>}
           </div>
