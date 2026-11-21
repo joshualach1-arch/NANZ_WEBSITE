@@ -385,7 +385,11 @@ export async function correctAcquisition(token: string, acquisitionId: string, p
 }
 
 
-export async function importCosmicPetValues(): Promise<Record<string, unknown>> {\n  return await vaultCall('cosmic-pet-values-import');\n}\n\nexport async function importCosmicSigners(): Promise<Record<string, unknown>> {
+export async function importCosmicPetValues(): Promise<Record<string, unknown>> {
+  return await vaultCall('cosmic-pet-values-import');
+}
+
+export async function importCosmicSigners(): Promise<Record<string, unknown>> {
   const result = await vaultCall('cosmic-signers-import');
   return result;
 }
