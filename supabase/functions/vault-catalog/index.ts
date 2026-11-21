@@ -282,81 +282,84 @@ Deno.serve(async (req: Request) => {
       if (session.error) return json({ error: "vault_access_denied" }, 401);
       const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
+
+      // One page per Edge Function invocation. The browser orchestrates pages
+      // sequentially, keeping every request short and resumable after failures.
       const categories = ["Huges", "Exclusives", "Titanics", "Gargantuans"];
-      const allRows: Record<string, unknown>[] = [];
-      let completedCategories = 0;
+      const category = String(body.category ?? "");
+      const categoryIndex = categories.indexOf(category);
+      const page = Math.max(1, Math.min(200, Number(body.page ?? 1)));
+      if (categoryIndex < 0) return json({ error: "invalid_cosmic_category", allowed: categories }, 400);
+
       const writeProgress = async (patch: Record<string, unknown>) => {
         const result = await supabase.from("vault_cosmic_import_progress").upsert({
           id: 1, updated_at: new Date().toISOString(), ...patch,
         });
         if (result.error) throw new Error("progress_write_failed: " + result.error.message);
       };
-      await writeProgress({ status: "running", stage: "fetching", category: null, category_index: 0, category_total: 100, page: 0, source_rows: 0, message: "Starting Cosmic Values download", error: null });
+
       try {
-        for (let categoryIndex = 0; categoryIndex < categories.length; categoryIndex++) {
-          const category = categories[categoryIndex];
-          for (let page = 1; page <= 200; page++) {
-            await writeProgress({ status: "running", stage: "fetching", category, category_index: Math.floor((categoryIndex / categories.length) * 80), category_total: 100, page, source_rows: allRows.length, message: `Downloading ${category}, page ${page}` });
-            const url = new URL("https://petsimulatorvalues.com/values.php");
-            url.searchParams.set("category", category);
-            url.searchParams.set("page", String(page));
-            const res = await fetch(url.toString(), {
-              headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault pet values refresh" },
-              signal: AbortSignal.timeout(20000),
-            });
-            if (!res.ok) throw new Error(`Cosmic source returned HTTP ${res.status} for ${category}, page ${page}`);
-            const html = await res.text();
-            const rows = parseCosmicPetRows(html);
-            if (rows.length === 0) break;
-            allRows.push(...rows);
-            await writeProgress({ status: "running", stage: "fetching", category, category_index: Math.floor((categoryIndex / categories.length) * 80), category_total: 100, page, source_rows: allRows.length, message: `Downloaded ${allRows.length} rows; currently ${category}, page ${page}` });
-            if (!html.includes("Next")) break;
+        const url = new URL("https://petsimulatorvalues.com/values.php");
+        url.searchParams.set("category", category);
+        url.searchParams.set("page", String(page));
+        await writeProgress({
+          status: "running", stage: "fetching", category,
+          category_index: categoryIndex * 20, category_total: 100,
+          page, source_rows: 0,
+          message: `Downloading ${category}, page ${page}`, error: null,
+        });
+
+        const res = await fetch(url.toString(), {
+          headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault pet values refresh" },
+          signal: AbortSignal.timeout(18000),
+        });
+        if (!res.ok) throw new Error(`Cosmic source returned HTTP ${res.status} for ${category}, page ${page}`);
+        const html = await res.text();
+        const rows = parseCosmicPetRows(html);
+        const hasMore = rows.length > 0 && html.includes("Next");
+
+        if (rows.length > 0) {
+          const unique = new Map<string, Record<string, unknown>>();
+          for (const row of rows) unique.set(`${String(row.pet_name).toLowerCase()}::${String(row.variant)}`, row);
+          const values = [...unique.values()];
+          await writeProgress({
+            status: "running", stage: "saving", category,
+            category_index: categoryIndex * 20 + 5, category_total: 100,
+            page, source_rows: rows.length,
+            message: `Saving ${category}, page ${page}: ${values.length} variants`, error: null,
+          });
+          const batchSize = 40;
+          for (let offset = 0; offset < values.length; offset += batchSize) {
+            const batch = values.slice(offset, offset + batchSize);
+            const saved = await supabase.rpc("vault_cosmic_pet_values_import", { p_token: token, p_values: batch });
+            if (saved.error) throw new Error(`Database save failed for ${category}, page ${page}, batch ${Math.floor(offset / batchSize) + 1}: ${saved.error.message}`);
           }
-          completedCategories++;
-          await writeProgress({ status: "running", stage: "fetching", category, category_index: Math.floor((completedCategories / categories.length) * 80), category_total: 100, page: 0, source_rows: allRows.length, message: `Finished ${category} (${completedCategories}/${categories.length})` });
         }
-        if (allRows.length === 0) throw new Error("Cosmic source returned zero parsable pet rows. Check the source HTML/parser.");
-        const byKey = new Map<string, Record<string, unknown>>();
-        for (const row of allRows) byKey.set(`${String(row.pet_name).toLowerCase()}::${String(row.variant)}`, row);
-        const values = [...byKey.values()];
-        // Save in small independent transactions. A single full-catalog RPC can
-        // exceed Supabase's statement timeout even after scraping reached 100%.
-        const batchSize = 100;
-        const batchTotal = Math.ceil(values.length / batchSize);
-        let updated = 0;
-        let updatedPets = 0;
-        let skipped = 0;
-        for (let offset = 0; offset < values.length; offset += batchSize) {
-          const batchNumber = Math.floor(offset / batchSize) + 1;
-          const batch = values.slice(offset, offset + batchSize);
-          await writeProgress({
-            status: "running", stage: "saving", category: null,
-            category_index: 80 + Math.floor(((batchNumber - 1) / batchTotal) * 19),
-            category_total: 100, page: 0, source_rows: allRows.length,
-            message: `Saving database batch ${batchNumber}/${batchTotal} (${Math.min(offset + batch.length, values.length)}/${values.length} variants)`,
-            error: null,
-          });
-          const importRes = await supabase.rpc("vault_cosmic_pet_values_import", { p_token: token, p_values: batch });
-          if (importRes.error) throw new Error(`Database save failed in batch ${batchNumber}/${batchTotal}: ${importRes.error.message}`);
-          const saved = asRecord(importRes.data);
-          updated += Number(saved.updated ?? 0);
-          updatedPets += Number(saved.updated_pets ?? 0);
-          skipped += Number(saved.skipped ?? 0);
-          await writeProgress({
-            status: "running", stage: "saving", category: null,
-            category_index: 80 + Math.floor((batchNumber / batchTotal) * 19),
-            category_total: 100, page: 0, source_rows: allRows.length,
-            message: `Saved database batch ${batchNumber}/${batchTotal}`,
-            error: null,
-          });
-        }
-        const result = { status: "ok", source_rows: allRows.length, unique_values: values.length, updated, updated_pets: updatedPets, skipped, batches: batchTotal };
-        await writeProgress({ status: "completed", stage: "completed", category: null, category_index: 100, category_total: 100, page: 0, source_rows: allRows.length, message: "Cosmic Values import completed", error: null });
-        return json(result);
+
+        const finishedCategory = rows.length === 0 || !hasMore;
+        const progressIndex = finishedCategory
+          ? Math.min(99, (categoryIndex + 1) * 20)
+          : Math.min(99, categoryIndex * 20 + 5 + Math.min(14, page));
+        await writeProgress({
+          status: "running", stage: finishedCategory ? "category_complete" : "fetching",
+          category, category_index: progressIndex, category_total: 100,
+          page, source_rows: rows.length,
+          message: rows.length === 0
+            ? `No more rows in ${category}; category finished`
+            : finishedCategory
+              ? `Finished ${category}; saved ${rows.length} rows from final page`
+              : `Saved ${category}, page ${page} (${rows.length} rows)`,
+          error: null,
+        });
+        return json({ status: "ok", category, page, source_rows: rows.length, has_more: hasMore, category_finished: finishedCategory });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        await writeProgress({ status: "failed", stage: "failed", category: null, category_index: completedCategories, category_total: categories.length, page: 0, source_rows: allRows.length, message: "Cosmic Values import failed", error: message });
-        return json({ error: message, category_completed: completedCategories, source_rows: allRows.length }, 500);
+        await writeProgress({
+          status: "failed", stage: "failed", category,
+          category_index: categoryIndex * 20, category_total: 100,
+          page, source_rows: 0, message: "Cosmic Values import failed", error: message,
+        });
+        return json({ error: message, category, page }, 500);
       }
     }
 
