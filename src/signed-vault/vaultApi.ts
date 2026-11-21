@@ -373,7 +373,7 @@ export async function fetchAcquisitions(token: string, collectorNo: number | nul
 }
 
 export type VaultTradeGroup = {
-  id: string; external_transaction_key: string; source: 'trade' | 'booth';
+  id: string; external_transaction_key: string; source: 'trade' | 'booth'; booth_kind?: 'purchase' | 'sale' | null; counterparty_uid?: number | null;
   transaction_at: string; total_gems: number | string | null; counterparty: string | null;
   given_items: Array<Record<string, unknown>>; received_items: Array<Record<string, unknown>>;
   items: Array<{ acquisition_id: string; pet_name: string; variant: Variant; pet_image: string | null; allocated_gems: number | string | null }>;

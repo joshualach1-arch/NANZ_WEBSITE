@@ -353,7 +353,34 @@ Deno.serve(async (req: Request) => {
         const amount = Number(item.count ?? item.amount ?? asRecord(item.rawData)._am ?? 0);
         return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
       }, 0);
+      const stableItems = (items: Record<string, unknown>[]) => items.map((item) => {
+        const raw = asRecord(item.rawData);
+        return {
+          id: String(item.id ?? item.displayName ?? "").trim().toLowerCase(),
+          variant: String(item.variant ?? "Regular").trim().toLowerCase(),
+          count: Number(item.count ?? item.amount ?? raw._am ?? 1),
+          shiny: Boolean(raw.sh ?? item.shiny),
+          paint: Number(raw.pt ?? 0),
+          tier: Number(item.tier ?? raw.tn ?? 0),
+        };
+      }).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      const fingerprintFor = (source: "trade" | "booth", timestamp: number, counterparty: string, given: Record<string, unknown>[], received: Record<string, unknown>[]) =>
+        JSON.stringify({ source, timestamp, counterparty, given: stableItems(given), received: stableItems(received) });
       const records: Record<string, unknown>[] = [];
+      const seenTransactions = new Map<string, number>();
+      const existingGroupsRes = await supabase.from("vault_trade_groups")
+        .select("id, external_transaction_key, source, transaction_at, counterparty, given_items, received_items, created_at")
+        .eq("collector_no", scope).order("created_at", { ascending: true });
+      if (existingGroupsRes.error) return json({ error: "history_existing_groups_failed" }, 500);
+      const existingByFingerprint = new Map<string, Record<string, unknown>[]>();
+      for (const old of (existingGroupsRes.data ?? []) as Record<string, unknown>[]) {
+        const oldGiven = Array.isArray(old.given_items) ? (old.given_items as unknown[]).map(asRecord) : [];
+        const oldReceived = Array.isArray(old.received_items) ? (old.received_items as unknown[]).map(asRecord) : [];
+        const oldAt = Math.floor(new Date(String(old.transaction_at)).getTime() / 1000);
+        const fp = fingerprintFor(String(old.source) as "trade" | "booth", oldAt, String(old.counterparty ?? ""), oldGiven, oldReceived);
+        if (!existingByFingerprint.has(fp)) existingByFingerprint.set(fp, []);
+        existingByFingerprint.get(fp)!.push(old);
+      }
       const addRecords = async (entries: Record<string, unknown>[], source: "trade" | "booth") => {
         for (const entry of entries) {
           const timestamp = Number(entry.timestamp ?? 0);
@@ -363,18 +390,44 @@ Deno.serve(async (req: Request) => {
           const pets = received.filter((item) => isTrackedPet(item));
           if (!pets.length) continue;
           const otherParty = asRecord(entry.otherParty);
-          const keyMaterial = JSON.stringify({ source, timestamp, other: otherParty.uid ?? null, given, received });
-          const key = Array.from(await sha256(keyMaterial)).map((b) => b.toString(16).padStart(2, "0")).join("");
-          const diamonds = source === "trade" ? diamondAmount(given) : 0;
-          const groupRes = await supabase.from("vault_trade_groups").upsert({
-            collector_no: scope, external_transaction_key: key, source,
-            transaction_at: new Date(timestamp * 1000).toISOString(),
-            total_gems: diamonds > 0 ? diamonds : null,
-            counterparty: otherParty.displayName ? String(otherParty.displayName) : null,
-            given_items: given, received_items: received,
-          }, { onConflict: "collector_no,external_transaction_key" }).select("id").single();
-          if (groupRes.error || !groupRes.data?.id) throw new Error("trade_group_store_failed");
-          const tradeGroupId = groupRes.data.id as string;
+          const counterparty = String(otherParty.displayName ?? otherParty.uid ?? "");
+          const baseFingerprint = fingerprintFor(source, timestamp, counterparty, given, received);
+          const occurrence = seenTransactions.get(baseFingerprint) ?? 0;
+          seenTransactions.set(baseFingerprint, occurrence + 1);
+          // BIG Games documents timestamp + otherParty + item arrays, but no transaction ID.
+          // Stable item fields plus an occurrence ordinal preserve two identical same-second trades.
+          const key = Array.from(await sha256(`${baseFingerprint}#${occurrence}`)).map((b) => b.toString(16).padStart(2, "0")).join("");
+          const diamondsGiven = diamondAmount(given);
+          const diamondsReceived = diamondAmount(received);
+          const boothKind = source === "booth" ? String(entry.kind ?? (given.length ? "sale" : "purchase")) : null;
+          const diamonds = source === "booth" && boothKind === "sale" ? diamondsReceived : diamondsGiven;
+          const legacyCandidates = existingByFingerprint.get(baseFingerprint) ?? [];
+          const legacy = legacyCandidates[occurrence] as Record<string, unknown> | undefined;
+          let tradeGroupId: string;
+          if (legacy) {
+            tradeGroupId = String(legacy.id);
+            const oldKey = String(legacy.external_transaction_key);
+            const { error: groupUpdateError } = await supabase.from("vault_trade_groups").update({
+              external_transaction_key: key, source, transaction_at: new Date(timestamp * 1000).toISOString(),
+              total_gems: diamonds > 0 ? diamonds : null, counterparty: counterparty || null,
+              given_items: given, received_items: received, booth_kind: boothKind, counterparty_uid: otherParty.uid ?? null,
+            }).eq("id", tradeGroupId);
+            if (groupUpdateError) throw new Error("trade_group_update_failed");
+            if (oldKey !== key) {
+              const { error: acquisitionKeyError } = await supabase.from("vault_acquisitions").update({ external_transaction_key: key, trade_group_id: tradeGroupId })
+                .eq("collector_no", scope).eq("external_transaction_key", oldKey);
+              if (acquisitionKeyError) throw new Error("history_key_migration_failed");
+            }
+          } else {
+            const groupRes = await supabase.from("vault_trade_groups").upsert({
+              collector_no: scope, external_transaction_key: key, source,
+              transaction_at: new Date(timestamp * 1000).toISOString(),
+              total_gems: diamonds > 0 ? diamonds : null, counterparty: counterparty || null,
+              given_items: given, received_items: received, booth_kind: boothKind, counterparty_uid: otherParty.uid ?? null,
+            }, { onConflict: "collector_no,external_transaction_key" }).select("id").single();
+            if (groupRes.error || !groupRes.data?.id) throw new Error("trade_group_store_failed");
+            tradeGroupId = groupRes.data.id as string;
+          }
           for (const pet of pets) {
             const catalogPet = isTrackedPet(pet)!;
             const price = diamonds > 0 && pets.length === 1 ? diamonds : null;
@@ -385,7 +438,7 @@ Deno.serve(async (req: Request) => {
               acquired_at: new Date(timestamp * 1000).toISOString().slice(0, 10),
               purchase_price: price,
               currency: "gems",
-              source: "trade",
+              source: source === "booth" ? "booth_purchase" : "trade",
               acquisition_type: source === "booth" ? "booth_purchase" : "trade",
               verification_status: "unverified",
               external_transaction_key: key,
@@ -410,7 +463,7 @@ Deno.serve(async (req: Request) => {
           .select("id");
         if (upsertError) return json({ error: "history_store_failed", detail: upsertError.message }, 500);
         imported = upserted?.length ?? 0;
-        // Existing imports are retained unchanged; attach them to the newly refreshed transaction groups.
+        // Existing imports are retained and linked to the stable transaction group keys.
         for (const group of [...new Map(records.map((r) => [String(r.external_transaction_key), r])).values()]) {
           await supabase.from("vault_acquisitions").update({ trade_group_id: group.trade_group_id })
             .eq("collector_no", scope).eq("external_transaction_key", group.external_transaction_key);
