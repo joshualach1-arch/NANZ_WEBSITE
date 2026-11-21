@@ -755,6 +755,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   }, [importingCosmicPets]);
   const [collectionMode, setCollectionMode] = useState<'owned' | 'missing'>('owned');
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [missingCategoryFilter, setMissingCategoryFilter] = useState('all');
   const [petSearch, setPetSearch] = useState('');
   const [presetPetId, setPresetPetId] = useState<string | null>(null);
 
@@ -791,11 +792,13 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const ownedPetIds = useMemo(() => new Set(pets.map((pet) => pet.pet_id)), [pets]);
   const missingCatalog = useMemo(() => data.catalog.filter((pet) => {
     const category = String(pet.category ?? '').trim().toLowerCase();
-    const isHuge = category.startsWith('huge') || pet.is_huge === true;
-    if (!isHuge || ownedPetIds.has(pet.id)) return false;
+    const supported = ['huge', 'exclusive', 'titanic', 'gargantuan'].some((name) => category.includes(name))
+      || pet.is_huge === true || pet.is_exclusive === true || pet.is_titanic === true || pet.is_gargantuan === true;
+    if (!supported || ownedPetIds.has(pet.id)) return false;
+    if (missingCategoryFilter !== 'all' && !category.includes(missingCategoryFilter)) return false;
     const q = catalogSearch.trim().toLowerCase();
     return !q || pet.pet_name.toLowerCase().includes(q) || String(pet.display_name ?? '').toLowerCase().includes(q);
-  }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, catalogSearch]);
+  }).sort((x, y) => x.pet_name.localeCompare(y.pet_name)), [data.catalog, ownedPetIds, catalogSearch, missingCategoryFilter]);
   const signersList = useMemo(
     () => [...new Map(pets.filter((pet) => pet.signer_id).map((pet) => [pet.signer_id!, pet.signer_name!])).entries()],
     [pets]
@@ -896,7 +899,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
       <div className="vault-collection-switch">
         <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}><span>MY SIGNED COLLECTION</span><b>{pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').length}</b></button>
-        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}><span>MISSING HUGE PETS</span><b>{missingCatalog.length}</b></button>
+        <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}><span>MISSING PETS</span><b>{missingCatalog.length}</b></button>
       </div>
       {collectionMode === 'owned' && <div className="vault-row" style={{ gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
         {['all', ...categories.map((entry) => entry.toLowerCase())].map((entry) => (
@@ -906,9 +909,16 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         ))}
       </div>}
       {collectionMode === 'missing' && <div className="vault-missing-intro">
-        <span className="vault-kicker">HUGE ONLY · COLLECTION GOAL</span>
-        <strong>Huge pets you haven't collected yet</strong>
-        <small>Only Huge pets appear here. Select a pet to add it to your collection.</small>
+        <span className="vault-kicker">PET COLLECTION GOAL</span>
+        <strong>Pets you haven't collected yet</strong>
+        <small>Browse missing Huge, Exclusive, Titanic and Gargantuan pets. Select one to add it to your collection.</small>
+      </div>}
+      {collectionMode === 'missing' && <div className="vault-row" style={{ gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
+        {['all', 'huge', 'exclusive', 'titanic', 'gargantuan'].map((entry) => (
+          <button key={entry} className={`vault-tab${missingCategoryFilter === entry ? ' active' : ''}`} onClick={() => setMissingCategoryFilter(entry)}>
+            {entry === 'all' ? 'All categories' : entry.charAt(0).toUpperCase() + entry.slice(1)}
+          </button>
+        ))}
       </div>}
       <div className="vault-card vault-collection-search-panel">
         <div className="vault-collection-search">
