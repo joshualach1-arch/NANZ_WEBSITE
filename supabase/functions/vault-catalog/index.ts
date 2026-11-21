@@ -78,7 +78,7 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
   const rows: Record<string, unknown>[] = [];
   // Parse the rendered signer text without depending on the site's CSS classes.
   const text = decode(html);
-  const pattern = /(?:Staff|Partner|Dev)\s+(.{1,60}?)\s+@([A-Za-z0-9_]{3,20})\s+Exclusive\s+([\d,.]+\s*[KMBT]?|SOON)\s+Huge\s+([\d,.]+\s*[KMBT]?|SOON)\s+Titanic\s+([\d,.]+\s*[KMBT]?|SOON)\s+Demand\s+(N\/?A|\d+\/10)/gi;
+  const pattern = /(?:Staff|Partner|Dev)\s+(.{1,60}?)\s+@([A-Za-z0-9_]{3,20})\s+Exclusive\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A)\s+Huge\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A)\s+Titanic\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A)\s+Demand\s+(N\/?A|\d+\/10)/gi;
   for (const match of text.matchAll(pattern)) {
     const signerName = match[1].replace(/\s+/g, " ").trim();
     const username = match[2];
