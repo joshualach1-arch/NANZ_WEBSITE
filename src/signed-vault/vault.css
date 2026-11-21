@@ -1749,3 +1749,118 @@
   .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important; }
   .vault-collection-page > .vault-card { padding:15px!important; }
 }
+
+
+/* ── Collection pet cards: match the approved NANZO Signers design ── */
+.vault-collection-page .vault-pet-grid {
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:15px!important;
+}
+.vault-collection-page .vault-pet-card {
+  position:relative!important;
+  overflow:hidden!important;
+  min-width:0;
+  border:1px solid rgba(226,64,163,.32)!important;
+  border-radius:19px!important;
+  background:linear-gradient(155deg,#151827 0%,#0a0e1b 100%)!important;
+  box-shadow:0 9px 24px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.035)!important;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease!important;
+}
+.vault-collection-page .vault-pet-card:hover {
+  transform:translateY(-4px)!important;
+  border-color:rgba(242,74,177,.72)!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.32),0 0 22px rgba(231,51,157,.13)!important;
+}
+.vault-collection-page .vault-pet-card-signed:before {
+  content:"";
+  position:absolute;z-index:5;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#ff4d7d,#ffb84d,#f8ed67,#45df9a,#50c8ff,#9d72ff,#ff55c8,#ff4d7d);
+  background-size:300% 100%;
+  animation:collectionRainbowSweep 3.2s linear infinite;
+}
+.vault-collection-page .vault-pet-media {
+  position:relative!important;
+  margin:9px 9px 0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border-radius:12px!important;
+  background:#050914!important;
+  border:1px solid rgba(255,255,255,.08);
+}
+.vault-collection-page .vault-pet-media img {
+  display:block!important;width:100%!important;aspect-ratio:1/1!important;
+  object-fit:cover!important;border-radius:11px!important;
+}
+.vault-collection-page .vault-pet-body { padding:12px 13px 15px!important; }
+.vault-collection-page .vault-pet-name {
+  color:#f5f5fb!important;font-size:17px!important;font-weight:850!important;
+  line-height:1.25!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.vault-collection-page .vault-pet-card-footer {
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  flex-wrap:wrap!important;gap:8px!important;margin-top:12px!important;
+}
+/* The complete SIGNED BY pill gets a subtle animated rainbow edge. */
+.vault-collection-page .vault-signed-by {
+  position:relative;isolation:isolate;
+  display:inline-flex!important;align-items:center!important;gap:6px!important;
+  max-width:100%;min-width:0;padding:7px 10px!important;
+  border:1px solid transparent!important;border-radius:10px!important;
+  background:
+    linear-gradient(#0b1020,#0b1020) padding-box,
+    linear-gradient(100deg,#ff5577,#ffbd55,#f7ef69,#51e3a4,#58bdff,#a78bfa,#ff65c8,#ff5577) border-box!important;
+  background-size:100% 100%,260% 100%!important;
+  animation:collectionSignedPill 4s linear infinite!important;
+  box-shadow:0 0 13px rgba(177,91,255,.12),inset 0 1px rgba(255,255,255,.035)!important;
+  overflow:hidden;
+}
+.vault-collection-page .vault-signed-by:after {
+  content:"";position:absolute;z-index:-1;inset:0;border-radius:inherit;
+  background:linear-gradient(100deg,rgba(255,72,131,.08),rgba(255,190,78,.06),rgba(70,218,164,.07),rgba(83,145,255,.08),rgba(202,87,235,.08));
+  background-size:260% 100%;animation:collectionRainbowSweep 4s linear infinite;
+  pointer-events:none;
+}
+.vault-collection-page .vault-signed-by-pen {
+  color:#f47ac1!important;flex:0 0 auto;
+  filter:drop-shadow(0 0 5px rgba(255,76,178,.55));
+}
+.vault-collection-page .vault-signed-by-label {
+  color:#d6d9e8!important;font-size:9px!important;font-weight:950!important;
+  letter-spacing:.09em!important;white-space:nowrap;
+}
+.vault-collection-page .vault-signer-name-aura {
+  display:inline-block!important;min-width:0;max-width:150px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px!important;font-weight:950!important;letter-spacing:.01em;
+  background:linear-gradient(100deg,#ff5577 0%,#ffbd55 16%,#f7ef69 31%,#51e3a4 47%,#58bdff 63%,#a78bfa 80%,#ff65c8 100%);
+  background-size:300% 100%;background-clip:text;-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent!important;
+  animation:collectionRainbowSweep 3s linear infinite!important;
+  filter:drop-shadow(0 0 5px rgba(132,116,255,.24));
+}
+@keyframes collectionRainbowSweep { to { background-position:300% 50%; } }
+@keyframes collectionSignedPill {
+  0% { background-position:0 0,0% 50%; }
+  100% { background-position:0 0,300% 50%; }
+}
+.vault-collection-page .vault-pet-card-footer .vault-status-unassigned,
+.vault-collection-page .vault-pet-card-footer .vault-status-verified {
+  border-radius:9px!important;padding:7px 10px!important;
+}
+@media(max-width:1250px) {
+  .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(4,minmax(0,1fr))!important; }
+}
+@media(max-width:900px) {
+  .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+}
+@media(max-width:620px) {
+  .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important; }
+  .vault-collection-page .vault-pet-name { font-size:14px!important; }
+  .vault-collection-page .vault-pet-body { padding:10px!important; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .vault-collection-page .vault-pet-card-signed:before,
+  .vault-collection-page .vault-signed-by,
+  .vault-collection-page .vault-signed-by:after,
+  .vault-collection-page .vault-signer-name-aura { animation:none!important; }
+}
