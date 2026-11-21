@@ -463,7 +463,7 @@ function getOwnedPetValue(data: VaultData, pet: VaultPet): number {
   const isTitanic = Boolean(catalogPet?.is_titanic) || category.includes('titanic');
   const isHuge = Boolean(catalogPet?.is_huge) || category.includes('huge');
   const isExclusive = Boolean(catalogPet?.is_exclusive) || category.includes('exclusive');
-  const cosmicSignerValue = signer
+  const cosmicSignerValue = signer && pet.signed_status !== 'not_signed'
     ? isTitanic ? signer.cosmic_titanic_value
       : isHuge ? signer.cosmic_huge_value
       : isExclusive ? signer.cosmic_exclusive_value
