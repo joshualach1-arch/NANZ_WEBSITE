@@ -133,7 +133,7 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
     const petName = sourceName.replace(/^(?:(?:GOLDEN|RAINBOW|SHINY)\s+)+/i, "").trim();
     const valueText = match[3].trim();
     const value = parseCosmicValue(valueText);
-    const status = parseCosmicStatus(valueText) ?? (/^O\\/?C$/i.test(valueText) ? "oc" : null);
+    const status = parseCosmicStatus(valueText) ?? (/^O\/?C$/i.test(valueText) ? "oc" : null);
     const key = `${petName.toLowerCase()}::${variant}`;
     if (!petName || seen.has(key) || (value == null && status == null)) continue;
     seen.add(key);
