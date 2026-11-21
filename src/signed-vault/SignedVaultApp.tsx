@@ -744,10 +744,6 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
   const pets = (view === data.me ? data.pets : (data.other_pets ?? []))
     .filter((pet) => isTrackedCategory(pet.pet_category));
-  const signedPets = pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed');
-  const collectionValue = pets.reduce((sum, pet) => sum + getOwnedPetValue(data, pet), 0);
-  const investedValue = pets.reduce((sum, pet) => sum + Number(pet.purchase_price ?? 0), 0);
-  const collectionProfit = collectionValue - investedValue;
 
   const run = async (params: Record<string, unknown>) => {
     setBusy(true);
