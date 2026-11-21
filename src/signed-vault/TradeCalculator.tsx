@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowDownUp, Plus, Trash2, Sparkles, TrendingUp, TrendingDown, Scale, ShieldCheck, Search, Coins, Calculator, X, Check } from 'lucide-react';
 import { formatValue, variantLabelWide, type VaultData, type Variant } from './vaultApi';
+import { ScreenshotTradeAnalyzer } from './ScreenshotTradeAnalyzer';
 
 type Side = 'give' | 'get';
 type TradeItem = { id: string; petId: string; signerId: string; variant: Variant; signatureValue: string; hugeValue: string; demand: number };
@@ -102,13 +103,18 @@ function TradeSide({ side, title, subtitle, items, data, gems, onGems, onAdd, on
   </section>;
 }
 
-export function TradeCalculator({ data }: { data: VaultData }) {
+export function TradeCalculator({ data, token }: { data: VaultData; token: string | null }) {
+  const [mode,setMode]=useState<'normal'|'screenshot'>('normal');
   const [give,setGive]=useState<TradeItem[]>([]);
   const [get,setGet]=useState<TradeItem[]>([]);
   const [giveGems,setGiveGems]=useState('0');
   const [getGems,setGetGems]=useState('0');
   const [rarityEnabled,setRarityEnabled]=useState(true);
   const [calculated,setCalculated]=useState(false);
+  const importDetected=(side:Side,petId:string,signerId:string,variant:Variant)=>{
+    const signature=signerId?signerValue(data,petId,signerId,variant):'';
+    add(side,{id:makeId(),petId,signerId,variant,signatureValue:signature,hugeValue:String(petBaseValue(data,petId)||0),demand:5});
+  };
   const update=(side:Side,id:string,patch:Partial<TradeItem>)=>(side==='give'?setGive:setGet)(items=>items.map(item=>item.id===id?{...item,...patch}:item));
   const add=(side:Side,item:TradeItem)=>(side==='give'?setGive:setGet)(items=>[...items,item]);
   const remove=(side:Side,id:string)=>(side==='give'?setGive:setGet)(items=>items.filter(item=>item.id!==id));
@@ -141,6 +147,8 @@ export function TradeCalculator({ data }: { data: VaultData }) {
   }
   return <div className="tc-page">
     <div className="tc-hero"><div><span className="tc-kicker">NANZO TRADE LAB</span><h2>Trade Profit <b>Calculator</b></h2><p>Build your offer, add the other side, then calculate the real trade value.</p></div><div className="tc-hero-icon"><ArrowDownUp size={38}/></div></div>
+    <div className="tc-mode-switch"><button className={mode==='normal'?'active':''} onClick={()=>setMode('normal')}><Calculator size={16}/> Normal Trade Calculator</button><button className={mode==='screenshot'?'active':''} onClick={()=>setMode('screenshot')}><ScanSearch size={16}/> Screenshot Calculator <span>AI</span></button></div>
+    {mode==='screenshot' ? <ScreenshotTradeAnalyzer data={data} token={token} onImport={importDetected} onSetGems={(side,amount)=>{(side==='give'?setGiveGems:setGetGems)(amount);setMode('normal');}}/> : <>
     <div className="tc-modebar"><div><span className="tc-live-dot"/> TRADE BUILDER <small>Add pets, signatures and Gems before calculating</small></div><label className="tc-toggle"><input type="checkbox" checked={rarityEnabled} onChange={(e)=>setRarityEnabled(e.target.checked)}/><span/> Rarity weighting <b>{rarityEnabled?'ON':'OFF'}</b></label></div>
     <div className="tc-trade-grid">
       <TradeSide side="give" title="You Give" subtitle="Everything you put into the trade" items={give} data={data} gems={giveGems} onGems={setGiveGems} onAdd={(item)=>add('give',item)} onChange={(id,patch)=>update('give',id,patch)} onRemove={(id)=>remove('give',id)}/>
@@ -191,5 +199,6 @@ export function TradeCalculator({ data }: { data: VaultData }) {
       <div className="tc-demand-note"><ShieldCheck size={17}/><span><b>How rarity affects the result:</b> Higher rarity can improve the estimated deal score. This is NANZO's custom collector estimate, not an official market value.</span></div>
     </section>}
     <div className="tc-footnote"><Search size={14}/> Search works across the full pet and designer catalogs. Unsigned pets are supported. All item values can be edited manually before calculating.</div>
+    </>}
   </div>;
 }
