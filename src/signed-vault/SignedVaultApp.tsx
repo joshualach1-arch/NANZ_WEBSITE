@@ -3275,7 +3275,7 @@ function VaultShell() {
         {tab === 'acquisitions' && (
           <AcquisitionsPage isOwner={data.is_owner} myCollectorNo={data.me} onRefresh={refresh} />
         )}
-        {tab === 'trade-calculator' && <TradeCalculator data={data} />}
+        {tab === 'trade-calculator' && <TradeCalculator data={data} token={session.token} />}
         {tab === 'values' && <ValuesTab data={data} onRefresh={refresh} isOwner={data.is_owner} />}
         {tab === 'verification' && <VerificationTab data={data} onRefresh={refresh} />}
         {tab === 'settings' && <SettingsTab data={data} onRefresh={refresh} onSignOut={() => void session.signOut()} />}
