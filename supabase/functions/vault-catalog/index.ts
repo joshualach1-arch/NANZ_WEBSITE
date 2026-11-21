@@ -88,8 +88,8 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(new RegExp("<script[\\s\\S]*?</script>", "gi"), " ")
+    .replace(new RegExp("<style[\\s\\S]*?</style>", "gi"), " ")
     .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const text = decode(html);
   const rows: Record<string, unknown>[] = [];
