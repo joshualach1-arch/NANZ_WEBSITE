@@ -55,7 +55,7 @@ There are ${images.length} uploaded screenshots. Image index is their order, sta
       content.push({ type: "input_text", text: `Screenshot ${i} — ${String(img.name ?? `image-${i+1}`)}` });
       content.push({ type: "input_image", image_url: data, detail: "original" });
     }
-    if (totalBytes > 28 * 1024 * 1024) return json({ error: "The combined screenshots are too large. Try fewer or smaller images." }, 413);
+    if (totalBytes > 4.5 * 1024 * 1024) return json({ error: "The combined screenshots are too large for one request. Try fewer or smaller images (maximum 4.5 MB combined)." }, 413);
 
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
