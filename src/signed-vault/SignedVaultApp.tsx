@@ -425,27 +425,27 @@ function eventLabel(event: ActivityEvent): { title: string; meta: string } {
   }
 }
 
-function getOwnedPetValue(data: VaultData, pet: VaultPet): number {
+function getOwnedSignatureValue(data: VaultData, pet: VaultPet): number {
+  if (!pet.signer_id || pet.signed_status === 'not_signed') return 0;
   const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
   const signer = data.signers.find((entry) => entry.id === pet.signer_id);
   const category = String(catalogPet?.category ?? pet.pet_category ?? '').toLowerCase();
   const isTitanic = Boolean(catalogPet?.is_titanic) || category.includes('titanic');
   const isHuge = Boolean(catalogPet?.is_huge) || category.includes('huge');
   const isExclusive = Boolean(catalogPet?.is_exclusive) || category.includes('exclusive');
-  const cosmicSignerValue = signer && pet.signed_status !== 'not_signed'
-    ? isTitanic ? signer.cosmic_titanic_value
-      : isHuge ? signer.cosmic_huge_value
-      : isExclusive ? signer.cosmic_exclusive_value
-      : null
-    : null;
+  const cosmicSignerValue = isTitanic ? signer?.cosmic_titanic_value
+    : isHuge ? signer?.cosmic_huge_value
+    : isExclusive ? signer?.cosmic_exclusive_value : null;
   const signature = data.signatures.find(
     (entry) => entry.pet_id === pet.pet_id && entry.signer_id === pet.signer_id && entry.variant === pet.variant
   );
-  const verifiedSignature = Boolean(signature && (
-    signature.verification_status === 'verified' || signature.verification_status === 'community_verified'
-  ));
-  const signerValue = verifiedSignature && cosmicSignerValue != null ? Number(cosmicSignerValue) : 0;
-  return Number(pet.cosmic_value ?? 0) + signerValue;
+  // Prefer a pet/variant-specific signature value; otherwise use the signer's Cosmic category value.
+  const value = signature?.signature_value ?? cosmicSignerValue;
+  return value == null ? 0 : Math.max(0, Number(value) || 0);
+}
+
+function getOwnedPetValue(data: VaultData, pet: VaultPet): number {
+  return Number(pet.cosmic_value ?? 0) + getOwnedSignatureValue(data, pet);
 }
 
 function computeStats(data: VaultData, pets: VaultPet[]) {
@@ -498,10 +498,15 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
   );
 
   // Owned signed pets use the matching signer's Cosmic Huge/Exclusive/Titanic value.
-  const totalValue = useMemo(
-    () => data.pets.reduce((sum, pet) => sum + getOwnedPetValue(data, pet), 0),
+  const petValueTotal = useMemo(
+    () => data.pets.reduce((sum, pet) => sum + Number(pet.cosmic_value ?? 0), 0),
+    [data.pets]
+  );
+  const signatureValueTotal = useMemo(
+    () => data.pets.reduce((sum, pet) => sum + getOwnedSignatureValue(data, pet), 0),
     [data.pets, data.signatures, data.signers, data.catalog]
   );
+  const totalValue = petValueTotal + signatureValueTotal;
 
   const spent = useMemo(
     () => data.pets.reduce((sum, pet) => sum + Number(pet.purchase_price ?? 0), 0),
@@ -528,7 +533,7 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
     <div className="vault-overview-page">
       <div className="vault-stat-grid vault-overview-primary-stats">
         <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.pets.length)} hint={`${verifiedPets.length} verified · ${unverifiedPets.length} unverified`} />
-        <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(totalValue)} hint="Cosmic signer values for owned signed pets" />
+        <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(totalValue)} hint={`Pets ${formatValue(petValueTotal)} + Signatures ${formatValue(signatureValueTotal)}`} />
         <StatCard icon={<Coins size={38} strokeWidth={2.6} />} label="Invested" value={formatValue(spent)} hint="total purchase price" />
         <StatCard icon={<TrendingUp size={38} strokeWidth={2.6} />} label={profit >= 0 ? 'Profit' : 'Loss'} value={`${profit >= 0 ? '+' : ''}${formatValue(profit)}`} hint={pctReturn !== null ? `${pctReturn >= 0 ? '+' : ''}${pctReturn.toFixed(1)}% return` : 'no purchases recorded yet'} />
       </div>
@@ -1026,7 +1031,9 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
   const cosmicSignerValue = isTitanic ? signer?.cosmic_titanic_value
     : isHuge ? signer?.cosmic_huge_value
     : isExclusive ? signer?.cosmic_exclusive_value : null;
-  const signatureValue = signer && isVerified && cosmicSignerValue != null ? Number(cosmicSignerValue) : 0;
+  const signatureValue = pet.signer_id && pet.signed_status !== 'not_signed'
+    ? Number(signature?.signature_value ?? cosmicSignerValue ?? 0)
+    : 0;
   const combined = Number(pet.cosmic_value ?? 0) + signatureValue;
 
   const [editOpen, setEditOpen] = useState(false);
@@ -1098,8 +1105,8 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
 
       <div className="vault-stat-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: 14 }}>
         <StatCard label="Pet value" value={formatValue(pet.cosmic_value)} hint={`source: ${cosmicSource}`} />
-        <StatCard label="Signature value" value={signatureValue > 0 ? formatValue(signatureValue) : '—'} hint={isVerified ? 'Cosmic signer value' : 'counts only when verified'} />
-        <StatCard label="Combined value" value={formatValue(combined)} gold hint={isVerified ? 'pet + signature' : 'unverified signature not counted'} />
+        <StatCard label="Signature value" value={signatureValue > 0 ? formatValue(signatureValue) : '—'} hint={signature?.signature_value != null ? 'Pet-specific signature value' : 'Assigned signer Cosmic value'} />
+        <StatCard label="Combined value" value={formatValue(combined)} gold hint="Pet value + signature value" />
       </div>
 
       <div className="vault-divider" />
