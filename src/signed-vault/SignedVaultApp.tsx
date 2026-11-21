@@ -64,6 +64,7 @@ import {
 import { BigGamesConnect, OAuthCallback } from './BigGamesConnect';
 import { InventoryScannerTab } from './InventoryScannerTab';
 import { AcquisitionsPage } from './AcquisitionsPage';
+import { TradeCalculator } from './TradeCalculator';
 import { RobloxConnectionCard } from './RobloxConnect';
 import { SignerGallery, signabilityTone } from './SignerDirectory';
 import { signabilityLabels } from './vaultApi';
@@ -76,6 +77,7 @@ type VaultTab =
   | 'missing'
   | 'signers'
   | 'acquisitions'
+  | 'trade-calculator'
   | 'values'
   | 'verification'
   | 'settings';
@@ -87,6 +89,7 @@ const vaultTabs: { id: VaultTab; label: string }[] = [
   { id: 'missing', label: 'Missing Pets' },
   { id: 'signers', label: 'Signers' },
   { id: 'acquisitions', label: 'Trade History' },
+  { id: 'trade-calculator', label: 'Trade Calculator' },
   { id: 'values', label: 'Cosmic Value Tracker' },
   { id: 'verification', label: 'Verification' },
   { id: 'settings', label: 'Settings' },
@@ -3220,7 +3223,7 @@ function VaultShell() {
             </span>
           </a>
           <nav className="vault-tabs vault-header-tabs">
-            {vaultTabs.filter((entry) => ['overview', 'collection', 'signers', 'acquisitions'].includes(entry.id)).map((entry) => (
+            {vaultTabs.filter((entry) => ['overview', 'collection', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
               <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
             ))}
           </nav>
@@ -3265,6 +3268,7 @@ function VaultShell() {
         {tab === 'acquisitions' && (
           <AcquisitionsPage isOwner={data.is_owner} myCollectorNo={data.me} onRefresh={refresh} />
         )}
+        {tab === 'trade-calculator' && <TradeCalculator data={data} />}
         {tab === 'values' && <ValuesTab data={data} onRefresh={refresh} isOwner={data.is_owner} />}
         {tab === 'verification' && <VerificationTab data={data} onRefresh={refresh} />}
         {tab === 'settings' && <SettingsTab data={data} onRefresh={refresh} onSignOut={() => void session.signOut()} />}
