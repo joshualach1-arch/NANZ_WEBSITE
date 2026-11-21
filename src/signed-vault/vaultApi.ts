@@ -145,6 +145,8 @@ export type AcquisitionHistoryEntry = Acquisition & {
   sync_batch_id: string | null;
   updated_at: string | null;
   updated_by: string | null;
+  external_transaction_key?: string | null;
+  trade_group_id?: string | null;
 };
 
 export type SignedStatus = 'verified' | 'unverified' | 'not_signed' | 'manual_review';
@@ -368,6 +370,22 @@ export async function fetchChecklist(token: string, collectorNo: number | null =
 export async function fetchAcquisitions(token: string, collectorNo: number | null = null): Promise<AcquisitionHistoryEntry[]> {
   const result = await rpcCall('vault_acquisitions_get', token, collectorNo ? { p_collector_no: collectorNo } : {});
   return (result.result as { acquisitions: AcquisitionHistoryEntry[] }).acquisitions;
+}
+
+export type VaultTradeGroup = {
+  id: string; external_transaction_key: string; source: 'trade' | 'booth';
+  transaction_at: string; total_gems: number | string | null; counterparty: string | null;
+  given_items: Array<Record<string, unknown>>; received_items: Array<Record<string, unknown>>;
+  items: Array<{ acquisition_id: string; pet_name: string; variant: Variant; pet_image: string | null; allocated_gems: number | string | null }>;
+};
+
+export async function fetchTradeGroups(token: string, collectorNo: number | null = null): Promise<VaultTradeGroup[]> {
+  const result = await rpcCall('vault_trade_groups_get', token, collectorNo ? { p_collector_no: collectorNo } : {});
+  return (result.result as { groups: VaultTradeGroup[] }).groups ?? [];
+}
+
+export async function updateTradeGroup(token: string, groupId: string, totalGems: number | null, allocations: Array<{ acquisition_id: string; allocated_gems: number }>): Promise<void> {
+  await rpcCall('vault_trade_group_update', token, { p_group_id: groupId, p_total_gems: totalGems, p_allocations: allocations });
 }
 
 export async function dismissNotification(token: string, notificationId: string): Promise<void> {

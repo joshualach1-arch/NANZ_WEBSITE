@@ -360,6 +360,15 @@ Deno.serve(async (req: Request) => {
           const keyMaterial = JSON.stringify({ source, timestamp, other: otherParty.uid ?? null, given, received });
           const key = Array.from(await sha256(keyMaterial)).map((b) => b.toString(16).padStart(2, "0")).join("");
           const diamonds = source === "trade" ? diamondAmount(given) : 0;
+          const groupRes = await supabase.from("vault_trade_groups").upsert({
+            collector_no: scope, external_transaction_key: key, source,
+            transaction_at: new Date(timestamp * 1000).toISOString(),
+            total_gems: diamonds > 0 ? diamonds : null,
+            counterparty: otherParty.displayName ? String(otherParty.displayName) : null,
+            given_items: given, received_items: received,
+          }, { onConflict: "collector_no,external_transaction_key" }).select("id").single();
+          if (groupRes.error || !groupRes.data?.id) throw new Error("trade_group_store_failed");
+          const tradeGroupId = groupRes.data.id as string;
           for (const pet of pets) {
             const catalogPet = isTrackedPet(pet)!;
             const price = diamonds > 0 && pets.length === 1 ? diamonds : null;
@@ -374,6 +383,7 @@ Deno.serve(async (req: Request) => {
               acquisition_type: source === "booth" ? "booth_purchase" : "trade",
               verification_status: "unverified",
               external_transaction_key: key,
+              trade_group_id: tradeGroupId,
               notes: [
                 source === "booth" ? "Imported from BIG Games booth history." : "Imported from BIG Games trade history.",
                 otherParty.displayName ? `Other party: ${String(otherParty.displayName)}` : "",
@@ -394,6 +404,11 @@ Deno.serve(async (req: Request) => {
           .select("id");
         if (upsertError) return json({ error: "history_store_failed", detail: upsertError.message }, 500);
         imported = upserted?.length ?? 0;
+        // Existing imports are retained unchanged; attach them to the newly refreshed transaction groups.
+        for (const group of [...new Map(records.map((r) => [String(r.external_transaction_key), r])).values()]) {
+          await supabase.from("vault_acquisitions").update({ trade_group_id: group.trade_group_id })
+            .eq("collector_no", scope).eq("external_transaction_key", group.external_transaction_key);
+        }
       }
       return json({
         status: "ok",
