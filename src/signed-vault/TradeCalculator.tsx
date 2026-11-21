@@ -79,7 +79,8 @@ export function TradeCalculator({ data }: { data: VaultData }) {
     const signature = items.reduce((sum, item) => sum + num(item.signatureValue), 0);
     const huge = items.reduce((sum, item) => sum + num(item.hugeValue), 0);
     const adjusted = items.reduce((sum, item) => sum + num(item.signatureValue) * rarityFactor(item.demand), 0);
-    const demand = items.length ? items.reduce((sum, item) => sum + item.demand, 0) / items.length : 0;
+    const selected = items.filter((item) => item.petId);
+    const demand = selected.length ? selected.reduce((sum, item) => sum + item.demand, 0) / selected.length : 0;
     return { signature, huge, adjusted, demand };
   };
   const a = useMemo(() => totals(give), [give]);
@@ -114,7 +115,7 @@ export function TradeCalculator({ data }: { data: VaultData }) {
     <div className="tc-modebar"><div><span className="tc-live-dot"/> LIVE CALCULATION <small>Changes update instantly</small></div><label className="tc-toggle"><input type="checkbox" checked={rarityEnabled} onChange={(e) => setRarityEnabled(e.target.checked)}/><span/> Rarity weighting <b>{rarityEnabled ? 'ON' : 'OFF'}</b></label></div>
     <div className="tc-trade-grid"><TradeSide {...sideProps('give', give, a)}/><div className="tc-versus"><span>VS</span><ArrowDownUp size={19}/></div><TradeSide {...sideProps('get', get, b)}/></div>
     <section className={`tc-result tc-result-${tone}`}>
-      <div className="tc-result-top"><div><span className="tc-kicker">TRADE VERDICT</span><h3>{verdict}</h3><p>{detail}</p></div><div className="tc-verdict-mark">{tone === 'win' ? <TrendingUp size={30}/> : tone === 'loss' ? <TrendingDown size={30}/> : <Scale size={30}/>}</div></div>
+      <div className="tc-result-top"><div><span className="tc-kicker">TRADE VERDICT</span><h3>{verdict}</h3><p>{detail}</p><span className={`tc-direction tc-direction-${effectiveDiff > 0 ? 'up' : effectiveDiff < 0 ? 'down' : 'even'}`}>{effectiveDiff > 0 ? 'YOU UNDERPAY' : effectiveDiff < 0 ? 'YOU OVERPAY' : 'EVEN VALUE'}</span></div><div className="tc-verdict-mark">{tone === 'win' ? <TrendingUp size={30}/> : tone === 'loss' ? <TrendingDown size={30}/> : <Scale size={30}/>}</div></div>
       <div className="tc-result-grid">
         <div><span>PROFIT / LOSS · SIGNATURE VALUE</span><strong className={baseDiff >= 0 ? 'tc-positive' : 'tc-negative'}>{baseDiff >= 0 ? '+' : '−'}{money(Math.abs(baseDiff))}</strong><small>{pct >= 0 ? '+' : ''}{pct.toFixed(1)}% vs your offer</small></div>
         <div><span>HUGE VALUE DIFFERENCE</span><strong>{money(b.huge - a.huge)}</strong><small>Received minus given</small></div>
