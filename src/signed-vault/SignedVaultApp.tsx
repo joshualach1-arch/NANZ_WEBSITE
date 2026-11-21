@@ -673,7 +673,7 @@ type CollectionSort =
   | 'newest' | 'oldest' | 'alpha'
   | 'gain' | 'loss';
 
-const VARIANT_FILTERS = ['normal', 'golden', 'rainbow', 'shiny', 'rainbow_shiny', 'other'] as const;
+const VARIANT_FILTERS = ['normal', 'golden', 'rainbow', 'shiny', 'golden_shiny', 'rainbow_shiny', 'other'] as const;
 
 function petSignatureValue(pet: VaultPet, signatures: SignatureRecord[]): number {
   const record = signatures.find(
