@@ -473,13 +473,14 @@ function getOwnedPetValue(data: VaultData, pet: VaultPet): number {
       : isExclusive ? signer.cosmic_exclusive_value
       : null
     : null;
-  if (cosmicSignerValue != null) return Number(cosmicSignerValue);
   const signature = data.signatures.find(
     (entry) => entry.pet_id === pet.pet_id && entry.signer_id === pet.signer_id && entry.variant === pet.variant
   );
-  if (signature && (signature.verification_status === 'verified' || signature.verification_status === 'community_verified')
-      && signature.signature_value != null) return Number(signature.signature_value);
-  return Number(pet.cosmic_value ?? 0);
+  const verifiedSignature = Boolean(signature && (
+    signature.verification_status === 'verified' || signature.verification_status === 'community_verified'
+  ));
+  const signerValue = verifiedSignature && cosmicSignerValue != null ? Number(cosmicSignerValue) : 0;
+  return Number(pet.cosmic_value ?? 0) + signerValue;
 }
 
 function computeStats(data: VaultData, pets: VaultPet[]) {
@@ -730,6 +731,9 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [detail, setDetail] = useState<VaultPet | null>(null);
   const [busy, setBusy] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [importingCosmicPets, setImportingCosmicPets] = useState(false);
+  const [cosmicPetImportMessage, setCosmicPetImportMessage] = useState<string | null>(null);
+  const [cosmicPetImportError, setCosmicPetImportError] = useState<string | null>(null);
   const [collectionMode, setCollectionMode] = useState<'owned' | 'missing'>('owned');
   const [catalogSearch, setCatalogSearch] = useState('');
   const [petSearch, setPetSearch] = useState('');
@@ -814,6 +818,8 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           <p className="vault-subtitle">Your signed pets, signer records and trade history in one place.</p>
         </div>
       </section>
+      {cosmicPetImportMessage && <div className="vault-success" style={{ marginBottom: 12 }}>{cosmicPetImportMessage}</div>}
+      {cosmicPetImportError && <div className="vault-error" style={{ marginBottom: 12 }}>{cosmicPetImportError}</div>}
       {showScanner && <div style={{ marginBottom: 18 }}><InventoryScannerTab onRefresh={onRefresh} isOwner={isOwner} /></div>}
       <div className="vault-section-head">
         <div className="vault-row">
@@ -826,7 +832,17 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           )}
           <span className="vault-pill vault-pill-gray">{filtered.length} of {pets.length} pets</span>
         </div>
-        <div className="vault-row" style={{ gap: 8 }}>
+        <div className="vault-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {isOwner && <button className="vault-btn vault-btn-sm" disabled={importingCosmicPets} onClick={() => {
+            setImportingCosmicPets(true); setCosmicPetImportMessage(null); setCosmicPetImportError(null);
+            void importCosmicPetValues()
+              .then(async (result) => {
+                setCosmicPetImportMessage('Cosmic Values updated · ' + Number(result.updated ?? 0) + ' existing pet variants matched · ' + Number(result.skipped ?? 0) + ' unmatched values skipped. Pet catalog and collection records were not changed.');
+                await onRefresh();
+              })
+              .catch((err) => setCosmicPetImportError(err instanceof Error ? err.message : 'Cosmic pet value import failed.'))
+              .finally(() => setImportingCosmicPets(false));
+          }}>{importingCosmicPets ? 'Importing Cosmic Values…' : '↓ Update Cosmic Pet Values'}</button>}
           <button className="vault-btn vault-btn-sm" onClick={() => setShowScanner((value) => !value)}>
             {showScanner ? 'Hide scanner' : 'Scan Roblox inventory'}
           </button>
@@ -980,7 +996,15 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
     (sig) => sig.pet_id === pet.pet_id && sig.signer_id === pet.signer_id && sig.variant === pet.variant
   ) ?? null;
   const isVerified = pet.verification_status === 'verified' || pet.verification_status === 'community_verified';
-  const signatureValue = signature && isVerified ? Number(signature.signature_value ?? 0) : 0;
+  const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
+  const petCategory = String(catalogPet?.category ?? pet.pet_category ?? '').toLowerCase();
+  const isTitanic = Boolean(catalogPet?.is_titanic) || petCategory.includes('titanic');
+  const isHuge = Boolean(catalogPet?.is_huge) || petCategory.includes('huge');
+  const isExclusive = Boolean(catalogPet?.is_exclusive) || petCategory.includes('exclusive');
+  const cosmicSignerValue = isTitanic ? signer?.cosmic_titanic_value
+    : isHuge ? signer?.cosmic_huge_value
+    : isExclusive ? signer?.cosmic_exclusive_value : null;
+  const signatureValue = signer && isVerified && cosmicSignerValue != null ? Number(cosmicSignerValue) : 0;
   const combined = Number(pet.cosmic_value ?? 0) + signatureValue;
 
   const [editOpen, setEditOpen] = useState(false);
@@ -1052,7 +1076,7 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
 
       <div className="vault-stat-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: 14 }}>
         <StatCard label="Pet value" value={formatValue(pet.cosmic_value)} hint={`source: ${cosmicSource}`} />
-        <StatCard label="Signature value" value={signatureValue > 0 ? formatValue(signatureValue) : '—'} hint={isVerified ? 'verified record' : 'counts only when verified'} />
+        <StatCard label="Signature value" value={signatureValue > 0 ? formatValue(signatureValue) : '—'} hint={isVerified ? 'Cosmic signer value' : 'counts only when verified'} />
         <StatCard label="Combined value" value={formatValue(combined)} gold hint={isVerified ? 'pet + signature' : 'unverified signature not counted'} />
       </div>
 
