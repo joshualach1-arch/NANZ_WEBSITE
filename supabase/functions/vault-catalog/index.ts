@@ -87,29 +87,41 @@ function parseCosmicStatus(value: string): string | null {
 function parseCosmicPetRows(html: string): Record<string, unknown>[] {
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const text = decode(html);
   const rows: Record<string, unknown>[] = [];
 
-  // Verified Cosmic HTML text format:
-  // "HUGE CAT Variant Normal Value ▲ 20.5% | 6.75B Demand 7/10"
-  // The percentage is the change indicator; the value after "|" is the pet value.
-  const pattern = /((?:(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,90}?)\s+VARIANT\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+VALUE\s+(?:(?:[▲▼=]\s*)?[\d,.]+\s*%?\s*\|\s*)?([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\s+DEMAND\s+(?:N\/?A|\d+\s*(?:\/\s*10|OUT\s+OF\s+10))/gi;
+  // Cosmic's actual values.php listing renders rows like:
+  // "Huge Anime Unicorn Normal 650M ▼ 25M 7/10 7w ago Exist 12,481 RAP 695.36M"
+  // The variant is a separate field AFTER the complete pet name. The old parser
+  // incorrectly expected the labels "VARIANT ... VALUE ... DEMAND ...", which
+  // do not exist in this listing.
+  const pattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\b/gi;
 
   for (const match of text.matchAll(pattern)) {
-    const fullName = match[1].replace(/\s+/g, " ").trim();
+    const sourceName = match[1].replace(/\s+/g, " ").trim();
     const variantRaw = match[2].replace(/\s+/g, " ").toLowerCase();
-    const variant = variantRaw === "normal" ? "normal" : variantRaw === "golden" ? "golden"
-      : variantRaw === "rainbow" ? "rainbow" : variantRaw === "shiny" ? "shiny" : "rainbow_shiny";
-    const baseName = fullName.replace(/^(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+/i, "").trim();
+    const variant = variantRaw === "normal" ? "normal"
+      : variantRaw === "golden" ? "golden"
+      : variantRaw === "rainbow" ? "rainbow"
+      : variantRaw === "shiny" ? "shiny"
+      : "rainbow_shiny";
+    // A leading modifier belongs to the variant, not to the base catalog pet.
+    const petName = sourceName.replace(/^(?:GOLDEN|RAINBOW|SHINY)\s+/i, "").trim();
     const rawValue = match[3].trim();
     const value = parseCosmicValue(rawValue);
     const status = parseCosmicStatus(rawValue) ?? (/^O\/?C$/i.test(rawValue) ? "oc" : null);
-    if (baseName && (value != null || status != null)) {
-      rows.push({ pet_name: baseName, variant, value, status, source_name: fullName });
+    if (petName && (value != null || status != null)) {
+      rows.push({
+        pet_name: petName,
+        variant,
+        value,
+        status,
+        source_name: sourceName,
+      });
     }
   }
   return rows;
