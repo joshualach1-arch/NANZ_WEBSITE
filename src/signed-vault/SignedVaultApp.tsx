@@ -456,18 +456,30 @@ function eventLabel(event: ActivityEvent): { title: string; meta: string } {
   }
 }
 
+function getOwnedPetValue(data: VaultData, pet: VaultPet): number {
+  const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
+  const signer = data.signers.find((entry) => entry.id === pet.signer_id);
+  const category = String(catalogPet?.category ?? pet.pet_category ?? '').toLowerCase();
+  const isTitanic = Boolean(catalogPet?.is_titanic) || category.includes('titanic');
+  const isHuge = Boolean(catalogPet?.is_huge) || category.includes('huge');
+  const isExclusive = Boolean(catalogPet?.is_exclusive) || category.includes('exclusive');
+  const cosmicSignerValue = signer
+    ? isTitanic ? signer.cosmic_titanic_value
+      : isHuge ? signer.cosmic_huge_value
+      : isExclusive ? signer.cosmic_exclusive_value
+      : null
+    : null;
+  if (cosmicSignerValue != null) return Number(cosmicSignerValue);
+  const signature = data.signatures.find(
+    (entry) => entry.pet_id === pet.pet_id && entry.signer_id === pet.signer_id && entry.variant === pet.variant
+  );
+  if (signature && (signature.verification_status === 'verified' || signature.verification_status === 'community_verified')
+      && signature.signature_value != null) return Number(signature.signature_value);
+  return Number(pet.cosmic_value ?? 0);
+}
+
 function computeStats(data: VaultData, pets: VaultPet[]) {
-  const totalValue = pets.reduce((sum, pet) => {
-    const petValue = Number(pet.cosmic_value ?? 0);
-    const signature = data.signatures.find(
-      (sig) => sig.pet_id === pet.pet_id && sig.signer_id === pet.signer_id && sig.variant === pet.variant
-    );
-    const signatureValue = signature &&
-      (signature.verification_status === 'verified' || signature.verification_status === 'community_verified')
-      ? Number(signature.signature_value ?? 0)
-      : 0;
-    return sum + petValue + signatureValue;
-  }, 0);
+  const totalValue = pets.reduce((sum, pet) => sum + getOwnedPetValue(data, pet), 0);
 
   const spent = pets.reduce((sum, pet) => sum + Number(pet.purchase_price ?? 0), 0);
   const signablePetCount = data.catalog.filter((pet) => pet.signability === 'signable').length;
@@ -515,17 +527,11 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
     [data.pets]
   );
 
-  // value model: cosmic value always; signature value only when verified
-  const totalValue = useMemo(() => data.pets.reduce((sum, pet) => {
-    const petValue = Number(pet.cosmic_value ?? 0);
-    const signature = data.signatures.find(
-      (sig) => sig.pet_id === pet.pet_id && sig.signer_id === pet.signer_id && sig.variant === pet.variant
-    );
-    const signatureValue = signature && (signature.verification_status === 'verified' || signature.verification_status === 'community_verified')
-      ? Number(signature.signature_value ?? 0)
-      : 0;
-    return sum + petValue + signatureValue;
-  }, 0), [data.pets, data.signatures]);
+  // Owned signed pets use the matching signer's Cosmic Huge/Exclusive/Titanic value.
+  const totalValue = useMemo(
+    () => data.pets.reduce((sum, pet) => sum + getOwnedPetValue(data, pet), 0),
+    [data.pets, data.signatures, data.signers, data.catalog]
+  );
 
   const spent = useMemo(
     () => data.pets.reduce((sum, pet) => sum + Number(pet.purchase_price ?? 0), 0),
