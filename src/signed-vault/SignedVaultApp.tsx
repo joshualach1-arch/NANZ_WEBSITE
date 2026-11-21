@@ -810,15 +810,9 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
     <div className="vault-collection-page">
       <section className="vault-collection-hero">
         <div className="vault-collection-hero-copy">
-          <span className="vault-kicker">SIGNED VAULT / YOUR INVENTORY</span>
-          <h1 className="vault-title">My <span>Collection</span></h1>
-          <p className="vault-subtitle">Your signed pets, Cosmic values and collection performance in one place.</p>
-        </div>
-        <div className="vault-collection-hero-stats">
-          <div className="vault-collection-hero-stat is-pink"><small><BadgeCheck size={14} /> SIGNED PETS</small><strong>{signedPets.length}</strong><span>in your collection</span></div>
-          <div className="vault-collection-hero-stat is-blue"><small><Gem size={14} /> COLLECTION VALUE</small><strong>{formatValue(collectionValue)}</strong><span>current estimated value</span></div>
-          <div className="vault-collection-hero-stat is-violet"><small><Coins size={14} /> INVESTED</small><strong>{formatValue(investedValue)}</strong><span>total purchase price</span></div>
-          <div className={`vault-collection-hero-stat ${collectionProfit >= 0 ? 'is-green' : 'is-red'}`}><small><TrendingUp size={14} /> {collectionProfit >= 0 ? 'PROFIT' : 'LOSS'}</small><strong>{collectionProfit >= 0 ? '+' : ''}{formatValue(collectionProfit)}</strong><span>collection value minus invested</span></div>
+          <span className="vault-kicker">SIGNED VAULT</span>
+          <h1 className="vault-title">My Collection</h1>
+          <p className="vault-subtitle">Your signed pets, signer records and trade history in one place.</p>
         </div>
       </section>
       {showScanner && <div style={{ marginBottom: 18 }}><InventoryScannerTab onRefresh={onRefresh} isOwner={isOwner} /></div>}
