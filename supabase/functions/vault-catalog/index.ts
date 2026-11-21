@@ -78,7 +78,7 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
   const rows: Record<string, unknown>[] = [];
   // Parse the rendered signer text without depending on the site's CSS classes.
   const text = decode(html);
-  const pattern = /(?:Staff|Partner|Dev)\s+(.{1,60}?)\s+@([A-Za-z0-9_]{3,20})\s+Exclusive\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A)\s+Huge\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A)\s+Titanic\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A)\s+Demand\s+(N\/?A|\d+\/10)/gi;
+  const pattern = /(?:Staff|Partner|Dev)\s+(.{1,60}?)\s+@([A-Za-z0-9_]{3,20})\s+Exclusive\s+([\d,.]+\s*[KMBT]?|SOON|N[/]?A)\s+Huge\s+([\d,.]+\s*[KMBT]?|SOON|N[/]?A)\s+Titanic\s+([\d,.]+\s*[KMBT]?|SOON|N[/]?A)\s+Demand\s+(N\/?A|\d+\/10)/gi;
   for (const match of text.matchAll(pattern)) {
     const signerName = match[1].replace(/\s+/g, " ").trim();
     const username = match[2];
@@ -91,10 +91,10 @@ function parseCosmicSignerRows(html: string, role: string): Record<string, unkno
       huge_value: parseCosmicValue(match[4]),
       titanic_value: parseCosmicValue(match[5]),
       demand: /\d+\/10/.test(match[6]) ? Number(match[6].split("/")[0]) : null,
-      exclusive_status: /^SOON$/i.test(match[3].trim()) ? "soon" : /^N\\/?A$/i.test(match[3].trim()) ? "na" : null,
-      huge_status: /^SOON$/i.test(match[4].trim()) ? "soon" : /^N\\/?A$/i.test(match[4].trim()) ? "na" : null,
-      titanic_status: /^SOON$/i.test(match[5].trim()) ? "soon" : /^N\\/?A$/i.test(match[5].trim()) ? "na" : null,
-      demand_status: /^N\\/?A$/i.test(match[6].trim()) ? "na" : null,
+      exclusive_status: /^SOON$/i.test(match[3].trim()) ? "soon" : /^N[/]?A$/i.test(match[3].trim()) ? "na" : null,
+      huge_status: /^SOON$/i.test(match[4].trim()) ? "soon" : /^N[/]?A$/i.test(match[4].trim()) ? "na" : null,
+      titanic_status: /^SOON$/i.test(match[5].trim()) ? "soon" : /^N[/]?A$/i.test(match[5].trim()) ? "na" : null,
+      demand_status: /^N[/]?A$/i.test(match[6].trim()) ? "na" : null,
       source: "cosmic_values",
       profile_url: null,
       avatar_url: null,
