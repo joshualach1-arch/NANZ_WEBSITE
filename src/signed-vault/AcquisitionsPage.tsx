@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tag } from 'lucide-react';
-import { Clock, TrendingDown, TrendingUp } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import {
   VaultApiError,
   correctAcquisition,
@@ -18,21 +18,6 @@ import {
   type VaultTradeGroup,
 } from './vaultApi';
 import { Modal } from './SignedVaultApp';
-
-const typePillTone: Record<string, string> = {
-  unconfirmed: 'vault-pill-gold',
-  manual_addition: 'vault-pill-blue',
-  booth_purchase: 'vault-pill-green',
-  trade: 'vault-pill-blue',
-  sync: 'vault-pill-gray',
-};
-
-const verifyPillTone: Record<string, string> = {
-  verified: 'vault-pill-green',
-  community_verified: 'vault-pill-green',
-  unverified: 'vault-pill-gold',
-  needs_review: 'vault-pill-red',
-};
 
 export function AcquisitionsPage({ isOwner, myCollectorNo, onRefresh }: {
   isOwner: boolean;
