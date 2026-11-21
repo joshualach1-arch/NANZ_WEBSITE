@@ -345,7 +345,7 @@ export async function vaultCall(action: string, body: Record<string, unknown> = 
                         ? 'Roblox is rate limiting. Try again in a minute.'
                         : code === 'roblox_unreachable'
                           ? 'Roblox is unreachable right now. Try again.'
-                          : 'Something went wrong. Try again.';
+                          : action.startsWith('cosmic-pet-values-') ? code : 'Something went wrong. Try again.';
     throw new VaultApiError(message, response.status);
   }
   return payload;
