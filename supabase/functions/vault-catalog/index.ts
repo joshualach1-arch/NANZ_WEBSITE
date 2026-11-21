@@ -319,11 +319,39 @@ Deno.serve(async (req: Request) => {
         const byKey = new Map<string, Record<string, unknown>>();
         for (const row of allRows) byKey.set(`${String(row.pet_name).toLowerCase()}::${String(row.variant)}`, row);
         const values = [...byKey.values()];
-        await writeProgress({ status: "running", stage: "saving", category: null, category_index: categories.length, category_total: categories.length, page: 0, source_rows: allRows.length, message: `Saving ${values.length} unique pet variants to the database` });
-        const importRes = await supabase.rpc("vault_cosmic_pet_values_import", { p_token: token, p_values: values });
-        if (importRes.error) throw new Error("Database save failed: " + importRes.error.message);
-        const result = { status: "ok", source_rows: allRows.length, unique_values: values.length, ...asRecord(importRes.data) };
-        await writeProgress({ status: "completed", stage: "completed", category: null, category_index: categories.length, category_total: categories.length, page: 0, source_rows: allRows.length, message: "Cosmic Values import completed", error: null });
+        // Save in small independent transactions. A single full-catalog RPC can
+        // exceed Supabase's statement timeout even after scraping reached 100%.
+        const batchSize = 100;
+        const batchTotal = Math.ceil(values.length / batchSize);
+        let updated = 0;
+        let updatedPets = 0;
+        let skipped = 0;
+        for (let offset = 0; offset < values.length; offset += batchSize) {
+          const batchNumber = Math.floor(offset / batchSize) + 1;
+          const batch = values.slice(offset, offset + batchSize);
+          await writeProgress({
+            status: "running", stage: "saving", category: null,
+            category_index: 80 + Math.floor(((batchNumber - 1) / batchTotal) * 19),
+            category_total: 100, page: 0, source_rows: allRows.length,
+            message: `Saving database batch ${batchNumber}/${batchTotal} (${Math.min(offset + batch.length, values.length)}/${values.length} variants)`,
+            error: null,
+          });
+          const importRes = await supabase.rpc("vault_cosmic_pet_values_import", { p_token: token, p_values: batch });
+          if (importRes.error) throw new Error(`Database save failed in batch ${batchNumber}/${batchTotal}: ${importRes.error.message}`);
+          const saved = asRecord(importRes.data);
+          updated += Number(saved.updated ?? 0);
+          updatedPets += Number(saved.updated_pets ?? 0);
+          skipped += Number(saved.skipped ?? 0);
+          await writeProgress({
+            status: "running", stage: "saving", category: null,
+            category_index: 80 + Math.floor((batchNumber / batchTotal) * 19),
+            category_total: 100, page: 0, source_rows: allRows.length,
+            message: `Saved database batch ${batchNumber}/${batchTotal}`,
+            error: null,
+          });
+        }
+        const result = { status: "ok", source_rows: allRows.length, unique_values: values.length, updated, updated_pets: updatedPets, skipped, batches: batchTotal };
+        await writeProgress({ status: "completed", stage: "completed", category: null, category_index: 100, category_total: 100, page: 0, source_rows: allRows.length, message: "Cosmic Values import completed", error: null });
         return json(result);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
