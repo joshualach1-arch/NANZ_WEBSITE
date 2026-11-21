@@ -29,7 +29,6 @@ Deno.serve(async (req: Request) => {
     if (sessionError || !session) return json({ error: "Your vault session expired. Please sign in again." }, 401);
 
     const content: Array<Record<string, unknown>> = [{
-      type: "text",
       text: `You are the screenshot parser for a Pet Simulator 99 trade calculator. Analyze all screenshots as ONE evidence set, not as separate trades.
 Return ONLY valid JSON with this exact top-level shape:
 {"screenshots":[{"index":0,"kind":"trade_overview|signature_closeup|gems|unknown","side":"give|get|unknown","notes":"short"}],"items":[{"pet_name":"exact visible or best catalog pet name","catalog_match":"exact candidate name or empty","variant":"normal|golden|rainbow|shiny|golden_shiny|rainbow_shiny|unknown","side":"give|get|unknown","signer_name":"visible signer/creator name or empty","signature_present":true,"signature_screenshot_indices":[1],"source_screenshot_indices":[0],"confidence":0.0,"needs_review":false,"review_reason":""}],"gems":[{"side":"give|get|unknown","amount":0,"screenshot_indices":[0],"confidence":0.0}],"warnings":["..."]}.
@@ -52,8 +51,8 @@ There are ${images.length} uploaded screenshots. Image index is their order, sta
       const data = String(img.data ?? "");
       if (!/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(data)) return json({ error: `Screenshot ${i + 1} is not a supported image.` }, 400);
       totalBytes += Math.floor(data.length * 0.75);
-      content.push({ type: "input_text", text: `Screenshot ${i} — ${String(img.name ?? `image-${i+1}`)}` });
-      content.push({ type: "inline_data", mime_type: "image/jpeg", data: data.split(",")[1] });
+      content.push({ text: `Screenshot ${i} — ${String(img.name ?? `image-${i+1}`)}` });
+      content.push({ inlineData: { mimeType: "image/jpeg", data: data.split(",")[1] } });
     }
     if (totalBytes > 4.5 * 1024 * 1024) return json({ error: "The combined screenshots are too large for one request. Try fewer or smaller images (maximum 4.5 MB combined)." }, 413);
 
