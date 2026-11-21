@@ -15,8 +15,8 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   try {
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!apiKey) return json({ error: "OPENAI_API_KEY is not configured in Supabase Edge Function secrets." }, 503);
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey) return json({ error: "GEMINI_API_KEY is not configured in Supabase Edge Function secrets." }, 503);
     const body = record(await req.json());
     const token = String(body.token ?? "");
     const images = Array.isArray(body.images) ? body.images : [];
@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
     if (sessionError || !session) return json({ error: "Your vault session expired. Please sign in again." }, 401);
 
     const content: Array<Record<string, unknown>> = [{
-      type: "input_text",
+      type: "text",
       text: `You are the screenshot parser for a Pet Simulator 99 trade calculator. Analyze all screenshots as ONE evidence set, not as separate trades.
 Return ONLY valid JSON with this exact top-level shape:
 {"screenshots":[{"index":0,"kind":"trade_overview|signature_closeup|gems|unknown","side":"give|get|unknown","notes":"short"}],"items":[{"pet_name":"exact visible or best catalog pet name","catalog_match":"exact candidate name or empty","variant":"normal|golden|rainbow|shiny|golden_shiny|rainbow_shiny|unknown","side":"give|get|unknown","signer_name":"visible signer/creator name or empty","signature_present":true,"signature_screenshot_indices":[1],"source_screenshot_indices":[0],"confidence":0.0,"needs_review":false,"review_reason":""}],"gems":[{"side":"give|get|unknown","amount":0,"screenshot_indices":[0],"confidence":0.0}],"warnings":["..."]}.
@@ -53,33 +53,25 @@ There are ${images.length} uploaded screenshots. Image index is their order, sta
       if (!/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(data)) return json({ error: `Screenshot ${i + 1} is not a supported image.` }, 400);
       totalBytes += Math.floor(data.length * 0.75);
       content.push({ type: "input_text", text: `Screenshot ${i} — ${String(img.name ?? `image-${i+1}`)}` });
-      content.push({ type: "input_image", image_url: data, detail: "original" });
+      content.push({ type: "inline_data", mime_type: "image/jpeg", data: data.split(",")[1] });
     }
     if (totalBytes > 4.5 * 1024 * 1024) return json({ error: "The combined screenshots are too large for one request. Try fewer or smaller images (maximum 4.5 MB combined)." }, 413);
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-6.2-astra",
-        store: false,
-        input: [{ role: "user", content }],
-      }),
+      headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ role: "user", parts: content }], generationConfig: { responseMimeType: "application/json", temperature: 0.1 } }),
     });
     const payload = await response.json();
     if (!response.ok) {
-      console.error("OpenAI vision request failed", response.status, payload);
-      return json({ error: "Vision analysis failed. Check the OpenAI API key, billing and model access." }, 502);
+      console.error("Gemini vision request failed", response.status, payload);
+      return json({ error: "Gemini screenshot analysis failed. Check the Gemini API key, API access and free-tier quota." }, 502);
     }
-    const output = Array.isArray(payload.output) ? payload.output : [];
-    const text = output.flatMap((entry: Record<string, unknown>) => Array.isArray(entry.content) ? entry.content as Array<Record<string, unknown>> : [])
-      .filter((part: Record<string, unknown>) => part.type === "output_text")
-      .map((part: Record<string, unknown>) => String(part.text ?? "")).join("\n");
-    const cleaned = text.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "").trim();
+    const text = Array.isArray(payload.candidates?.[0]?.content?.parts) ? payload.candidates[0].content.parts.map((part: Record<string, unknown>) => String(part.text ?? "")).join("\n") : "";
     let result: Record<string, unknown>;
-    try { result = JSON.parse(cleaned); } catch {
-      console.error("Vision output was not valid JSON", text.slice(0, 2000));
-      return json({ error: "The screenshot analysis returned an unreadable result. Please try again with clearer screenshots." }, 502);
+    try { result = JSON.parse(text.trim()); } catch {
+      console.error("Gemini vision output was not valid JSON", text.slice(0, 2000));
+      return json({ error: "Gemini returned an unreadable result. Please try again with clearer screenshots." }, 502);
     }
     return json({ status: "ok", analysis: result });
   } catch (error) {
