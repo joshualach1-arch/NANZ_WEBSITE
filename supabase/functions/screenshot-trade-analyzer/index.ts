@@ -56,7 +56,7 @@ There are ${images.length} uploaded screenshots. Image index is their order, sta
     }
     if (totalBytes > 4.5 * 1024 * 1024) return json({ error: "The combined screenshots are too large for one request. Try fewer or smaller images (maximum 4.5 MB combined)." }, 413);
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
       method: "POST",
       headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ role: "user", parts: content }], generationConfig: { responseMimeType: "application/json", temperature: 0.1 } }),
