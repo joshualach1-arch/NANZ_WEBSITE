@@ -400,8 +400,12 @@ Deno.serve(async (req: Request) => {
           const key = Array.from(await sha256(`${baseFingerprint}#${occurrence}`)).map((b) => b.toString(16).padStart(2, "0")).join("");
           const diamondsGiven = diamondAmount(given);
           const diamondsReceived = diamondAmount(received);
-          const boothKind = source === "booth" ? String(entry.kind ?? (given.length ? "sale" : "purchase")) : null;
-          const diamonds = source === "booth" && boothKind === "sale" ? diamondsReceived : diamondsGiven;
+          // In BIG Games booth history, diamonds in `given` mean YOU BOUGHT the pet;
+          // diamonds in `received` mean YOU SOLD the pet. Do not infer direction from array length.
+          const boothKind = source === "booth"
+            ? (diamondsGiven > 0 ? "purchase" : diamondsReceived > 0 ? "sale" : String(entry.kind ?? "purchase"))
+            : null;
+          const diamonds = source === "booth" ? (boothKind === "purchase" ? diamondsGiven : diamondsReceived) : diamondsGiven;
           const legacyCandidates = existingByFingerprint.get(baseFingerprint) ?? [];
           const legacy = legacyCandidates[occurrence] as Record<string, unknown> | undefined;
           let tradeGroupId: string;
