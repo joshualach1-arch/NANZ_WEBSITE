@@ -110,17 +110,17 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
   const text = html
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(new RegExp("<script[\\s\\S]*?</script>", "gi"), " ")
-    .replace(new RegExp("<style[\\s\\S]*?</style>", "gi"), " ")
-    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
+    .replace(new RegExp("<script[\s\\S]*?</script>", "gi"), " ")
+    .replace(new RegExp("<style[\s\\S]*?</style>", "gi"), " ")
+    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
-  const pattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\\b[A-Z0-9 .,'’&()\\-]{0,100}?)\\s+Variant\\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\\s+SHINY|SHINY\\s+GOLDEN|RAINBOW\\s+SHINY|SHINY\\s+RAINBOW)\\s+Value\\s+([\\d,.]+\\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\\b/gi;
+  const pattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+Variant\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\s+SHINY|SHINY\s+GOLDEN|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+Value\s+([\d,.]+\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\b/gi;
 
   for (const match of text.matchAll(pattern)) {
-    const sourceName = match[1].replace(/\\s+/g, " ").trim();
-    const variantText = match[2].replace(/\\s+/g, " ").toLowerCase();
+    const sourceName = match[1].replace(/\s+/g, " ").trim();
+    const variantText = match[2].replace(/\s+/g, " ").toLowerCase();
     const variant = variantText === "normal" ? "normal"
       : variantText === "golden" ? "golden"
       : variantText === "rainbow" ? "rainbow"
@@ -130,7 +130,7 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
 
     // Cosmic prefixes variant labels to the base pet name. The catalog stores
     // the base identity, so remove every leading variant prefix before matching.
-    const petName = sourceName.replace(/^(?:(?:GOLDEN|RAINBOW|SHINY)\\s+)+/i, "").trim();
+    const petName = sourceName.replace(/^(?:(?:GOLDEN|RAINBOW|SHINY)\s+)+/i, "").trim();
     const valueText = match[3].trim();
     const value = parseCosmicValue(valueText);
     const status = parseCosmicStatus(valueText) ?? (/^O\\/?C$/i.test(valueText) ? "oc" : null);
