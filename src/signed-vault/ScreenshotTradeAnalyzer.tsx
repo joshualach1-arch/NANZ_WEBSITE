@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AlertTriangle, Check, FileImage, LoaderCircle, ScanSearch, Sparkles, Trash2, Upload, X } from 'lucide-react';
+import { AlertTriangle, Check, FileImage, LoaderCircle, ScanSearch, Sparkles, Upload, X } from 'lucide-react';
 import type { VaultData, Variant } from './vaultApi';
 import { variantLabelWide } from './vaultApi';
 
@@ -22,11 +22,11 @@ async function optimizeImage(file: File): Promise<string> {
   const source = await readDataUrl(file);
   const image = new Image(); image.src = source;
   await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=reject;});
-  const scale = Math.min(1, 1900 / Math.max(image.width,image.height));
+  const scale = Math.min(1, 1600 / Math.max(image.width,image.height));
   const canvas = document.createElement('canvas'); canvas.width=Math.round(image.width*scale); canvas.height=Math.round(image.height*scale);
   const ctx=canvas.getContext('2d'); if(!ctx) throw new Error('Could not process screenshot.');
   ctx.drawImage(image,0,0,canvas.width,canvas.height);
-  return canvas.toDataURL('image/jpeg',0.84);
+  return canvas.toDataURL('image/jpeg',0.72);
 }
 const parseMoney = (n: number) => Number.isFinite(n) ? n : 0;
 
@@ -48,7 +48,7 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
   const analyze=async()=>{
     if(!token){setError('Your vault session expired. Sign in again.');return;}
     if(!files.length){setError('Upload at least one screenshot first.');return;}
-    setBusy(true);setError('');setAnalysis(null);setImported(false);
+    const uploadBytes=files.reduce((sum,file)=>sum+Math.floor(file.data.length*0.75),0);\n    if(uploadBytes>4.5*1024*1024){setError('The selected screenshots are too large for one request. Remove a few images or upload smaller screenshots (maximum 4.5 MB combined).');return;}\n    setBusy(true);setError('');setAnalysis(null);setImported(false);
     const {data:response,error:invokeError}=await supabase.functions.invoke('screenshot-trade-analyzer',{body:{
       token,images:files.map(f=>({name:f.file.name,data:f.data})),
       petCatalog:data.catalog.map(p=>p.display_name||p.pet_name).slice(0,1800),
@@ -76,7 +76,7 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
   const catalogMatch=(item:DetectedItem)=>data.catalog.find(p=>(p.display_name||p.pet_name)===item.catalog_match);
   return <section className="sc-analyzer">
     <div className="sc-head"><div><span className="tc-kicker">NANZO VISION LAB</span><h3><ScanSearch/> Screenshot Trade Analyzer</h3><p>Upload up to 10 screenshots. Vision AI connects overview shots, signature close-ups and Gems into one trade.</p></div><div className="sc-ai-pill"><span/> VISION AI</div></div>
-    <label className="sc-dropzone"><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e=>{void addFiles(e.target.files);e.currentTarget.value='';}}/><Upload size={27}/><b>Drop screenshots here or click to browse</b><span>PNG, JPG or WEBP · Up to 10 images · Multiple screenshots are analyzed together</span><strong>{files.length}/10 UPLOADED</strong></label>
+    <label className="sc-dropzone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void addFiles(e.dataTransfer.files);}}><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e=>{void addFiles(e.target.files);e.currentTarget.value='';}}/><Upload size={27}/><b>Drop screenshots here or click to browse</b><span>PNG, JPG or WEBP · Up to 10 images · Multiple screenshots are analyzed together</span><strong>{files.length}/10 UPLOADED</strong></label>
     {files.length>0&&<div className="sc-upload-grid">{files.map((f,i)=><article key={f.id}><img src={f.preview} alt={f.file.name}/><span>SCREENSHOT {i+1}</span><button onClick={()=>{setFiles(v=>v.filter(x=>x.id!==f.id));setAnalysis(null);}} aria-label="Remove screenshot"><X size={14}/></button><small>{f.file.name}</small></article>)}</div>}
     {error&&<div className="sc-error"><AlertTriangle size={16}/>{error}</div>}
     <button className="sc-analyze" disabled={!files.length||busy} onClick={()=>void analyze()}>{busy?<><LoaderCircle className="sc-spin"/> Analyzing all screenshots…</>:<><Sparkles size={18}/> Analyze trade with AI</>}</button>
