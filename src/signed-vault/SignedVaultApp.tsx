@@ -1020,21 +1020,29 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
   const scopeCollectorNo = data.is_owner ? pet.collector_no ?? data.me : null;
 
   const cosmicSource = data.catalog.find((entry) => entry.id === pet.pet_id)?.value_source ?? 'manual';
+  const displayedSignerName = signer ? (signer.display_name || signer.signer_name) : 'No signer assigned';
+  const displayedSignatureName = signature?.signature_name || signer?.display_name || signer?.signer_name || 'Signature name unavailable';
+  const signerRoleTone = (role: string) => role === 'big_games_partner' ? 'partner' : role === 'big_games_developer' ? 'developer' : role === 'content_creator' || role === 'youtuber' || role === 'streamer' ? 'creator' : 'other';
 
   return (
     <Modal title={pet.nickname || pet.pet_name} onClose={onClose} wide>
-      <div className="vault-detail-head">
-        <div className="vault-pet-media" style={{ width: 96, height: 96, borderRadius: 18 }}>
+      <div className="vault-detail-premium-head">
+        <div className="vault-detail-premium-avatar">
           {pet.pet_image ? <img src={pet.pet_image} alt={pet.pet_name} /> : <Sparkles size={36} />}
         </div>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontWeight: 800, fontSize: 17 }}>{pet.pet_name}</div>
-          <div className="vault-note">{pet.pet_category} · {variantLabelWide[pet.variant] ?? pet.variant}{pet.quantity && pet.quantity > 1 ? ` · ×${pet.quantity}` : ''}</div>
-          <div className="vault-row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-            <span className={`vault-pill ${pet.signed_status === 'not_signed' ? 'vault-pill-gray' : isVerified ? 'vault-pill-green' : 'vault-pill-gold'}`}>
-              {pet.signed_status === 'not_signed' ? 'Not signed' : pet.signed_status === 'manual_review' ? 'Unknown – needs review' : verificationLabels[pet.verification_status ?? 'needs_review']}
+        <div className="vault-detail-premium-identity">
+          <h2>{pet.pet_name}</h2>
+          <div className="vault-detail-category-line">
+            <span>{pet.pet_category}</span>
+            <span className="vault-detail-dot">•</span>
+            <span className={pet.variant === 'rainbow' ? 'vault-detail-rainbow-text' : ''}>{variantLabelWide[pet.variant] ?? pet.variant}</span>
+            {pet.quantity && pet.quantity > 1 ? <span>· ×{pet.quantity}</span> : null}
+          </div>
+          <div className="vault-detail-statuses">
+            <span className={`vault-detail-status ${pet.signed_status === 'not_signed' ? 'is-muted' : isVerified ? 'is-verified' : 'is-review'}`}>
+              {pet.signed_status === 'not_signed' ? 'NOT SIGNED' : pet.signed_status === 'manual_review' ? 'NEEDS REVIEW' : verificationLabels[pet.verification_status ?? 'needs_review'].toUpperCase()}
             </span>
-            <span className="vault-pill vault-pill-gray">{signedStatusLabels[pet.signed_status ?? 'manual_review']}</span>
+            <span className="vault-detail-status is-muted">{signedStatusLabels[pet.signed_status ?? 'manual_review'].toUpperCase()}</span>
           </div>
         </div>
       </div>
@@ -1046,26 +1054,37 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
       </div>
 
       <div className="vault-divider" />
-      <div className="vault-detail-signer-action">
-        <div className="vault-detail-signer-current">
-          <span className="vault-label">Signer</span>
-          <strong className={signer ? 'vault-signer-name-rainbow' : ''}>{signer ? (signer.display_name || signer.signer_name) : 'No signer assigned'}</strong>
-          {signer?.roblox_username && <small>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</small>}
+      <section className="vault-detail-premium-signer">
+        <div className="vault-detail-premium-signer-top">
+          <div className="vault-detail-premium-signer-avatar"><UserRoundX size={25} /></div>
+          <div className="vault-detail-premium-signer-identity">
+            <span className="vault-detail-section-label">SIGNER</span>
+            <strong className={signer ? 'vault-signer-name-rainbow' : ''}>{displayedSignerName}</strong>
+            {signer?.roblox_username && <small>@{signer.roblox_username}{signer.roblox_user_id ? ` · ${signer.roblox_user_id}` : ''}</small>}
+          </div>
+          {data.is_owner && <button className="vault-detail-change-signer" onClick={() => { setSelectedSignerId(pet.signer_id ?? ''); setSignerSearch(''); setSignerPickerOpen(true); }}>
+            <ArrowLeft size={15} /> {signer ? 'Change signer' : 'Make signed'}
+          </button>}
         </div>
-        {data.is_owner && <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => { setSelectedSignerId(pet.signer_id ?? ''); setSignerSearch(''); setSignerPickerOpen(true); }}>
-          {signer ? 'Change signer' : 'Make signed'}
-        </button>}
-      </div>
-      <div className="vault-form-grid">
-        <div className="vault-field">
-          <span className="vault-label">Signer roles</span>
-          <div>{signer?.roles?.length ? signer.roles.map((role) => signerRoleLabels[role]).join(', ') : '—'}</div>
+        <div className="vault-detail-premium-roles">
+          <span className="vault-detail-section-label">SIGNER ROLES</span>
+          <div className="vault-detail-role-list">
+            {signer?.roles?.length ? signer.roles.map((role) => (
+              <span key={role} className={`vault-detail-role-chip is-${signerRoleTone(role)}`}>
+                {role === 'big_games_partner' ? '♛' : role === 'big_games_developer' ? '</>' : role === 'content_creator' || role === 'youtuber' || role === 'streamer' ? '▧' : '✦'}
+                {signerRoleLabels[role]}
+              </span>
+            )) : <span className="vault-detail-no-roles">—</span>}
+          </div>
         </div>
-        <div className="vault-field vault-detail-signature">
-          <span className="vault-label">Signature name</span>
-          <div className="vault-signer-name-rainbow">{signature?.signature_name || signer?.display_name || signer?.signer_name || 'Signature name unavailable'}</div>
+        <div className="vault-detail-premium-signature">
+          <span className="vault-detail-section-label">SIGNATURE NAME</span>
+          <div className="vault-detail-signature-name-row">
+            <strong className="vault-detail-signature-rainbow">{displayedSignatureName}</strong>
+            <Pencil size={16} />
+          </div>
         </div>
-      </div>
+      </section>
 
       {signerPickerOpen && (
         <Modal title={pet.signer_id ? 'Change pet signer' : 'Make this pet signed'} onClose={() => !assignBusy && setSignerPickerOpen(false)}>
