@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type Variant = 'normal' | 'golden' | 'rainbow' | 'shiny';
+export type Variant = 'normal' | 'golden' | 'rainbow' | 'shiny' | 'golden_shiny' | 'rainbow_shiny';
 
 export type Collector = {
   collector_no: number;
@@ -481,11 +481,12 @@ export const variantLabel: Record<Variant, string> = {
   golden: 'Golden',
   rainbow: 'Rainbow',
   shiny: 'Shiny',
+  golden_shiny: 'Golden Shiny',
+  rainbow_shiny: 'Rainbow Shiny',
 };
 
 export const variantLabelWide: Record<string, string> = {
   ...variantLabel,
-  rainbow_shiny: 'Rainbow Shiny',
   other: 'Other',
 };
 
