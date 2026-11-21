@@ -102,6 +102,7 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
       : normalizedVariant === "golden" ? "golden"
       : normalizedVariant === "rainbow" ? "rainbow"
       : normalizedVariant === "shiny" ? "shiny"
+      : normalizedVariant === "golden shiny" || normalizedVariant === "shiny golden" ? "golden_shiny"
       : "rainbow_shiny";
     const petName = sourceName.replace(/^(?:GOLDEN|RAINBOW|SHINY)\\s+/i, "").trim();
     const valueText = rawValue.trim();
@@ -114,7 +115,7 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
   };
 
   // Standard values.php rows, e.g. "Huge Anime Unicorn Normal 650M ...".
-  const standardPattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\\b[A-Z0-9 .,'’&()\\-]{0,100}?)\\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\\s+SHINY|SHINY\\s+RAINBOW)\\s+([\\d,.]+\\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\\b/gi;
+  const standardPattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\\b[A-Z0-9 .,'’&()\\-]{0,100}?)\\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\\s+SHINY|SHINY\\s+GOLDEN|RAINBOW\\s+SHINY|SHINY\\s+RAINBOW)\\s+([\\d,.]+\\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\\b/gi;
   for (const match of text.matchAll(standardPattern)) add(match[1], match[2], match[3]);
 
   // AJAX response rows, e.g. "HUGE CAT Variant Normal Value 12.5B Demand 6/10".
