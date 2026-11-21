@@ -866,12 +866,23 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         <div className="vault-row" style={{ gap: 8, flexWrap: 'wrap' }}>
           {isOwner && <button className="vault-btn vault-btn-sm" disabled={importingCosmicPets} onClick={() => {
             setImportingCosmicPets(true); setCosmicPetImportMessage(null); setCosmicPetImportError(null); setCosmicPetImportProgress(null);
-            void importCosmicPetValues()
-              .then(async (result) => {
-                setCosmicPetImportMessage('Cosmic Values updated · ' + Number(result.updated ?? 0) + ' existing pet variants matched · ' + Number(result.skipped ?? 0) + ' unmatched values skipped. Pet catalog and collection records were not changed.');
-                await onRefresh();
-              })
-              .catch((err) => setCosmicPetImportError(err instanceof Error ? err.message : 'Cosmic pet value import failed.'))
+            void (async () => {
+              const categories = ['Huges', 'Exclusives', 'Titanics', 'Gargantuans'];
+              let totalRows = 0;
+              let totalPages = 0;
+              for (const category of categories) {
+                for (let page = 1; page <= 200; page++) {
+                  const result = await importCosmicPetValues(category, page);
+                  totalRows += Number(result.source_rows ?? 0);
+                  totalPages += 1;
+                  if (!result.has_more) break;
+                  if (page === 200) throw new Error('Cosmic import safety limit reached for ' + category + ' (200 pages).');
+                }
+              }
+              setCosmicPetImportMessage('Cosmic Values updated · ' + totalRows.toLocaleString() + ' source rows processed across ' + totalPages + ' short requests. Pet catalog and collection records were not changed.');
+              await onRefresh();
+            })()
+              .catch((err) => setCosmicPetImportError(err instanceof Error ? err.message : String(err ?? 'Cosmic pet value import failed.')))
               .finally(() => setImportingCosmicPets(false));
           }}>{importingCosmicPets ? 'Importing Cosmic Values…' : '↓ Update Cosmic Pet Values'}</button>}
           <button className="vault-btn vault-btn-sm" onClick={() => setShowScanner((value) => !value)}>
