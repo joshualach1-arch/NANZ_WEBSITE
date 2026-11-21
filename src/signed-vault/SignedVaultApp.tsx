@@ -324,85 +324,43 @@ function AddPetModal({ data, onClose, onSubmit, presetPetId }: {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
+  const selectedPet = data.catalog.find((pet) => pet.id === petId) ?? null;
+  const variants: Variant[] = ['normal', 'golden', 'rainbow', 'shiny', 'golden_shiny', 'rainbow_shiny'];
   const submit = async () => {
     if (!petId) { setError('Choose a pet from the catalog.'); return; }
-    setBusy(true);
-    setError(null);
+    setBusy(true); setError(null);
     try {
-      await rpcCall('vault_collection_manage', sessionToken(), {
-        p_action: 'add',
-        p_pet_id: petId,
-        p_signer_id: signerId || null,
-        p_variant: variant,
-        p_nickname: nickname.trim() || null,
-        p_acquired_at: acquiredAt || null,
-        p_purchase_price: price.trim() ? Number(price) : null,
-        p_notes: notes.trim() || null,
-      });
-      await onSubmit({});
-      onClose();
-    } catch (err) {
-      setError(err instanceof VaultApiError ? err.message : 'Could not add the pet.');
-    } finally {
-      setBusy(false);
-    }
+      await rpcCall('vault_collection_manage', readStoredToken() ?? '', { p_action: 'add', p_pet_id: petId, p_signer_id: signerId || null, p_variant: variant, p_nickname: nickname.trim() || null, p_acquired_at: acquiredAt || null, p_purchase_price: price.trim() ? Number(price) : null, p_notes: notes.trim() || null });
+      await onSubmit({}); onClose();
+    } catch (err) { setError(err instanceof VaultApiError ? err.message : 'Could not add the pet.'); }
+    finally { setBusy(false); }
   };
-
-  const sessionToken = () => readStoredToken() ?? '';
-
   return (
-    <Modal title="Add signed pet" onClose={onClose}>
-      <div className="vault-form-grid">
-        <div className="vault-field">
-          <span className="vault-label">Pet (catalog)</span>
-          <select className="vault-select" value={petId} onChange={(event) => setPetId(event.target.value)}>
-            <option value="">Select pet…</option>
-            {data.catalog.map((pet) => (
-              <option key={pet.id} value={pet.id}>{pet.pet_name}</option>
-            ))}
-          </select>
+    <Modal title={presetPetId ? 'Choose pet variant' : 'Add pet to collection'} onClose={onClose}>
+      <div className="vault-variant-modal">
+        {presetPetId && selectedPet && <div className="vault-variant-preview">
+          <div className={'vault-variant-art variant-' + variant.replace('_', '-')}>
+            {selectedPet.image_url ? <img src={selectedPet.image_url} alt={selectedPet.pet_name} /> : <Sparkles size={44} />}
+            {['shiny','golden_shiny','rainbow_shiny'].includes(variant) && <span className="vault-shine-sweep" />}
+          </div>
+          <div><span className="vault-kicker">{selectedPet.category}</span><h3>{selectedPet.display_name || selectedPet.pet_name}</h3><p>Select the exact variant you own. Only that variant will be added.</p></div>
+        </div>}
+        {!presetPetId && <div className="vault-field"><span className="vault-label">Pet (catalog)</span><select className="vault-select" value={petId} onChange={(event) => setPetId(event.target.value)}><option value="">Select pet…</option>{data.catalog.map((pet) => <option key={pet.id} value={pet.id}>{pet.pet_name}</option>)}</select></div>}
+        <div className="vault-field"><span className="vault-label">Choose variant</span><div className="vault-variant-grid">
+          {variants.map((value) => <button type="button" key={value} className={'vault-variant-option' + (variant === value ? ' active' : '')} onClick={() => setVariant(value)}>
+            <span className={'vault-variant-swatch variant-' + value.replace('_', '-')}>{selectedPet?.image_url ? <img src={selectedPet.image_url} alt="" /> : <Sparkles size={24} />}{['shiny','golden_shiny','rainbow_shiny'].includes(value) && <i className="vault-shine-sweep" />}</span>
+            <b>{variantLabelWide[value] ?? value}</b>{variant === value && <span className="vault-variant-check">Selected</span>}
+          </button>)}
+        </div></div>
+        <div className="vault-form-grid">
+          <div className="vault-field"><span className="vault-label">Signer</span><select className="vault-select" value={signerId} onChange={(event) => setSignerId(event.target.value)}><option value="">Unknown / none</option>{data.signers.map((signer) => <option key={signer.id} value={signer.id}>{signer.signer_name}</option>)}</select></div>
+          <div className="vault-field"><span className="vault-label">Acquired on</span><input className="vault-input" type="date" value={acquiredAt} onChange={(event) => setAcquiredAt(event.target.value)} /></div>
+          <div className="vault-field"><span className="vault-label">Purchase price (USD)</span><input className="vault-input" type="number" min="0" step="0.01" placeholder="Optional" value={price} onChange={(event) => setPrice(event.target.value)} /></div>
+          <div className="vault-field"><span className="vault-label">Nickname</span><input className="vault-input" placeholder="Optional" value={nickname} onChange={(event) => setNickname(event.target.value)} /></div>
         </div>
-        <div className="vault-field">
-          <span className="vault-label">Signer</span>
-          <select className="vault-select" value={signerId} onChange={(event) => setSignerId(event.target.value)}>
-            <option value="">Unknown / none</option>
-            {data.signers.map((signer) => (
-              <option key={signer.id} value={signer.id}>{signer.signer_name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Variant</span>
-          <select className="vault-select" value={variant} onChange={(event) => setVariant(event.target.value as Variant)}>
-            {(['normal', 'golden', 'rainbow', 'shiny'] as Variant[]).map((value) => (
-              <option key={value} value={value}>{variantLabel[value]}</option>
-            ))}
-          </select>
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Acquired on</span>
-          <input className="vault-input" type="date" value={acquiredAt} onChange={(event) => setAcquiredAt(event.target.value)} />
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Purchase price (USD)</span>
-          <input className="vault-input" type="number" min="0" step="0.01" placeholder="Optional" value={price} onChange={(event) => setPrice(event.target.value)} />
-        </div>
-        <div className="vault-field">
-          <span className="vault-label">Nickname</span>
-          <input className="vault-input" placeholder="Optional" value={nickname} onChange={(event) => setNickname(event.target.value)} />
-        </div>
-      </div>
-      <div className="vault-field" style={{ marginTop: 12 }}>
-        <span className="vault-label">Notes</span>
-        <textarea className="vault-textarea" rows={2} placeholder="Provenance, condition, trade partner…" value={notes} onChange={(event) => setNotes(event.target.value)} />
-      </div>
-      {error && <div className="vault-error" style={{ marginTop: 10 }}>{error}</div>}
-      <div className="vault-row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
-        <button className="vault-btn" onClick={onClose}>Cancel</button>
-        <button className="vault-btn vault-btn-gold" onClick={() => void submit()} disabled={busy}>
-          {busy ? 'Adding…' : 'Add to collection'}
-        </button>
+        <div className="vault-field" style={{ marginTop: 12 }}><span className="vault-label">Notes</span><textarea className="vault-textarea" rows={2} placeholder="Provenance, condition, trade partner…" value={notes} onChange={(event) => setNotes(event.target.value)} /></div>
+        {error && <div className="vault-error" role="alert" style={{ marginTop: 10 }}>{error}</div>}
+        <div className="vault-row" style={{ marginTop: 16, justifyContent: 'flex-end' }}><button className="vault-btn" onClick={onClose}>Cancel</button><button className="vault-btn vault-btn-gold" onClick={() => void submit()} disabled={busy || !petId}>{busy ? 'Adding…' : 'Add selected variant'}</button></div>
       </div>
     </Modal>
   );
@@ -985,7 +943,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
       {collectionMode === 'missing' ? (
         missingCatalog.length === 0 ? <div className="vault-empty"><div className="vault-empty-title">No missing pets found</div><div>Your tracked catalog is fully collected for these filters.</div></div> :
-        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Add to collection +</span></div><div className="vault-pet-value">{formatValue(pet.cosmic_value)}</div></div></button>)}</div>
+        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Choose variant +</span></div><div className="vault-pet-value">{formatValue(pet.cosmic_value)}</div></div></button>)}</div>
       ) : pets.length === 0 ? (
         <div className="vault-empty">
           <div className="vault-empty-title">Empty collection</div>
