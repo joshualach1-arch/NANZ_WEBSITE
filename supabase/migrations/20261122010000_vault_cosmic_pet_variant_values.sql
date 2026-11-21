@@ -76,7 +76,7 @@ BEGIN
   END LOOP;
 
   INSERT INTO public.vault_import_history(kind,source,added,updated,skipped,details,finished_at)
-  VALUES('pet_values','cosmic_values',0,v_updated,v_skipped,
+  VALUES('cosmic','cosmic_values',0,v_updated,v_skipped,
          jsonb_build_object('batch',v_batch,'source_count',jsonb_array_length(coalesce(p_values,'[]'::jsonb))),now());
   INSERT INTO public.vault_audit_log(collector_no,actor,action,detail)
   VALUES(1,'owner','cosmic_pet_values_import',jsonb_build_object('updated',v_updated,'skipped',v_skipped,'batch',v_batch));
