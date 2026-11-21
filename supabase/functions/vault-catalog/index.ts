@@ -94,11 +94,10 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
   const text = decode(html);
   const rows: Record<string, unknown>[] = [];
 
-  // Current Cosmic list format:
-  // "Huge Anime Unicorn Normal 650M ▲ 20M 6/10 ..."
-  // The first number is the listed value; the following arrow number is
-  // only the change indicator and must not be imported as the pet value.
-  const pattern = /((?:(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,90}?)\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)(?:\s+[▲▼=]\s*[\d,.]+\s*[KMBT]?)?\s+(?:N\/?A|\d+\s*(?:\/\s*10|OUT\s+OF\s+10))/gi;
+  // Verified Cosmic HTML text format:
+  // "HUGE CAT Variant Normal Value ▲ 20.5% | 6.75B Demand 7/10"
+  // The percentage is the change indicator; the value after "|" is the pet value.
+  const pattern = /((?:(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,90}?)\s+VARIANT\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+VALUE\s+(?:(?:[▲▼=]\s*)?[\d,.]+\s*%?\s*\|\s*)?([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\s+DEMAND\s+(?:N\/?A|\d+\s*(?:\/\s*10|OUT\s+OF\s+10))/gi;
 
   for (const match of text.matchAll(pattern)) {
     const fullName = match[1].replace(/\s+/g, " ").trim();
