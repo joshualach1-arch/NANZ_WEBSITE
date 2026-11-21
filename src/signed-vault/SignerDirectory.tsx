@@ -68,7 +68,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
           ? a.signer_name.localeCompare(b.signer_name)
           : b.signature_count - a.signature_count;
       });
-  }, [data.signers, query, category, verification, ownership, sort]);
+  }, [data.signers, query, category, verification, ownership, sort, ownedSignerIds]);
 
   const ownedSignerCount = data.signers.filter((entry) => ownedSignerIds.has(entry.id)).length;
   const missingSignerCount = Math.max(0, data.signers.length - ownedSignerCount);
