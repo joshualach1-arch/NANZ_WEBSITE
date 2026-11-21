@@ -4,6 +4,9 @@ import {
   BadgeCheck,
   Check,
   Gem,
+  Search,
+  SlidersHorizontal,
+  ChevronDown,
   Lock,
   LogOut,
   Plus,
@@ -849,13 +852,13 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         <strong>Huge pets you haven't collected yet</strong>
         <small>Only Huge pets appear here. Select a pet to add it to your collection.</small>
       </div>}
-      <div className="vault-card" style={{ marginBottom: 16 }}>
-        <div className="vault-field" style={{ marginBottom: 12 }}>
-          <span className="vault-label">{collectionMode === 'missing' ? 'Find a missing pet' : 'Search your collection'}</span>
-          <input className="vault-input" placeholder={collectionMode === 'missing' ? 'Search catalog…' : 'Search pet, nickname or signer…'} value={collectionMode === 'missing' ? catalogSearch : petSearch} onChange={(event) => collectionMode === 'missing' ? setCatalogSearch(event.target.value) : setPetSearch(event.target.value)} />
+      <div className="vault-card vault-collection-search-panel">
+        <div className="vault-collection-search">
+          <Search size={19} aria-hidden="true" />
+          <input className="vault-input" aria-label={collectionMode === 'missing' ? 'Find a missing pet' : 'Search your collection'} placeholder={collectionMode === 'missing' ? 'Search catalog…' : 'Search pet, nickname or signer…'} value={collectionMode === 'missing' ? catalogSearch : petSearch} onChange={(event) => collectionMode === 'missing' ? setCatalogSearch(event.target.value) : setPetSearch(event.target.value)} />
         </div>
-        <details className="vault-advanced-filters">
-          <summary>Advanced filters and sorting</summary>
+        <details className="vault-advanced-filters vault-collection-advanced">
+          <summary><SlidersHorizontal size={16} /> Advanced filters and sorting <ChevronDown size={15} /></summary>
           <div className="vault-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', marginTop: 12 }}>
           <div className="vault-field">
             <span className="vault-label">Variant</span>
