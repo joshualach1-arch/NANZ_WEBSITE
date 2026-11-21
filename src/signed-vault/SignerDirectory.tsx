@@ -91,12 +91,12 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
               setImportingCosmic(true); setImportError(null); setImportSummary(null);
               void importCosmicSigners()
                 .then(async (result) => {
-                  setImportSummary(`Cosmic Values import ${result.source_complete === false ? 'incomplete' : 'complete'} · ${Number(result.unique_signers ?? 0)} distinct Roblox accounts${result.expected_signers != null ? ` / ${Number(result.expected_signers)} published` : ''} from ${Number(result.source_rows ?? 0)} source rows · ${Number(result.added ?? 0)} added · ${Number(result.updated ?? 0)} updated · ${Number(result.skipped ?? 0)} skipped. Same display names remain separate when the Roblox accounts differ.`);
+                  setImportSummary(`Cosmic Values refreshed · ${Number(result.updated ?? 0)} existing signer records updated · ${Number(result.skipped ?? 0)} unmatched source rows skipped. Signer records and identities were not changed.`);
                   await onRefresh();
                 })
                 .catch((err) => setImportError(err instanceof Error ? err.message : 'Signer import failed.'))
                 .finally(() => setImportingCosmic(false));
-            }}>{importingCosmic ? 'Importing…' : '↓  Import Cosmic Values'}</button>
+            }}>{importingCosmic ? 'Importing…' : '↓  Update Cosmic Values'}</button>
             <button className="vault-btn vault-btn-gold vault-btn-sm vault-signers-add" onClick={() => setEditor('new')}><Plus size={17} /> Add Signer</button>
           </div>
         )}
@@ -139,10 +139,10 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
                 <span className="vault-signer-open"><ChevronRight size={19} /></span>
               </div>
               <div className="vault-signer-metrics">
-                <div><small>EXCLUSIVE</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : '—'}</strong></div>
-                <div><small>HUGE</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : '—'}</strong></div>
-                <div><small>TITANIC</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : '—'}</strong></div>
-                <div><small>DEMAND</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : '—'}</strong></div>
+                <div><small>EXCLUSIVE</small><strong>{signer.cosmic_exclusive_value != null ? formatValue(signer.cosmic_exclusive_value, '') : signer.cosmic_exclusive_status === 'soon' ? 'SOON' : signer.cosmic_exclusive_status === 'na' ? 'N/A' : '—'}</strong></div>
+                <div><small>HUGE</small><strong>{signer.cosmic_huge_value != null ? formatValue(signer.cosmic_huge_value, '') : signer.cosmic_huge_status === 'soon' ? 'SOON' : signer.cosmic_huge_status === 'na' ? 'N/A' : '—'}</strong></div>
+                <div><small>TITANIC</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : signer.cosmic_titanic_status === 'soon' ? 'SOON' : signer.cosmic_titanic_status === 'na' ? 'N/A' : '—'}</strong></div>
+                <div><small>DEMAND</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : signer.cosmic_demand_status === 'na' ? 'N/A' : '—'}</strong></div>
               </div>
               <div className="vault-signer-card-footer"><span>{signer.signature_count} signatures</span><span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span></div>
             </button>
