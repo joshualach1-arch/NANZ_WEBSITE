@@ -2375,3 +2375,30 @@
   .vault-collection-page .vault-pet-name { font-size:14px!important; }
   .vault-collection-page .vault-pet-body { padding:10px!important; }
 }
+
+
+/* Missing Pets variant chooser */
+.vault-variant-modal{display:flex;flex-direction:column;gap:18px}
+.vault-variant-preview{display:grid;grid-template-columns:132px minmax(0,1fr);gap:16px;align-items:center;padding:14px;border:1px solid rgba(120,145,210,.2);border-radius:16px;background:linear-gradient(130deg,rgba(25,37,66,.9),rgba(10,16,31,.95))}
+.vault-variant-preview h3{margin:5px 0;font-size:19px;color:#f4f6ff}
+.vault-variant-preview p{margin:0;color:#9baaca;font-size:12px;line-height:1.5}
+.vault-variant-art,.vault-variant-swatch{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle,rgba(81,110,175,.25),rgba(8,13,24,.9))}
+.vault-variant-art{min-height:118px;border-radius:13px}
+.vault-variant-art img{width:100%;height:118px;object-fit:contain;padding:9px;filter:drop-shadow(0 8px 10px rgba(0,0,0,.4))}
+.vault-variant-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.vault-variant-option{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;padding:9px;border:1px solid rgba(130,153,205,.17);border-radius:13px;color:#dce5ff;background:rgba(8,14,28,.78);cursor:pointer}
+.vault-variant-option.active{border-color:#8a79ff;background:linear-gradient(145deg,rgba(92,91,206,.22),rgba(20,29,54,.9));box-shadow:0 0 0 1px rgba(140,123,255,.22),0 8px 22px rgba(73,65,170,.15)}
+.vault-variant-swatch{width:100%;height:78px;border-radius:9px}
+.vault-variant-swatch img{width:100%;height:100%;object-fit:contain;padding:6px;filter:drop-shadow(0 5px 7px rgba(0,0,0,.4))}
+.vault-variant-option b{font-size:11px;text-align:center}
+.vault-variant-check{color:#a9b7ff;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.variant-golden{background:linear-gradient(135deg,rgba(255,190,61,.26),rgba(65,42,14,.7))}
+.variant-golden img{filter:sepia(.42) saturate(1.6) hue-rotate(350deg) drop-shadow(0 5px 8px rgba(255,190,60,.25))}
+.variant-rainbow,.variant-rainbow-shiny{background:linear-gradient(115deg,rgba(255,80,115,.32),rgba(255,190,75,.25),rgba(95,220,155,.25),rgba(80,160,255,.3),rgba(185,105,255,.3))}
+.variant-shiny img,.variant-golden-shiny img,.variant-rainbow-shiny img{filter:brightness(1.14) contrast(1.06) drop-shadow(0 5px 8px rgba(190,220,255,.3))}
+.variant-golden-shiny{background:linear-gradient(135deg,rgba(255,191,65,.28),rgba(52,38,24,.7))}
+.vault-shine-sweep{position:absolute;inset:-40% auto -40% -55%;width:36%;transform:skewX(-22deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),rgba(255,255,255,.82),rgba(255,255,255,.12),transparent);filter:blur(1px);animation:vaultShineSweep 1.15s ease-in-out infinite;pointer-events:none}
+@keyframes vaultShineSweep{0%{left:-55%;opacity:0}15%{opacity:.9}75%{opacity:.85}100%{left:125%;opacity:0}}
+.vault-variant-option .vault-shine-sweep{width:42%}
+@media(max-width:560px){.vault-variant-preview{grid-template-columns:94px minmax(0,1fr)}.vault-variant-art img{height:94px}.vault-variant-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.vault-shine-sweep{animation:none;left:35%;opacity:.45}}
