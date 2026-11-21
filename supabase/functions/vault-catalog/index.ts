@@ -93,7 +93,13 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
     .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const text = decode(html);
   const rows: Record<string, unknown>[] = [];
-  const pattern = /((?:(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,90}?)\s+VARIANT\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+VALUE\s+(?:(?:[▲▼=]\s*)?[\d,.]+\s*[KMBT]?\s*\|\s*)?([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/C)\s+DEMAND\s+(?:N\/?A|\d+\s*(?:\/\s*10|OUT\s+OF\s+10))/gi;
+
+  // Current Cosmic list format:
+  // "Huge Anime Unicorn Normal 650M ▲ 20M 6/10 ..."
+  // The first number is the listed value; the following arrow number is
+  // only the change indicator and must not be imported as the pet value.
+  const pattern = /((?:(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,90}?)\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)(?:\s+[▲▼=]\s*[\d,.]+\s*[KMBT]?)?\s+(?:N\/?A|\d+\s*(?:\/\s*10|OUT\s+OF\s+10))/gi;
+
   for (const match of text.matchAll(pattern)) {
     const fullName = match[1].replace(/\s+/g, " ").trim();
     const variantRaw = match[2].replace(/\s+/g, " ").toLowerCase();
@@ -102,12 +108,13 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
     const baseName = fullName.replace(/^(?:RAINBOW\s+SHINY|SHINY\s+RAINBOW|GOLDEN|RAINBOW|SHINY)\s+/i, "").trim();
     const rawValue = match[3].trim();
     const value = parseCosmicValue(rawValue);
-    const status = parseCosmicStatus(rawValue) ?? (/^O\/C$/i.test(rawValue) ? "oc" : null);
-    if (baseName && (value != null || status != null)) rows.push({ pet_name: baseName, variant, value, status, source_name: fullName });
+    const status = parseCosmicStatus(rawValue) ?? (/^O\/?C$/i.test(rawValue) ? "oc" : null);
+    if (baseName && (value != null || status != null)) {
+      rows.push({ pet_name: baseName, variant, value, status, source_name: fullName });
+    }
   }
   return rows;
 }
-
 function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
