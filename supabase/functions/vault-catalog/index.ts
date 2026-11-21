@@ -27,10 +27,19 @@ const IMPORT_CATEGORIES = new Set(["Huge", "Exclusive", "Titanic", "Gargantuan"]
 function normalizePetCategory(pet: PetRow): string | null {
   const raw = String(pet.category ?? "").trim().toLowerCase();
   const config = asRecord(pet.configData);
-  if (raw.includes("gargantuan") || config.gargantuan === true) return "Gargantuan";
-  if (raw.includes("titanic") || config.titanic === true) return "Titanic";
-  if (raw.includes("huge") || config.huge === true) return "Huge";
-  if (raw.includes("exclusive") || config.exclusive === true) return "Exclusive";
+
+  // The API can mark Exclusive pets with additional capability flags (including
+  // huge=true). Prefer the explicit category from the collection record first,
+  // otherwise the generic huge flag incorrectly swallows Exclusive pets.
+  if (raw.includes("gargantuan")) return "Gargantuan";
+  if (raw.includes("titanic")) return "Titanic";
+  if (raw.includes("exclusive")) return "Exclusive";
+  if (raw.includes("huge")) return "Huge";
+
+  if (config.gargantuan === true) return "Gargantuan";
+  if (config.titanic === true) return "Titanic";
+  if (config.exclusive === true) return "Exclusive";
+  if (config.huge === true) return "Huge";
   return null;
 }
 
