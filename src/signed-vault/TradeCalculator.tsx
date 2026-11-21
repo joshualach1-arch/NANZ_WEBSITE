@@ -140,16 +140,46 @@ export function TradeCalculator({ data }: { data: VaultData }) {
     </div>
     <div className="tc-calculate-bar"><div><Calculator size={19}/><span><b>Trade ready?</b><small>{give.length} offered · {get.length} received · Gems included</small></span></div><button onClick={()=>{setCalculated(true);document.getElementById('tc-results')?.scrollIntoView({behavior:'smooth',block:'start'});}}><Scale size={18}/> THAT'S MY TRADE</button></div>
     {calculated && <section id="tc-results" className={`tc-result tc-result-${tone}`}>
-      <div className="tc-result-top"><div><span className="tc-kicker">TRADE VERDICT</span><h3>{verdict}</h3><p>{detail}</p><span className={`tc-direction tc-direction-${effectiveDiff>0?'up':effectiveDiff<0?'down':'even'}`}>{effectiveDiff>0?'YOU UNDERPAY':effectiveDiff<0?'YOU OVERPAY':'EVEN VALUE'}</span></div><div className="tc-verdict-mark">{tone==='win'?<TrendingUp size={30}/>:tone==='loss'?<TrendingDown size={30}/>:<Scale size={30}/>}</div></div>
-      <div className="tc-result-grid">
-        <div><span>PROFIT / LOSS · COMBINED VALUE</span><strong className={baseDiff>=0?'tc-positive':'tc-negative'}>{baseDiff>=0?'+':'−'}{money(Math.abs(baseDiff))}</strong><small>{pct>=0?'+':''}{pct.toFixed(1)}% vs your offer</small></div>
-        <div><span>PET VALUE DIFFERENCE</span><strong>{money(b.pet-a.pet)}</strong><small>Received minus given</small></div>
-        <div><span>SIGNATURE VALUE DIFFERENCE</span><strong>{money(b.signature-a.signature)}</strong><small>Signed value only</small></div>
-        <div><span>RARITY-ADJUSTED RESULT</span><strong className={effectiveDiff>=0?'tc-positive':'tc-negative'}>{effectiveDiff>=0?'+':'−'}{money(Math.abs(effectiveDiff))}</strong><small>{effectivePct>=0?'+':''}{effectivePct.toFixed(1)}% · {rarityEnabled?'rarity included':'rarity ignored'}</small></div>
-        <div><span>DEMAND / RARITY DIFFERENCE</span><strong>{demandDiff>0?'+':''}{demandDiff.toFixed(1)} / 10</strong><small>{demandDiff>0?'Received side is rarer':demandDiff<0?'Your offer is rarer':'Equal average rarity'}</small></div>
-        <div><span>GEMS DIFFERENCE</span><strong>{money(num(getGems)-num(giveGems))}</strong><small>Received minus given</small></div>
+      <div className="tc-result-heading">
+        <div><span className="tc-kicker">NANZO TRADE ANALYSIS</span><h3>Trade result</h3><p>Here is exactly what you give, what you receive, and whether the trade is worth it.</p></div>
+        <div className={`tc-verdict-pill tc-verdict-${tone}`}>{verdict}</div>
       </div>
-      <div className="tc-demand-note"><ShieldCheck size={17}/><span><b>NANZO rarity model:</b> 10/10 adds up to 20% to the evaluation; 1/10 reduces it by up to 16%. This is a collector estimate, not an official market formula.</span></div>
+      <div className="tc-trade-receipt">
+        <div className="tc-receipt-side tc-receipt-give">
+          <div className="tc-receipt-title"><span>YOU GIVE</span><b>{money(a.combined)}</b></div>
+          {give.map((item)=>{const p=data.catalog.find(x=>x.id===item.petId);const sg=data.signers.find(x=>x.id===item.signerId);return <div className="tc-receipt-item" key={item.id}>
+            <div className="tc-receipt-image">{p?.image_url?<img src={p.image_url} alt=""/>:<Sparkles size={24}/>}</div>
+            <div className="tc-receipt-name"><b>{p?.display_name||p?.pet_name||'Pet'}</b><span>{variantLabelWide[item.variant]||item.variant}</span><small>{sg?(`Signed by ${sg.display_name||sg.signer_name}`):'No signature'}</small></div>
+            <div className="tc-receipt-value"><b>{money(num(item.hugeValue)+num(item.signatureValue))}</b><small>Pet {money(num(item.hugeValue))} · Sign {money(num(item.signatureValue))}</small></div>
+          </div>})}
+          {num(giveGems)>0&&<div className="tc-receipt-gems"><Coins size={17}/><span>Gems added</span><b>{money(num(giveGems))}</b></div>}
+          <div className="tc-receipt-total"><span>Total value you give</span><b>{money(a.combined)}</b></div>
+        </div>
+        <div className="tc-receipt-vs"><span>TRADE</span><ArrowDownUp size={24}/></div>
+        <div className="tc-receipt-side tc-receipt-get">
+          <div className="tc-receipt-title"><span>YOU RECEIVE</span><b>{money(b.combined)}</b></div>
+          {get.map((item)=>{const p=data.catalog.find(x=>x.id===item.petId);const sg=data.signers.find(x=>x.id===item.signerId);return <div className="tc-receipt-item" key={item.id}>
+            <div className="tc-receipt-image">{p?.image_url?<img src={p.image_url} alt=""/>:<Sparkles size={24}/>}</div>
+            <div className="tc-receipt-name"><b>{p?.display_name||p?.pet_name||'Pet'}</b><span>{variantLabelWide[item.variant]||item.variant}</span><small>{sg?(`Signed by ${sg.display_name||sg.signer_name}`):'No signature'}</small></div>
+            <div className="tc-receipt-value"><b>{money(num(item.hugeValue)+num(item.signatureValue))}</b><small>Pet {money(num(item.hugeValue))} · Sign {money(num(item.signatureValue))}</small></div>
+          </div>})}
+          {num(getGems)>0&&<div className="tc-receipt-gems"><Coins size={17}/><span>Gems added</span><b>{money(num(getGems))}</b></div>}
+          <div className="tc-receipt-total"><span>Total value you receive</span><b>{money(b.combined)}</b></div>
+        </div>
+      </div>
+      <div className="tc-result-explainer">
+        <div className="tc-result-main-number"><span>{effectiveDiff>=0?'YOU WIN':'YOU LOSE'}</span><strong className={effectiveDiff>=0?'tc-positive':'tc-negative'}>{effectiveDiff>=0?'+':'−'}{money(Math.abs(effectiveDiff))}</strong><small>{effectivePct>=0?'+':''}{effectivePct.toFixed(1)}% difference after rarity</small></div>
+        <div className="tc-result-plain"><b>{effectiveDiff>0?'This trade is in your favor.':effectiveDiff<0?'You are giving more value than you receive.':'Both sides are approximately equal.'}</b><p>{detail} {demandDiff>0?'The pets you receive have a higher average rarity score.':demandDiff<0?'The pets you give have a higher average rarity score.':'Both sides have the same average rarity score.'}</p><span className={`tc-direction tc-direction-${effectiveDiff>0?'up':effectiveDiff<0?'down':'even'}`}>{effectiveDiff>0?'YOU UNDERPAY':effectiveDiff<0?'YOU OVERPAY':'EVEN TRADE'}</span></div>
+      </div>
+      <div className="tc-result-grid">
+        <div><span>Pet value difference</span><strong>{money(b.pet-a.pet)}</strong><small>Difference in pet values</small></div>
+        <div><span>Signature value difference</span><strong>{money(b.signature-a.signature)}</strong><small>Difference in designer values</small></div>
+        <div><span>Gems difference</span><strong>{money(num(getGems)-num(giveGems))}</strong><small>Gems you receive minus give</small></div>
+        <div><span>Value difference before rarity</span><strong className={baseDiff>=0?'tc-positive':'tc-negative'}>{baseDiff>=0?'+':'−'}{money(Math.abs(baseDiff))}</strong><small>{pct>=0?'+':''}{pct.toFixed(1)}% compared with your offer</small></div>
+        <div><span>Average rarity – your offer</span><strong>{a.demand.toFixed(1)} / 10</strong><small>Average score of pets you give</small></div>
+        <div><span>Average rarity – received</span><strong>{b.demand.toFixed(1)} / 10</strong><small>Average score of pets you receive</small></div>
+      </div>
+      <div className="tc-demand-note"><ShieldCheck size={17}/><span><b>How rarity affects the result:</b> Higher rarity can improve the estimated deal score. This is NANZO's custom collector estimate, not an official market value.</span></div>
     </section>}
     <div className="tc-footnote"><Search size={14}/> Search works across the full pet and designer catalogs. Unsigned pets are supported. All item values can be edited manually before calculating.</div>
   </div>;
