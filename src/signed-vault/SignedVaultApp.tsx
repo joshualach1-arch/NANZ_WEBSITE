@@ -558,7 +558,7 @@ function OverviewTab({ data, onNavigate }: { data: VaultData; onNavigate: (tab: 
     <div className="vault-overview-page">
       <div className="vault-stat-grid vault-overview-primary-stats">
         <StatCard icon={<Layers size={38} strokeWidth={2.6} />} label="Collection size" value={String(data.pets.length)} hint={`${verifiedPets.length} verified · ${unverifiedPets.length} unverified`} />
-        <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(totalValue)} hint="verified signature values only" />
+        <StatCard icon={<ChartNoAxesColumnIncreasing size={38} strokeWidth={2.6} />} label="Collection value" value={formatValue(totalValue)} hint="Cosmic signer values for owned signed pets" />
         <StatCard icon={<Coins size={38} strokeWidth={2.6} />} label="Invested" value={formatValue(spent)} hint="total purchase price" />
         <StatCard icon={<TrendingUp size={38} strokeWidth={2.6} />} label={profit >= 0 ? 'Profit' : 'Loss'} value={`${profit >= 0 ? '+' : ''}${formatValue(profit)}`} hint={pctReturn !== null ? `${pctReturn >= 0 ? '+' : ''}${pctReturn.toFixed(1)}% return` : 'no purchases recorded yet'} />
       </div>
