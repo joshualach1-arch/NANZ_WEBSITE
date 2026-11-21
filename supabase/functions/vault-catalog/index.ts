@@ -116,7 +116,7 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
 
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
-  const pattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+Variant\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\s+SHINY|SHINY\s+GOLDEN|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+Value\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\b/gi;
+  const pattern = new RegExp(String.raw`((?:(?:GOLDEN|RAINBOW|SHINY)\s+)*(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+Variant\s+(NORMAL|GOLDEN|RAINBOW|SHINY|GOLDEN\s+SHINY|SHINY\s+GOLDEN|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+Value\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\b`, "gi");
 
   for (const match of text.matchAll(pattern)) {
     const sourceName = match[1].replace(/\s+/g, " ").trim();
