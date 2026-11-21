@@ -336,7 +336,10 @@ Deno.serve(async (req: Request) => {
         const rows = parseCosmicPetRows(html);
         // Cosmic's AJAX feed returns up to 50 records per page and does not
         // reliably include the HTML pager markup.
-        const hasMore = rows.length >= 50;
+        // Cosmic returns 24 cards per AJAX page; the parsed row count is therefore not a 50-row page size.
+        // Continue while the source page is full, and stop only on an empty/short source page.
+        const sourceCardCount = (html.match(/class=["\']card-box["\']/gi) ?? []).length;
+        const hasMore = sourceCardCount >= 24;
 
         if (rows.length > 0) {
           const unique = new Map<string, Record<string, unknown>>();
