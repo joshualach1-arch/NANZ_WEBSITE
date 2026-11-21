@@ -29,3 +29,7 @@ entrypoint = "./functions/vault-biggames/index.ts"
 [functions.vault-catalog]
 verify_jwt = false
 entrypoint = "./functions/vault-catalog/index.ts"
+
+[functions.screenshot-trade-analyzer]
+verify_jwt = false
+entrypoint = "./functions/screenshot-trade-analyzer/index.ts"
