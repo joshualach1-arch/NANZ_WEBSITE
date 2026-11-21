@@ -88,42 +88,40 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim();
   const text = decode(html);
   const rows: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
 
-  // Cosmic's actual values.php listing renders rows like:
-  // "Huge Anime Unicorn Normal 650M ▼ 25M 7/10 7w ago Exist 12,481 RAP 695.36M"
-  // The variant is a separate field AFTER the complete pet name. The old parser
-  // incorrectly expected the labels "VARIANT ... VALUE ... DEMAND ...", which
-  // do not exist in this listing.
-  const pattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\b[A-Z0-9 .,'’&()\-]{0,100}?)\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\s+SHINY|SHINY\s+RAINBOW)\s+([\d,.]+\s*[KMBT]?|SOON|N\/?A|O\/?C)\b/gi;
-
-  for (const match of text.matchAll(pattern)) {
-    const sourceName = match[1].replace(/\s+/g, " ").trim();
-    const variantRaw = match[2].replace(/\s+/g, " ").toLowerCase();
-    const variant = variantRaw === "normal" ? "normal"
-      : variantRaw === "golden" ? "golden"
-      : variantRaw === "rainbow" ? "rainbow"
-      : variantRaw === "shiny" ? "shiny"
+  const add = (sourceNameRaw: string, variantRaw: string, rawValue: string) => {
+    const sourceName = sourceNameRaw.replace(/\\s+/g, " ").trim();
+    const normalizedVariant = variantRaw.replace(/\\s+/g, " ").toLowerCase();
+    const variant = normalizedVariant === "normal" ? "normal"
+      : normalizedVariant === "golden" ? "golden"
+      : normalizedVariant === "rainbow" ? "rainbow"
+      : normalizedVariant === "shiny" ? "shiny"
       : "rainbow_shiny";
-    // A leading modifier belongs to the variant, not to the base catalog pet.
-    const petName = sourceName.replace(/^(?:GOLDEN|RAINBOW|SHINY)\s+/i, "").trim();
-    const rawValue = match[3].trim();
-    const value = parseCosmicValue(rawValue);
-    const status = parseCosmicStatus(rawValue) ?? (/^O\/?C$/i.test(rawValue) ? "oc" : null);
-    if (petName && (value != null || status != null)) {
-      rows.push({
-        pet_name: petName,
-        variant,
-        value,
-        status,
-        source_name: sourceName,
-      });
-    }
-  }
+    const petName = sourceName.replace(/^(?:GOLDEN|RAINBOW|SHINY)\\s+/i, "").trim();
+    const valueText = rawValue.trim();
+    const value = parseCosmicValue(valueText);
+    const status = parseCosmicStatus(valueText) ?? (/^O\\/?C$/i.test(valueText) ? "oc" : null);
+    const key = `${petName.toLowerCase()}::${variant}`;
+    if (!petName || seen.has(key) || (value == null && status == null)) return;
+    seen.add(key);
+    rows.push({ pet_name: petName, variant, value, status, source_name: sourceName });
+  };
+
+  // Standard values.php rows, e.g. "Huge Anime Unicorn Normal 650M ...".
+  const standardPattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\\b[A-Z0-9 .,'’&()\\-]{0,100}?)\\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\\s+SHINY|SHINY\\s+RAINBOW)\\s+([\\d,.]+\\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\\b/gi;
+  for (const match of text.matchAll(standardPattern)) add(match[1], match[2], match[3]);
+
+  // AJAX response rows, e.g. "HUGE CAT Variant Normal Value 12.5B Demand 6/10".
+  // This is the text format returned by Cosmic's ajax_load_items.php endpoint.
+  const ajaxPattern = /((?:(?:GOLDEN|RAINBOW|SHINY)\\s+)?(?:HUGE|TITANIC|EXCLUSIVE|GARGANTUAN)\\b[A-Z0-9 .,'’&()\\-]{0,100}?)\\s+Variant\\s+(NORMAL|GOLDEN|RAINBOW|SHINY|RAINBOW\\s+SHINY|SHINY\\s+RAINBOW)\\s+Value\\s+([\\d,.]+\\s*[KMBT]?|SOON|N\\/?A|O\\/?C)\\b/gi;
+  for (const match of text.matchAll(ajaxPattern)) add(match[1], match[2], match[3]);
+
   return rows;
 }
 function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
