@@ -389,6 +389,11 @@ export async function importCosmicPetValues(): Promise<Record<string, unknown>> 
   return await vaultCall('cosmic-pet-values-import');
 }
 
+export async function fetchCosmicPetImportProgress(): Promise<Record<string, unknown>> {
+  const result = await vaultCall('cosmic-pet-values-progress');
+  return (result.progress ?? {}) as Record<string, unknown>;
+}
+
 export async function importCosmicSigners(): Promise<Record<string, unknown>> {
   const result = await vaultCall('cosmic-signers-import');
   return result;
