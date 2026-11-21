@@ -61,9 +61,13 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
         if (ownership === 'missing' && ownedSignerIds.has(signer.id)) return false;
         return true;
       })
-      .sort((a, b) => sort === 'name'
-        ? a.signer_name.localeCompare(b.signer_name)
-        : b.signature_count - a.signature_count);
+      .sort((a, b) => {
+        const ownedOrder = Number(ownedSignerIds.has(b.id)) - Number(ownedSignerIds.has(a.id));
+        if (ownedOrder !== 0) return ownedOrder;
+        return sort === 'name'
+          ? a.signer_name.localeCompare(b.signer_name)
+          : b.signature_count - a.signature_count;
+      });
   }, [data.signers, query, category, verification, ownership, sort]);
 
   const ownedSignerCount = data.signers.filter((entry) => ownedSignerIds.has(entry.id)).length;
@@ -122,17 +126,19 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
         <div className="vault-empty"><div className="vault-empty-title">No signers match</div><div>Adjust the search or filters.</div></div>
       ) : (
         <div className="vault-signer-grid">
-          {filtered.map((signer) => (
-            <button key={signer.id} className="vault-signer-card" onClick={() => onOpenSigner(signer.id)}>
+          {filtered.map((signer) => {
+            const isOwned = ownedSignerIds.has(signer.id);
+            return (
+            <button key={signer.id} className={`vault-signer-card${isOwned ? ' is-owned-signer' : ''}`} onClick={() => onOpenSigner(signer.id)}>
               <div className="vault-signer-card-top">
                 <div className="vault-signer-card-identity">
                   <div className="vault-signer-avatar">{signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" /> : signer.signer_name.slice(0, 2).toUpperCase()}</div>
                   <div className="vault-signer-card-names">
-                    <div className="vault-signer-name">{signer.display_name || signer.signer_name}</div>
+                    <div className={`vault-signer-name${isOwned ? ' vault-owned-signer-name' : ''}`}>{signer.display_name || signer.signer_name}</div>
                     <div className="vault-note">@{signer.roblox_username || signer.signer_name}</div>
                     <div className="vault-signer-card-badges">
                       <span className={`vault-ownership-badge ${ownedSignerIds.has(signer.id) ? 'is-owned' : 'is-missing'}`}><span className="vault-ownership-dot" />{ownedSignerIds.has(signer.id) ? 'OWNED' : 'MISSING'}</span>
-                      <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>{verificationLabels[signer.verification_status ?? 'unverified']}</span>
+                      {!isOwned && <span className={`vault-verification-badge ${verificationTone[signer.verification_status ?? 'unverified']}`}>{verificationLabels[signer.verification_status ?? 'unverified']}</span>}
                     </div>
                   </div>
                 </div>
@@ -146,7 +152,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
               </div>
               <div className="vault-signer-card-footer"><span>{signer.signature_count} signatures</span><span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span></div>
             </button>
-          ))}
+          )})}
         </div>
       )}
       {editor && <SignerEditor data={data} signer={editor === 'new' ? null : editor} onClose={() => setEditor(null)} onSaved={onRefresh} />}
@@ -175,7 +181,23 @@ export function SignerDetailPage({ data, signerId, onBack }: {
   const signatures = data.signatures.filter((record) => record.signer_id === signer.id);
   const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id) : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id);
-  const totalValue = signatures.reduce((sum, record) => sum + (record.verification_status === 'verified' || record.verification_status === 'community_verified' ? Number(record.signature_value ?? 0) : 0), 0);
+  const hasOwnedPets = myPets.length > 0;
+  const totalValue = myPets.reduce((sum, pet) => {
+    const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
+    const category = String(catalogPet?.category ?? pet.pet_category ?? '').toLowerCase();
+    const isTitanic = Boolean(catalogPet?.is_titanic) || category.includes('titanic');
+    const isHuge = Boolean(catalogPet?.is_huge) || category.includes('huge');
+    const isExclusive = Boolean(catalogPet?.is_exclusive) || category.includes('exclusive');
+    const cosmicValue = isTitanic ? signer.cosmic_titanic_value
+      : isHuge ? signer.cosmic_huge_value
+      : isExclusive ? signer.cosmic_exclusive_value : null;
+    const signature = signatures.find((record) => record.pet_id === pet.pet_id && record.variant === pet.variant);
+    const value = cosmicValue != null ? Number(cosmicValue)
+      : signature && (signature.verification_status === 'verified' || signature.verification_status === 'community_verified')
+        ? Number(signature.signature_value ?? pet.cosmic_value ?? 0)
+        : Number(pet.cosmic_value ?? 0);
+    return sum + value;
+  }, 0);
   const verified = signer.verification_status === 'verified' || signer.verification_status === 'community_verified';
   return (
     <div className="vault-signer-modal-backdrop" onMouseDown={onBack}>
@@ -186,11 +208,11 @@ export function SignerDetailPage({ data, signerId, onBack }: {
             <div className="vault-profile-identity">
               <div className="vault-profile-avatar">{signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} /> : signer.signer_name.slice(0, 2).toUpperCase()}</div>
               <div className="vault-profile-main">
-                <h2>{signer.display_name || signer.signer_name}</h2>
+                <h2 className={hasOwnedPets ? 'vault-owned-signer-name' : undefined}>{signer.display_name || signer.signer_name}</h2>
                 <p>@{signer.roblox_username || signer.signer_name}</p>
                 <div className="vault-profile-badges">
                   {(signer.roles ?? []).map((role) => <span key={role} className={'vault-profile-role role-' + role}>{signerRoleLabels[role]}</span>)}
-                  <span className={'vault-profile-role vault-profile-verification' + (verified ? ' is-verified' : '')}><BadgeCheck size={12} /> {verificationLabels[signer.verification_status ?? 'unverified']}</span>
+                  {!hasOwnedPets && <span className={'vault-profile-role vault-profile-verification' + (verified ? ' is-verified' : '')}><BadgeCheck size={12} /> {verificationLabels[signer.verification_status ?? 'unverified']}</span>}
                 </div>
                 <div className="vault-profile-links">
                   {signer.profile_url && <a href={signer.profile_url} target="_blank" rel="noreferrer"><ExternalLink size={13} /> Roblox profile</a>}
