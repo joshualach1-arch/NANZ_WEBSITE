@@ -1465,39 +1465,40 @@ function SignerDetail({ signer, data, onClose }: { signer: Signer; data: VaultDa
 
 function SignersTab({ data }: { data: VaultData }) {
   const [selected, setSelected] = useState<Signer | null>(null);
+  const exportSignatures = (format: 'html' | 'csv' = 'html') => {
+    const catalogById = new Map(data.catalog.map((pet) => [pet.id, pet]));
+    const ownedKeys = new Set(data.pets.filter((pet) => pet.signer_id).map((pet) => `${pet.signer_id}:${pet.pet_id}`));
+    const rows = data.signatures.map((record) => {
+      const signer = data.signers.find((entry) => entry.id === record.signer_id);
+      const pet = catalogById.get(record.pet_id);
+      const owned = ownedKeys.has(`${record.signer_id}:${record.pet_id}`);
+      return { signer: signer?.signer_name ?? 'Unknown signer', pet: pet?.pet_name ?? record.signature_name ?? 'Unknown signature', variant: variantLabelWide[record.variant] ?? record.variant, status: owned ? 'OWNED' : 'MISSING', verification: record.verification_status ?? 'unverified', value: record.signature_value == null ? '' : String(record.signature_value) };
+    }).sort((a,b) => a.signer.localeCompare(b.signer) || a.pet.localeCompare(b.pet) || a.variant.localeCompare(b.variant));
+    const ownedCount = rows.filter((row) => row.status === 'OWNED').length;
+    const missingCount = rows.length - ownedCount;
+    const stamp = new Date().toISOString().slice(0,10);
+    const escape = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] ?? char));
+    if (format === 'csv') {
+      const csv = [['Signer','Signature / Pet','Variant','Collection status','Verification','Signature value'], ...rows.map((row) => [row.signer,row.pet,row.variant,row.status,row.verification,row.value])].map((line) => line.map((cell) => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+      const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href=url; link.download=`NANZ-Signature-Checklist-${stamp}.csv`; link.click(); URL.revokeObjectURL(url); return;
+    }
+    const grouped = data.signers.map((signer) => ({ signer, entries: rows.filter((row) => row.signer === signer.signer_name) })).filter((group) => group.entries.length);
+    const content = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NANZ Signature Registry</title><style>*{box-sizing:border-box}body{margin:0;background:#080d19;color:#edf3ff;font:14px Inter,Arial,sans-serif;padding:42px 22px}.wrap{max-width:1050px;margin:auto}.hero{padding:34px;border:1px solid #293750;border-radius:22px;background:radial-gradient(ellipse at 85% 0,#263f75 0,transparent 48%),linear-gradient(135deg,#141f35,#0d1424)}.brand{color:#8caeff;font-size:11px;font-weight:900;letter-spacing:.24em}.hero h1{font-size:34px;margin:12px 0 8px}.muted{color:#9aabc6}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 28px}.stat{padding:18px;border:1px solid #25334b;border-radius:15px;background:#111b2d}.stat b{display:block;font-size:27px}.stat span{font-size:10px;letter-spacing:.12em;color:#91a2bf}.group{margin:22px 0}.group h2{font-size:17px;margin:0 0 10px}.count{color:#8fa6ce;font-size:12px;margin-left:8px}.table{width:100%;border-collapse:collapse;background:#10192a;border:1px solid #25334b;border-radius:13px;overflow:hidden}.table th,.table td{text-align:left;padding:12px 14px;border-bottom:1px solid #202d43}.table th{font-size:10px;letter-spacing:.12em;color:#91a2bf;background:#162238}.table td{font-size:13px}.pill{display:inline-block;padding:5px 9px;border-radius:20px;font-size:10px;font-weight:900;letter-spacing:.06em}.owned{color:#73e2b2;background:#143a32}.missing{color:#ffca78;background:#47351c}.foot{margin-top:30px;color:#687b9b;font-size:11px;text-align:center}@media(max-width:650px){body{padding:18px 10px}.hero{padding:23px}.hero h1{font-size:26px}.stats{gap:7px}.stat{padding:12px}.stat b{font-size:21px}.table th,.table td{padding:9px 7px;font-size:11px}}</style></head><body><main class="wrap"><header class="hero"><div class="brand">NANZ · SIGNED VAULT</div><h1>Signature Collection</h1><div class="muted">Your personal ownership checklist · Generated ${stamp}</div></header><section class="stats"><div class="stat"><b>${rows.length}</b><span>KNOWN SIGNATURES</span></div><div class="stat"><b style="color:#73e2b2">${ownedCount}</b><span>COLLECTED</span></div><div class="stat"><b style="color:#ffca78">${missingCount}</b><span>STILL MISSING</span></div></section>${grouped.map(({signer,entries})=>`<section class="group"><h2>${escape(signer.signer_name)} <span class="count">${entries.filter(e=>e.status==='OWNED').length}/${entries.length} collected</span></h2><table class="table"><thead><tr><th>SIGNATURE / PET</th><th>VARIANT</th><th>STATUS</th><th>VERIFICATION</th></tr></thead><tbody>${entries.map(row=>`<tr><td>${escape(row.pet)}</td><td>${escape(row.variant)}</td><td><span class="pill ${row.status==='OWNED'?'owned':'missing'}">${row.status}</span></td><td>${escape(row.verification.replaceAll('_',' '))}</td></tr>`).join('')}</tbody></table></section>`).join('')}<footer class="foot">NANZ SIGNED VAULT · PRIVATE COLLECTION REPORT</footer></main></body></html>`;
+    const blob = new Blob([content], { type: 'text/html;charset=utf-8' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href=url; link.download=`NANZ-Signature-Checklist-${stamp}.html`; link.click(); URL.revokeObjectURL(url);
+  };
+  const ownedCount = data.signatures.filter((record) => data.pets.some((pet) => pet.signer_id === record.signer_id && pet.pet_id === record.pet_id)).length;
   return (
     <div>
       <div className="vault-section-head">
-        <div>
-          <span className="vault-kicker">Shared registry</span>
-          <h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length} known signers</h3>
-        </div>
+        <div><span className="vault-kicker">Shared registry</span><h3 style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800 }}>{data.signers.length} known signers</h3><div className="vault-note" style={{marginTop:5}}>{ownedCount} of {data.signatures.length} known signatures collected</div></div>
+        <div className="vault-row" style={{gap:8,flexWrap:'wrap'}}><button className="vault-btn" onClick={() => exportSignatures('csv')}>Export CSV</button><button className="vault-btn vault-btn-gold" onClick={() => exportSignatures('html')}><Layers size={16}/> Export checklist</button></div>
       </div>
-      {data.signers.length === 0 ? (
-        <div className="vault-empty">
-          <div className="vault-empty-title">No signers yet</div>
-          <div>The owner can add signers in Settings.</div>
-        </div>
-      ) : (
-        <div className="vault-signer-grid">
-          {data.signers.map((signer) => (
-            <button key={signer.id} className="vault-signer-card" onClick={() => setSelected(signer)} style={{ border: 'none' }}>
-              <div className="vault-signer-avatar">
-                {signer.avatar_url
-                  ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" />
-                  : signer.signer_name.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="vault-signer-name">{signer.signer_name}</div>
-              <div className="vault-note" style={{ marginTop: 4 }}>{signer.signature_count} records</div>
-            </button>
-          ))}
-        </div>
-      )}
+      {data.signers.length === 0 ? <div className="vault-empty"><div className="vault-empty-title">No signers yet</div><div>The owner can add signers in Settings.</div></div> : <div className="vault-signer-grid">{data.signers.map((signer) => <button key={signer.id} className="vault-signer-card" onClick={() => setSelected(signer)} style={{ border: 'none' }}><div className="vault-signer-avatar">{signer.avatar_url ? <img src={signer.avatar_url} alt={signer.signer_name} loading="lazy" /> : signer.signer_name.slice(0, 2).toUpperCase()}</div><div className="vault-signer-name">{signer.signer_name}</div><div className="vault-note" style={{ marginTop: 4 }}>{signer.signature_count} records</div></button>)}</div>}
       {selected && <SignerDetail signer={selected} data={data} onClose={() => setSelected(null)} />}
     </div>
   );
 }
-
 /* ── cosmic value tracker ────────────────────────────────────────── */
 
 function ValuesTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: () => Promise<void>; isOwner: boolean }) {
