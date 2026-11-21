@@ -5,11 +5,13 @@ ALTER TABLE public.vault_cosmic_values
   ADD COLUMN IF NOT EXISTS rainbow_value numeric(20,2),
   ADD COLUMN IF NOT EXISTS shiny_value numeric(20,2),
   ADD COLUMN IF NOT EXISTS rainbow_shiny_value numeric(20,2),
+  golden_shiny_value numeric(20,2),
   ADD COLUMN IF NOT EXISTS normal_status text,
   ADD COLUMN IF NOT EXISTS golden_status text,
   ADD COLUMN IF NOT EXISTS rainbow_status text,
   ADD COLUMN IF NOT EXISTS shiny_status text,
-  ADD COLUMN IF NOT EXISTS rainbow_shiny_status text;
+  ADD COLUMN IF NOT EXISTS rainbow_shiny_status text,
+  golden_shiny_status text;
 
 CREATE OR REPLACE FUNCTION public.vault_cosmic_pet_values_import(p_token text, p_values jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
@@ -29,7 +31,7 @@ BEGIN
     v_variant := lower(btrim(coalesce(v_item->>'variant','normal')));
     v_value := nullif(v_item->>'value','')::numeric;
     v_status := nullif(v_item->>'status','');
-    IF v_name='' OR v_variant NOT IN ('normal','golden','rainbow','shiny','rainbow_shiny')
+    IF v_name='' OR v_variant NOT IN ('normal','golden','rainbow','shiny','rainbow_shiny','golden_shiny')
        OR (v_value IS NULL AND v_status IS NULL) THEN
       v_skipped := v_skipped+1; CONTINUE;
     END IF;
@@ -45,8 +47,8 @@ BEGIN
 
     INSERT INTO public.vault_cosmic_values (
       pet_id, cosmic_value, source, fetched_at, updated_at,
-      normal_value,golden_value,rainbow_value,shiny_value,rainbow_shiny_value,
-      normal_status,golden_status,rainbow_status,shiny_status,rainbow_shiny_status
+      normal_value,golden_value,rainbow_value,shiny_value,rainbow_shiny_value,golden_shiny_value,
+      normal_status,golden_status,rainbow_status,shiny_status,rainbow_shiny_status,golden_shiny_status
     ) VALUES (
       v_pet,NULL,'cosmic_values',now(),now(),
       CASE WHEN v_variant='normal' THEN v_value END,
@@ -54,11 +56,13 @@ BEGIN
       CASE WHEN v_variant='rainbow' THEN v_value END,
       CASE WHEN v_variant='shiny' THEN v_value END,
       CASE WHEN v_variant='rainbow_shiny' THEN v_value END,
+      CASE WHEN v_variant='golden_shiny' THEN v_value END,
       CASE WHEN v_variant='normal' THEN v_status END,
       CASE WHEN v_variant='golden' THEN v_status END,
       CASE WHEN v_variant='rainbow' THEN v_status END,
       CASE WHEN v_variant='shiny' THEN v_status END,
-      CASE WHEN v_variant='rainbow_shiny' THEN v_status END
+      CASE WHEN v_variant='rainbow_shiny' THEN v_status END,
+      CASE WHEN v_variant='golden_shiny' THEN v_status END
     )
     ON CONFLICT (pet_id) DO UPDATE SET
       source='cosmic_values', fetched_at=now(), updated_at=now(),
@@ -67,11 +71,13 @@ BEGIN
       rainbow_value=CASE WHEN v_variant='rainbow' THEN EXCLUDED.rainbow_value ELSE public.vault_cosmic_values.rainbow_value END,
       shiny_value=CASE WHEN v_variant='shiny' THEN EXCLUDED.shiny_value ELSE public.vault_cosmic_values.shiny_value END,
       rainbow_shiny_value=CASE WHEN v_variant='rainbow_shiny' THEN EXCLUDED.rainbow_shiny_value ELSE public.vault_cosmic_values.rainbow_shiny_value END,
+      golden_shiny_value=CASE WHEN v_variant='golden_shiny' THEN EXCLUDED.golden_shiny_value ELSE public.vault_cosmic_values.golden_shiny_value END,
       normal_status=CASE WHEN v_variant='normal' THEN EXCLUDED.normal_status ELSE public.vault_cosmic_values.normal_status END,
       golden_status=CASE WHEN v_variant='golden' THEN EXCLUDED.golden_status ELSE public.vault_cosmic_values.golden_status END,
       rainbow_status=CASE WHEN v_variant='rainbow' THEN EXCLUDED.rainbow_status ELSE public.vault_cosmic_values.rainbow_status END,
       shiny_status=CASE WHEN v_variant='shiny' THEN EXCLUDED.shiny_status ELSE public.vault_cosmic_values.shiny_status END,
-      rainbow_shiny_status=CASE WHEN v_variant='rainbow_shiny' THEN EXCLUDED.rainbow_shiny_status ELSE public.vault_cosmic_values.rainbow_shiny_status END;
+      rainbow_shiny_status=CASE WHEN v_variant='rainbow_shiny' THEN EXCLUDED.rainbow_shiny_status ELSE public.vault_cosmic_values.rainbow_shiny_status END,
+      golden_shiny_status=CASE WHEN v_variant='golden_shiny' THEN EXCLUDED.golden_shiny_status ELSE public.vault_cosmic_values.golden_shiny_status END;
     v_updated:=v_updated+1;
   END LOOP;
 
