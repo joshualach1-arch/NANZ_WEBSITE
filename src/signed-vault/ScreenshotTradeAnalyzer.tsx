@@ -37,7 +37,7 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
   const [analysis,setAnalysis]=useState<Analysis|null>(null);
   const [imported,setImported]=useState(false);
   const [sideGems,setSideGems]=useState<{give:string;get:string}>({give:'0',get:'0'});
-  const addFiles=async(list:FileList|null)=>{
+  const addFiles=async(list:FileList|File[]|null)=>{
     if(!list)return;
     const remaining=10-files.length;
     const selected=Array.from(list).slice(0,remaining);
@@ -78,6 +78,14 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
   const catalogMatch=(item:DetectedItem)=>data.catalog.find(p=>(p.display_name||p.pet_name)===item.catalog_match);
   return <section className="sc-analyzer">
     <div className="sc-head"><div><span className="tc-kicker">NANZO VISION LAB</span><h3><ScanSearch/> Screenshot Trade Analyzer</h3><p>Upload up to 10 screenshots. Vision AI connects overview shots, signature close-ups and Gems into one trade.</p></div><div className="sc-ai-pill"><span/> VISION AI</div></div>
+    <div className="sc-paste-wrap">
+      <label htmlFor="sc-paste-input"><span>QUICK PASTE</span><small>Click the field and press Ctrl+V (or Cmd+V) to add a copied screenshot</small></label>
+      <textarea id="sc-paste-input" className="sc-paste-input" rows={2} placeholder="Click here, then paste your copied image…" onPaste={e=>{
+        const imageFiles=Array.from(e.clipboardData.items).filter(item=>item.type.startsWith('image/')).map(item=>item.getAsFile()).filter((file):file is File=>!!file);
+        if(imageFiles.length){e.preventDefault();void addFiles(imageFiles.map((file,index)=>new File([file],file.name||`pasted-screenshot-${Date.now()}-${index}.png`,{type:file.type||'image/png'})));}
+      }} />
+      <span className="sc-paste-hint"><FileImage size={14}/> Images copied from screenshots, Snipping Tool or browser can be pasted here</span>
+    </div>
     <label className="sc-dropzone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void addFiles(e.dataTransfer.files);}}><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e=>{void addFiles(e.target.files);e.currentTarget.value='';}}/><Upload size={27}/><b>Drop screenshots here or click to browse</b><span>PNG, JPG or WEBP · Up to 10 images · Multiple screenshots are analyzed together</span><strong>{files.length}/10 UPLOADED</strong></label>
     {files.length>0&&<div className="sc-upload-grid">{files.map((f,i)=><article key={f.id}><img src={f.preview} alt={f.file.name}/><span>SCREENSHOT {i+1}</span><button onClick={()=>{setFiles(v=>v.filter(x=>x.id!==f.id));setAnalysis(null);}} aria-label="Remove screenshot"><X size={14}/></button><small>{f.file.name}</small></article>)}</div>}
     {error&&<div className="sc-error"><AlertTriangle size={16}/>{error}</div>}
