@@ -291,12 +291,12 @@ Deno.serve(async (req: Request) => {
         });
         if (result.error) throw new Error("progress_write_failed: " + result.error.message);
       };
-      await writeProgress({ status: "running", stage: "fetching", category: null, category_index: 0, category_total: categories.length, page: 0, source_rows: 0, message: "Starting Cosmic Values download", error: null });
+      await writeProgress({ status: "running", stage: "fetching", category: null, category_index: 0, category_total: 100, page: 0, source_rows: 0, message: "Starting Cosmic Values download", error: null });
       try {
         for (let categoryIndex = 0; categoryIndex < categories.length; categoryIndex++) {
           const category = categories[categoryIndex];
           for (let page = 1; page <= 200; page++) {
-            await writeProgress({ status: "running", stage: "fetching", category, category_index: categoryIndex, category_total: categories.length, page, source_rows: allRows.length, message: `Downloading ${category}, page ${page}` });
+            await writeProgress({ status: "running", stage: "fetching", category, category_index: Math.floor((categoryIndex / categories.length) * 80), category_total: 100, page, source_rows: allRows.length, message: `Downloading ${category}, page ${page}` });
             const url = new URL("https://petsimulatorvalues.com/values.php");
             url.searchParams.set("category", category);
             url.searchParams.set("page", String(page));
@@ -309,11 +309,11 @@ Deno.serve(async (req: Request) => {
             const rows = parseCosmicPetRows(html);
             if (rows.length === 0) break;
             allRows.push(...rows);
-            await writeProgress({ status: "running", stage: "fetching", category, category_index: categoryIndex, category_total: categories.length, page, source_rows: allRows.length, message: `Downloaded ${allRows.length} rows; currently ${category}, page ${page}` });
+            await writeProgress({ status: "running", stage: "fetching", category, category_index: Math.floor((categoryIndex / categories.length) * 80), category_total: 100, page, source_rows: allRows.length, message: `Downloaded ${allRows.length} rows; currently ${category}, page ${page}` });
             if (!html.includes("Next")) break;
           }
           completedCategories++;
-          await writeProgress({ status: "running", stage: "fetching", category, category_index: completedCategories, category_total: categories.length, page: 0, source_rows: allRows.length, message: `Finished ${category} (${completedCategories}/${categories.length})` });
+          await writeProgress({ status: "running", stage: "fetching", category, category_index: Math.floor((completedCategories / categories.length) * 80), category_total: 100, page: 0, source_rows: allRows.length, message: `Finished ${category} (${completedCategories}/${categories.length})` });
         }
         if (allRows.length === 0) throw new Error("Cosmic source returned zero parsable pet rows. Check the source HTML/parser.");
         const byKey = new Map<string, Record<string, unknown>>();
