@@ -56,15 +56,29 @@ There are ${images.length} uploaded screenshots. Image index is their order, sta
     }
     if (totalBytes > 4.5 * 1024 * 1024) return json({ error: "The combined screenshots are too large for one request. Try fewer or smaller images (maximum 4.5 MB combined)." }, 413);
 
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
-      method: "POST",
-      headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ role: "user", parts: content }], generationConfig: { responseMimeType: "application/json", temperature: 0.1 } }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      console.error("Gemini vision request failed", response.status, payload);
-      return json({ error: "Gemini screenshot analysis failed. Check the Gemini API key, API access and free-tier quota." }, 502);
+    const requestBody = JSON.stringify({ contents: [{ role: "user", parts: content }], generationConfig: { responseMimeType: "application/json", temperature: 0.1 } });
+    let response: Response | null = null;
+    let payload: Record<string, unknown> = {};
+    // Gemini Flash can return 503 during temporary capacity spikes. Retry transient failures with backoff.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {
+        method: "POST",
+        headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+        body: requestBody,
+      });
+      payload = record(await response.json().catch(() => ({})));
+      if (response.ok || ![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+    }
+    if (!response?.ok) {
+      const status = response?.status ?? 502;
+      console.error("Gemini vision request failed after retries", status, payload);
+      const message = status === 503
+        ? "Gemini is temporarily overloaded. Please wait a moment and try again."
+        : status === 429
+          ? "Gemini request limit reached. Please wait before trying again."
+          : "Gemini screenshot analysis failed. Check the Gemini API key and API access.";
+      return json({ error: message }, status === 503 || status === 429 ? 503 : 502);
     }
     const text = Array.isArray(payload.candidates?.[0]?.content?.parts) ? payload.candidates[0].content.parts.map((part: Record<string, unknown>) => String(part.text ?? "")).join("\n") : "";
     let result: Record<string, unknown>;
