@@ -2157,3 +2157,214 @@
     animation:nanzoCollectionSignerRainbow 3s linear infinite!important;
   }
 }
+
+
+/* ── My Collection: full approved NANZO pink/navy redesign ───────── */
+.vault-collection-page {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:16px!important;
+  width:100%;
+  color:#f5f6fb;
+}
+.vault-collection-page .vault-collection-hero {
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  min-height:124px!important;
+  overflow:hidden!important;
+  padding:24px 27px!important;
+  border:1px solid rgba(226,54,158,.48)!important;
+  border-radius:21px!important;
+  background:
+    radial-gradient(ellipse at 92% 110%,rgba(224,35,151,.20),transparent 28%),
+    linear-gradient(112deg,#111321 0%,#0c1020 55%,#101222 100%)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 12px 32px rgba(0,0,0,.16)!important;
+}
+.vault-collection-page .vault-collection-hero:after {
+  content:"";
+  position:absolute;top:-95px;right:95px;width:58px;height:330px;
+  transform:rotate(42deg);
+  background:linear-gradient(180deg,transparent,rgba(229,45,156,.22),transparent);
+  border-left:1px solid rgba(232,67,177,.16);
+  pointer-events:none;
+}
+.vault-collection-page .vault-collection-hero-copy { position:relative;z-index:1; }
+.vault-collection-page .vault-collection-hero .vault-kicker {
+  color:#ff65bb!important;font-size:12px!important;font-weight:900!important;
+  letter-spacing:.13em!important;
+}
+.vault-collection-page .vault-collection-hero .vault-title {
+  margin:7px 0 5px!important;color:#fbfaff!important;
+  font-size:38px!important;line-height:1.08!important;font-weight:950!important;
+  letter-spacing:-.045em!important;
+}
+.vault-collection-page .vault-collection-hero .vault-subtitle {
+  margin:0!important;color:#c9cddd!important;font-size:15px!important;
+}
+.vault-collection-page > .vault-section-head {
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  gap:16px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;
+}
+.vault-collection-page > .vault-section-head > .vault-row {
+  display:flex!important;align-items:center!important;gap:10px!important;flex-wrap:wrap!important;
+}
+.vault-collection-page > .vault-section-head > .vault-row:first-child > .vault-kicker {
+  color:#c9d0e2!important;font-size:12px!important;font-weight:900!important;
+  letter-spacing:.08em!important;text-transform:uppercase!important;
+}
+.vault-collection-page > .vault-section-head .vault-tabs { gap:7px!important; }
+.vault-collection-page > .vault-section-head .vault-tab {
+  min-height:46px!important;padding:0 23px!important;border-radius:16px!important;
+  border:1px solid rgba(112,125,163,.16)!important;
+  background:linear-gradient(145deg,rgba(25,28,45,.96),rgba(14,17,31,.96))!important;
+  color:#e8eaf3!important;font-size:14px!important;font-weight:750!important;
+}
+.vault-collection-page > .vault-section-head .vault-tab.active {
+  color:#fff!important;border-color:rgba(255,78,178,.55)!important;
+  background:linear-gradient(115deg,#f12d91,#d91678)!important;
+  box-shadow:0 0 18px rgba(236,31,139,.34),inset 0 1px rgba(255,255,255,.2)!important;
+}
+.vault-collection-page > .vault-section-head .vault-pill {
+  min-height:38px!important;padding:0 14px!important;border:1px solid rgba(230,67,165,.42)!important;
+  border-radius:22px!important;background:rgba(24,23,39,.92)!important;color:#f1eaf5!important;
+}
+.vault-collection-page > .vault-section-head > .vault-row:last-child .vault-btn {
+  min-height:47px!important;padding:0 22px!important;border-radius:14px!important;
+  font-weight:800!important;
+}
+.vault-collection-page > .vault-section-head > .vault-row:last-child .vault-btn:not(.vault-btn-gold) {
+  color:#f0f1f7!important;border:1px solid rgba(121,132,166,.22)!important;
+  background:linear-gradient(145deg,#1b1e30,#101424)!important;
+}
+.vault-collection-page > .vault-section-head > .vault-row:last-child .vault-btn-gold {
+  color:#fff!important;border:1px solid rgba(255,76,174,.5)!important;
+  background:linear-gradient(115deg,#f02b91,#d91578)!important;
+  box-shadow:0 5px 18px rgba(222,22,124,.25)!important;
+}
+.vault-collection-page .vault-collection-switch {
+  display:grid!important;grid-template-columns:1fr 1fr!important;gap:15px!important;margin:0!important;
+}
+.vault-collection-page .vault-collection-switch .vault-tab {
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  min-height:72px!important;padding:15px 23px!important;border-radius:15px!important;
+  border:1px solid rgba(129,139,177,.28)!important;
+  background:linear-gradient(120deg,rgba(24,24,39,.98),rgba(12,16,30,.98))!important;
+  color:#f5f6fb!important;box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+}
+.vault-collection-page .vault-collection-switch .vault-tab:first-child {
+  border-color:rgba(230,61,167,.62)!important;
+  box-shadow:0 0 16px rgba(222,38,151,.12),inset 0 1px rgba(255,255,255,.04)!important;
+}
+.vault-collection-page .vault-collection-switch .vault-tab span {
+  color:#e8e8f1!important;font-size:12px!important;font-weight:900!important;letter-spacing:.08em!important;
+}
+.vault-collection-page .vault-collection-switch .vault-tab b {
+  color:#fff!important;font-size:29px!important;font-weight:950!important;letter-spacing:-.04em!important;
+}
+.vault-collection-page .vault-collection-switch .vault-tab.active {
+  background:linear-gradient(120deg,rgba(43,26,49,.98),rgba(13,16,31,.98))!important;
+}
+.vault-collection-page .vault-collection-switch + .vault-row {
+  display:flex!important;align-items:center!important;gap:8px!important;
+  flex-wrap:wrap!important;margin:0!important;
+}
+.vault-collection-page .vault-collection-switch + .vault-row .vault-tab {
+  min-height:43px!important;padding:0 19px!important;border:1px solid transparent!important;
+  border-radius:24px!important;background:transparent!important;color:#d8dbea!important;
+  font-size:14px!important;font-weight:750!important;
+}
+.vault-collection-page .vault-collection-switch + .vault-row .vault-tab.active {
+  color:#fff!important;border-color:rgba(255,89,183,.55)!important;
+  background:linear-gradient(115deg,#ee2c91,#d91578)!important;
+  box-shadow:0 0 17px rgba(234,36,143,.32)!important;
+}
+.vault-collection-page .vault-collection-search-panel {
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;
+  gap:14px!important;margin:0 0 1px!important;padding:10px 13px!important;
+  border:1px solid rgba(142,132,179,.36)!important;border-radius:20px!important;
+  background:linear-gradient(115deg,rgba(22,21,37,.98),rgba(12,16,30,.98))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+}
+.vault-collection-page .vault-collection-search {
+  display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important;
+  min-height:45px!important;padding:0 14px!important;border:1px solid rgba(133,144,180,.2)!important;
+  border-radius:28px!important;background:rgba(8,12,24,.72)!important;color:#c8d0e5!important;
+}
+.vault-collection-page .vault-collection-search svg { flex:0 0 auto;color:#d6d9e7!important; }
+.vault-collection-page .vault-collection-search .vault-input {
+  min-width:0!important;width:100%!important;min-height:42px!important;padding:0!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;font-size:14px!important;
+}
+.vault-collection-page .vault-collection-search .vault-input:focus { box-shadow:none!important; }
+.vault-collection-page .vault-collection-advanced { position:relative;min-width:0; }
+.vault-collection-page .vault-collection-advanced > summary {
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+  min-height:45px!important;padding:0 17px!important;border:1px solid rgba(132,143,180,.22)!important;
+  border-radius:26px!important;background:linear-gradient(145deg,#191c2d,#101425)!important;
+  color:#f0f1f7!important;font-size:13px!important;font-weight:750!important;white-space:nowrap!important;
+  list-style:none!important;
+}
+.vault-collection-page .vault-collection-advanced > summary::-webkit-details-marker { display:none; }
+.vault-collection-page .vault-collection-advanced > summary svg:first-child { color:#f04aa8!important; }
+.vault-collection-page .vault-collection-advanced[open] > div {
+  position:absolute;z-index:20;top:calc(100% + 10px);right:0;width:min(760px,82vw);
+  padding:17px!important;border:1px solid rgba(229,63,165,.42)!important;border-radius:16px!important;
+  background:linear-gradient(145deg,#17192a,#0b1020)!important;
+  box-shadow:0 20px 55px rgba(0,0,0,.6)!important;
+}
+.vault-collection-page .vault-pet-grid {
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:15px!important;
+}
+.vault-collection-page .vault-pet-card {
+  border:1px solid rgba(225,57,160,.44)!important;border-radius:20px!important;
+  background:linear-gradient(155deg,#151827 0%,#0a0e1b 100%)!important;
+  box-shadow:0 9px 24px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.035)!important;
+}
+.vault-collection-page .vault-pet-card-signed:before {
+  content:none!important;display:none!important;animation:none!important;
+}
+.vault-collection-page .vault-pet-media {
+  margin:9px 9px 0!important;padding:0!important;border-radius:12px!important;background:#050914!important;
+}
+.vault-collection-page .vault-pet-media img {
+  width:100%!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:11px!important;
+}
+.vault-collection-page .vault-pet-name {
+  color:#f7f7fc!important;font-size:17px!important;font-weight:850!important;line-height:1.25!important;
+}
+.vault-collection-page .vault-signed-by {
+  border:1px solid rgba(116,131,171,.25)!important;
+  background:rgba(8,13,27,.94)!important;animation:none!important;
+}
+.vault-collection-page .vault-signed-by:after { display:none!important;animation:none!important; }
+.vault-collection-page .vault-signer-name-aura {
+  display:inline-block!important;max-width:145px!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  white-space:nowrap!important;font-size:10px!important;font-weight:950!important;
+  background:linear-gradient(100deg,#ff5577 0%,#ffbd55 16%,#f7ef69 31%,#51e3a4 47%,#58bdff 63%,#a78bfa 80%,#ff65c8 100%)!important;
+  background-size:300% 100%!important;background-clip:text!important;-webkit-background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;color:transparent!important;
+  animation:collectionRainbowSweep 3s linear infinite!important;
+}
+@media(max-width:1100px) {
+  .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(4,minmax(0,1fr))!important; }
+}
+@media(max-width:760px) {
+  .vault-collection-page > .vault-section-head { align-items:flex-start!important;flex-direction:column!important; }
+  .vault-collection-page > .vault-section-head > .vault-row:last-child { width:100%;justify-content:flex-end!important; }
+  .vault-collection-page .vault-collection-search-panel { grid-template-columns:1fr!important; }
+  .vault-collection-page .vault-collection-advanced > summary { width:100%; }
+  .vault-collection-page .vault-collection-advanced[open] > div { position:static;width:100%;margin-top:10px; }
+  .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+}
+@media(max-width:560px) {
+  .vault-collection-page .vault-collection-hero { min-height:120px!important;padding:20px!important; }
+  .vault-collection-page .vault-collection-hero .vault-title { font-size:31px!important; }
+  .vault-collection-page .vault-collection-switch { gap:8px!important; }
+  .vault-collection-page .vault-collection-switch .vault-tab { min-height:64px!important;padding:11px!important; }
+  .vault-collection-page .vault-collection-switch .vault-tab span { font-size:9px!important; }
+  .vault-collection-page .vault-collection-switch .vault-tab b { font-size:22px!important; }
+  .vault-collection-page .vault-pet-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important; }
+  .vault-collection-page .vault-pet-name { font-size:14px!important; }
+  .vault-collection-page .vault-pet-body { padding:10px!important; }
+}
