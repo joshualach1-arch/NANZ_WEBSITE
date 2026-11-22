@@ -63,6 +63,7 @@ import {
 } from './vaultApi';
 import { BigGamesConnect, OAuthCallback } from './BigGamesConnect';
 import { InventoryScannerTab } from './InventoryScannerTab';
+import { PlayerInventoryExplorer } from './PlayerInventoryExplorer';
 import { AcquisitionsPage } from './AcquisitionsPage';
 import { TradeCalculator } from './TradeCalculator';
 import { RobloxConnectionCard } from './RobloxConnect';
@@ -74,6 +75,7 @@ type VaultTab =
   | 'overview'
   | 'collection'
   | 'scanner'
+  | 'player-inventory'
   | 'missing'
   | 'signers'
   | 'acquisitions'
@@ -86,6 +88,7 @@ const vaultTabs: { id: VaultTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'collection', label: 'My Collection' },
   { id: 'scanner', label: 'Inventory Scanner' },
+  { id: 'player-inventory', label: 'Player Inventory Explorer' },
   { id: 'missing', label: 'Missing Pets' },
   { id: 'signers', label: 'Signers' },
   { id: 'acquisitions', label: 'Trade History' },
@@ -3270,6 +3273,7 @@ function VaultShell() {
         {tab === 'overview' && <OverviewTab data={data} onNavigate={navigate} />}
         {tab === 'collection' && <CollectionTab data={data} onRefresh={refresh} isOwner={data.is_owner} />}
         {tab === 'scanner' && <InventoryScannerTab onRefresh={refresh} isOwner={data.is_owner} />}
+        {tab === 'player-inventory' && <PlayerInventoryExplorer />}
         {tab === 'missing' && <MissingTab data={data} />}
         {tab === 'signers' && (
           <SignerGallery
