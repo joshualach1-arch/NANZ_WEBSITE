@@ -3249,9 +3249,12 @@ function VaultShell() {
             aria-label="Signed Vault navigation"
             onWheel={(event) => {
               const element = event.currentTarget;
-              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-                element.scrollLeft += event.deltaY;
+              // While the pointer is over this pill, route all wheel movement
+              // into its horizontal scroller and never let the page consume it.
+              if (event.deltaX !== 0 || event.deltaY !== 0) {
+                element.scrollLeft += event.deltaX + event.deltaY;
                 event.preventDefault();
+                event.stopPropagation();
               }
             }}
           >
