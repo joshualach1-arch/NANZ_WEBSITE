@@ -50,9 +50,10 @@ create or replace function public.vault_player_oauth_save(
 ) returns void language sql security definer set search_path=public as $$
  insert into public.vault_player_oauth_tokens(roblox_user_id,roblox_username,display_name,access_token,token_scope,expires_at,authorized_by_collector)
  values(p_user_id,p_username,p_display_name,p_access_token,p_scope,p_expires_at,p_collector)
- on conflict(roblox_user_id) do update set roblox_username=excluded.roblox_username,display_name=excluded.display_name,
+ on conflict(roblox_user_id,authorized_by_collector) do update set
+ roblox_username=excluded.roblox_username,display_name=excluded.display_name,
  access_token=excluded.access_token,token_scope=excluded.token_scope,expires_at=excluded.expires_at,
- authorized_by_collector=excluded.authorized_by_collector,updated_at=now();
+ updated_at=now();
 $$;
 revoke execute on function public.vault_player_oauth_state_set(text,text,text,integer,bigint,text) from public,anon,authenticated;
 revoke execute on function public.vault_player_oauth_state_claim(text) from public,anon,authenticated;
