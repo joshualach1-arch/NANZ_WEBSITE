@@ -3244,7 +3244,17 @@ function VaultShell() {
               <span className="vault-brand-sub">SIGNED VAULT</span>
             </span>
           </a>
-          <nav className="vault-tabs vault-header-tabs">
+          <nav
+            className="vault-tabs vault-header-tabs"
+            aria-label="Signed Vault navigation"
+            onWheel={(event) => {
+              const element = event.currentTarget;
+              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                element.scrollLeft += event.deltaY;
+                event.preventDefault();
+              }
+            }}
+          >
             {vaultTabs.filter((entry) => ['overview', 'collection', 'player-inventory', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
               <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
             ))}
