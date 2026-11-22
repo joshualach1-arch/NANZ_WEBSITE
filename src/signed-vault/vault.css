@@ -2678,3 +2678,45 @@
 .sc-paste-input:focus{border-color:#52dfb7;box-shadow:0 0 0 3px rgba(82,223,183,.1)}
 .sc-paste-hint{display:flex;align-items:center;gap:6px;color:#7184a5;font-size:9px}
 .sc-paste-hint svg{color:#52dfb7;flex:none}
+
+/* Public Player Inventory Explorer */
+.pie-wrap{display:flex;flex-direction:column;gap:18px}
+.pie-hero{position:relative;overflow:hidden;padding:30px;border:1px solid rgba(103,144,220,.2);border-radius:20px;background:radial-gradient(ellipse at 85% 0%,rgba(73,105,211,.2),transparent 42%),linear-gradient(135deg,rgba(15,25,48,.98),rgba(8,13,27,.98));box-shadow:0 18px 50px rgba(0,0,0,.2)}
+.pie-kicker{display:flex;align-items:center;gap:7px;color:#73a7ff;font-size:10px;font-weight:900;letter-spacing:1.5px}
+.pie-hero h2{margin:13px 0 6px;color:#f4f7ff;font-size:clamp(25px,4vw,35px);font-weight:900;letter-spacing:-1.2px}
+.pie-hero h2 span{color:#7da8ff}
+.pie-hero p{margin:0;color:#94a4c2;font-size:13px}
+.pie-search{display:flex;align-items:center;gap:12px;margin-top:23px;padding:8px 9px 8px 15px;border:1px solid rgba(132,164,226,.24);border-radius:13px;background:rgba(3,8,20,.72);color:#8da9dd}
+.pie-search input,.pie-toolbar input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f2f6ff;font:inherit;font-size:13px}
+.pie-search button{border:0;border-radius:9px;padding:11px 16px;background:linear-gradient(135deg,#668fff,#456bd5);color:white;font-size:11px;font-weight:850;cursor:pointer}
+.pie-search button:disabled{opacity:.55;cursor:wait}
+.pie-privacy{display:flex;align-items:center;gap:6px;margin-top:12px;color:#7184a6;font-size:10px}
+.pie-error{padding:14px 16px;border-radius:12px}
+.pie-profile{display:flex;align-items:center;gap:14px;padding:17px 19px;border:1px solid var(--border,rgba(120,145,190,.18));border-radius:15px;background:var(--card,rgba(15,23,42,.6))}
+.pie-avatar{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,#527ce4,#7a55c7);color:white;font-size:21px;font-weight:900}
+.pie-player-copy{flex:1;min-width:0}.pie-player-copy span,.pie-toolbar>div>span{color:#7698dc;font-size:9px;font-weight:900;letter-spacing:1.2px}
+.pie-player-copy h3{margin:3px 0;color:var(--text,#f4f6fc);font-size:19px;font-weight:850}.pie-player-copy p{margin:0;color:var(--muted,#8492aa);font-size:11px}
+.pie-profile>a{color:#8eafff;text-decoration:none;font-size:11px;font-weight:800}
+.pie-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pie-stats>div{display:grid;grid-template-columns:25px 1fr;align-items:center;column-gap:8px;padding:14px;border:1px solid var(--border,rgba(120,145,190,.16));border-radius:13px;background:var(--card,rgba(15,23,42,.55))}
+.pie-stats svg{grid-row:span 2;width:20px;color:#83a6ff}.pie-stats span{color:var(--muted,#8492aa);font-size:10px}.pie-stats b{color:var(--text,#f4f6fc);font-size:20px;font-weight:900}
+.pie-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}.pie-toolbar h3{margin:3px 0 0;color:var(--text,#f4f6fc);font-size:18px}
+.pie-toolbar input{max-width:230px;padding:11px 13px;border:1px solid var(--border,rgba(120,145,190,.2));border-radius:10px;background:var(--card,rgba(15,23,42,.5))}
+.pie-filters{display:flex;gap:7px;flex-wrap:wrap}.pie-filters button{padding:8px 13px;border:1px solid var(--border,rgba(120,145,190,.2));border-radius:9px;background:transparent;color:var(--muted,#8998b3);font-size:11px;font-weight:800;cursor:pointer}.pie-filters button.active{border-color:rgba(110,151,255,.55);background:rgba(91,130,222,.16);color:#9bbaff}
+.pie-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
+.pie-pet-card{overflow:hidden;border:1px solid var(--border,rgba(120,145,190,.17));border-radius:14px;background:var(--card,rgba(13,20,37,.78));transition:transform .18s,border-color .18s}
+.pie-pet-card:hover{transform:translateY(-3px);border-color:rgba(117,155,244,.55)}
+.pie-pet-art{position:relative;display:grid;place-items:center;height:132px;background:radial-gradient(circle at 50% 55%,rgba(81,118,207,.17),transparent 67%),rgba(5,10,23,.42);color:#7189bd}
+.pie-pet-art img{width:100%;height:100%;object-fit:contain;padding:12px}
+.pie-pet-art>span{position:absolute;top:8px;left:8px;padding:4px 7px;border-radius:6px;background:rgba(5,10,20,.78);color:#9bb8ff;font-size:8px;font-weight:950;letter-spacing:.7px;text-transform:uppercase}
+.pie-gargantuan .pie-pet-art{background:radial-gradient(circle,rgba(209,157,73,.24),transparent 68%),rgba(5,10,23,.42)}
+.pie-gargantuan .pie-pet-art>span{color:#ffd88a}.pie-titanic .pie-pet-art>span{color:#e3b4ff}.pie-huge .pie-pet-art>span{color:#8df0d1}
+.pie-pet-info{display:flex;flex-direction:column;gap:7px;padding:11px}
+.pie-pet-info>b{overflow:hidden;color:var(--text,#eef3ff);font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.pie-pet-info>small{color:var(--muted,#8290a9);font-size:9px}
+.pie-pet-info>div{display:flex;justify-content:space-between;gap:6px;color:var(--muted,#8290a9);font-size:9px}.pie-pet-info strong{color:var(--text,#e8edfa);font-variant-numeric:tabular-nums}
+.pie-footnote{color:var(--muted,#71809a);font-size:10px;line-height:1.5}
+.pie-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:240px;padding:30px;border:1px dashed var(--border,rgba(120,145,190,.25));border-radius:16px;text-align:center}
+.pie-empty>div{display:grid;place-items:center;width:58px;height:58px;border-radius:17px;background:rgba(93,130,220,.13);color:#8eacff}
+.pie-empty h3{margin:14px 0 5px;color:var(--text,#f1f4fc);font-size:16px}.pie-empty p{max-width:390px;margin:0;color:var(--muted,#8492aa);font-size:12px;line-height:1.6}
+@media(max-width:640px){.pie-hero{padding:20px}.pie-search{flex-wrap:wrap}.pie-search input{width:calc(100% - 40px)}.pie-search button{width:100%}.pie-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pie-profile{flex-wrap:wrap}.pie-profile>a{width:100%;margin-left:66px}.pie-toolbar{align-items:flex-start;flex-direction:column}.pie-toolbar input{max-width:none;width:100%}.pie-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
