@@ -56,16 +56,16 @@ Deno.serve(async(req)=>{
    const session=await supabase.rpc("vault_assert_session",{p_token:token});
    if(session.error)return json({error:"vault_access_denied"},401);
    if(action==="list"){
-    const rows=await supabase.from("vault_player_oauth_tokens").select("roblox_user_id,roblox_username,display_name,expires_at,authorized_at").order("authorized_at",{ascending:false});
+    const rows=await supabase.from("vault_player_oauth_tokens").select("roblox_user_id,roblox_username,display_name,expires_at,authorized_at").eq("authorized_by_collector",Number(session.data)).order("authorized_at",{ascending:false});
     if(rows.error)return json({error:"connections_unavailable"},500);
     return json({status:"ok",connections:rows.data??[]});
    }
    const userId=Number(body.user_id);if(!Number.isSafeInteger(userId)||userId<=0)return json({error:"user_id_invalid"},400);
    if(action==="revoke"){
-    const del=await supabase.from("vault_player_oauth_tokens").delete().eq("roblox_user_id",userId);
+    const del=await supabase.from("vault_player_oauth_tokens").delete().eq("roblox_user_id",userId).eq("authorized_by_collector",Number(session.data));
     return del.error?json({error:"revoke_failed"},500):json({status:"ok"});
    }
-   const row=await supabase.from("vault_player_oauth_tokens").select("access_token,expires_at,token_scope").eq("roblox_user_id",userId).maybeSingle();
+   const row=await supabase.from("vault_player_oauth_tokens").select("access_token,expires_at,token_scope").eq("roblox_user_id",userId).eq("authorized_by_collector",Number(session.data)).maybeSingle();
    if(row.error||!row.data)return json({error:"private_inventory_not_authorized"},404);
    if(new Date(row.data.expires_at).getTime()<Date.now())return json({error:"private_inventory_authorization_expired"},401);
    const res=await fetch(API+"/v1/account/inventory",{headers:{Authorization:"Bearer "+row.data.access_token,Accept:"application/json"}});
