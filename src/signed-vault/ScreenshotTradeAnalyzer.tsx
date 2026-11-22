@@ -22,11 +22,11 @@ async function optimizeImage(file: File): Promise<string> {
   const source = await readDataUrl(file);
   const image = new Image(); image.src = source;
   await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=reject;});
-  const scale = Math.min(1, 1600 / Math.max(image.width,image.height));
+  const scale = Math.min(1, 1280 / Math.max(image.width,image.height));
   const canvas = document.createElement('canvas'); canvas.width=Math.round(image.width*scale); canvas.height=Math.round(image.height*scale);
   const ctx=canvas.getContext('2d'); if(!ctx) throw new Error('Could not process screenshot.');
   ctx.drawImage(image,0,0,canvas.width,canvas.height);
-  return canvas.toDataURL('image/jpeg',0.72);
+  return canvas.toDataURL('image/jpeg',0.62);
 }
 const parseMoney = (n: number) => Number.isFinite(n) ? n : 0;
 
@@ -58,7 +58,7 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
         headers:{'Content-Type':'application/json',apikey:import.meta.env.VITE_SUPABASE_ANON_KEY,Authorization:`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`},
         body:JSON.stringify({
           token,images:files.map(f=>({name:f.file.name,data:f.data})),
-          petCatalog:data.catalog.map(p=>({name:p.display_name||p.pet_name,category:p.category,cosmic_value:p.cosmic_value})).slice(0,1800),
+          petCatalog:data.catalog.map(p=>({name:p.display_name||p.pet_name,category:p.category})).slice(0,1800),
           signerCatalog:data.signers.map(s=>({signer_name:s.signer_name,display_name:s.display_name,cosmic_exclusive_value:s.cosmic_exclusive_value,cosmic_huge_value:s.cosmic_huge_value,cosmic_titanic_value:s.cosmic_titanic_value})).slice(0,1200),
         }),
       });
