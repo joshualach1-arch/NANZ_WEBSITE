@@ -88,12 +88,10 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   };
 
 
-  // The signer gallery reflects signatures that are actually in either
-  // collector's current collection, not the lifetime Cosmic signature catalog.
+  // Signer ownership totals are calculated only from the active collector's pets.
   const ownedSignedPets = useMemo(() => {
-    const allPets = data.pets;
     const seen = new Set<string>();
-    return allPets.filter((pet) => {
+    return data.pets.filter((pet) => {
       if (!pet.signer_id || pet.signed_status === 'not_signed') return false;
       const key = pet.id || `${pet.signer_id}|${pet.pet_id}|${pet.variant}|${pet.inventory_uid ?? pet.instance_id ?? ''}`;
       if (seen.has(key)) return false;
