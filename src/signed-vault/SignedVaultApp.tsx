@@ -3156,22 +3156,30 @@ class VaultErrorBoundary extends Component<
 
 function VaultShell() {
   const navTabsRef = useRef<HTMLElement | null>(null);
+  const session = useVaultSession();
+
+  // The navigation is rendered only after the vault session is ready.
+  // Attach the non-passive wheel listener at that point (not on the loading render).
   useEffect(() => {
+    if (session.phase !== 'ready') return;
     const element = navTabsRef.current;
     if (!element) return;
     const handleWheel = (event: WheelEvent) => {
-      if (event.deltaX === 0 && event.deltaY === 0) return;
-      // This listener is explicitly non-passive, so preventDefault reliably
-      // keeps the document from scrolling while the pointer is over the nav.
-      element.scrollLeft += event.deltaX + event.deltaY;
+      const maxScroll = element.scrollWidth - element.clientWidth;
+      if (maxScroll <= 1) return;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.deltaY;
+      if (delta === 0) return;
+      const next = Math.max(0, Math.min(maxScroll, element.scrollLeft + delta));
+      element.scrollLeft = next;
+      // While the pointer is over a scrollable nav, keep the page stationary.
       event.preventDefault();
       event.stopPropagation();
     };
     element.addEventListener('wheel', handleWheel, { passive: false });
     return () => element.removeEventListener('wheel', handleWheel);
-  }, []);
-
-  const session = useVaultSession();
+  }, [session.phase]);
 
   const route = useVaultRoute();
   const tab = route.tab;
