@@ -89,7 +89,7 @@ const vaultTabs: { id: VaultTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'collection', label: 'My Collection' },
   { id: 'scanner', label: 'Inventory Scanner' },
-  { id: 'player-inventory', label: 'Player Inventory Explorer' },
+  { id: 'player-inventory', label: 'Player Inventory' },
   { id: 'missing', label: 'Missing Pets' },
   { id: 'signers', label: 'Signers' },
   { id: 'acquisitions', label: 'Trade History' },
@@ -3245,7 +3245,7 @@ function VaultShell() {
             </span>
           </a>
           <nav className="vault-tabs vault-header-tabs">
-            {vaultTabs.filter((entry) => ['overview', 'collection', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
+            {vaultTabs.filter((entry) => ['overview', 'collection', 'player-inventory', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
               <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
             ))}
           </nav>
