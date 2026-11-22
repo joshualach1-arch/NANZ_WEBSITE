@@ -91,7 +91,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   // The signer gallery reflects signatures that are actually in either
   // collector's current collection, not the lifetime Cosmic signature catalog.
   const ownedSignedPets = useMemo(() => {
-    const allPets = [...data.pets, ...(data.is_owner ? (data.other_pets ?? []) : [])];
+    const allPets = data.pets;
     const seen = new Set<string>();
     return allPets.filter((pet) => {
       if (!pet.signer_id || pet.signed_status === 'not_signed') return false;
@@ -100,7 +100,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
       seen.add(key);
       return true;
     });
-  }, [data.pets, data.other_pets, data.is_owner]);
+  }, [data.pets]);
 
   const ownedSignatureCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -244,7 +244,7 @@ export function SignerDetailPage({ data, signerId, onBack }: {
       </section>
     </div>
   );
-  const allSignerPets = [...data.pets, ...(data.is_owner ? (data.other_pets ?? []) : [])];
+  const allSignerPets = data.pets;
   const seenSignerPetIds = new Set<string>();
   const ownedSignerPets = allSignerPets.filter((pet) => {
     if (pet.signer_id !== signer.id || pet.signed_status === 'not_signed') return false;
@@ -255,7 +255,6 @@ export function SignerDetailPage({ data, signerId, onBack }: {
   });
   const signatures = data.signatures.filter((record) => record.signer_id === signer.id
     && ownedSignerPets.some((pet) => pet.pet_id === record.pet_id && pet.variant === record.variant));
-  const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id && pet.signed_status !== 'not_signed') : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id && pet.signed_status !== 'not_signed');
   const hasOwnedPets = ownedSignerPets.length > 0;
   const totalValue = myPets.reduce((sum, pet) => {
@@ -306,7 +305,6 @@ export function SignerDetailPage({ data, signerId, onBack }: {
             <div className="vault-profile-stat"><span>COSMIC TITANIC</span><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : signer.cosmic_titanic_status === 'soon' ? 'SOON' : signer.cosmic_titanic_status === 'na' ? 'N/A' : '—'}</strong></div>
             <div className="vault-profile-stat"><span>COSMIC DEMAND</span><strong>{signer.cosmic_demand != null ? signer.cosmic_demand + '/10' : signer.cosmic_demand_status === 'na' ? 'N/A' : '—'}</strong></div>
             <div className="vault-profile-stat"><span>IN YOUR COLLECTION</span><strong>{myPets.length}</strong></div>
-            {data.is_owner && <div className="vault-profile-stat"><span>IN COLLECTOR 2 VAULT</span><strong>{ownerPets.length}</strong></div>}
           </div>
 
           <section className="vault-known-signatures">
@@ -325,7 +323,7 @@ export function SignerDetailPage({ data, signerId, onBack }: {
                     <td><span className="vault-signature-name-rainbow">{record?.signature_name || ownedPet.signer_name || signer.display_name || signer.signer_name}</span></td>
                     <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 800 }}>{record?.signature_value != null ? formatValue(record.signature_value) : ownedPet.cosmic_value != null ? formatValue(ownedPet.cosmic_value) : '—'}</td>
                   </tr>;
-                })}{ownedSignerPets.length === 0 && <tr><td colSpan={4} className="vault-known-signatures-empty">No signed pets from this signer are currently in either collection.</td></tr>}</tbody>
+                })}{ownedSignerPets.length === 0 && <tr><td colSpan={4} className="vault-known-signatures-empty">No signed pets from this signer are in your collection yet.</td></tr>}</tbody>
               </table>
             </div>
           </section>
