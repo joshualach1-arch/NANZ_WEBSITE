@@ -37,7 +37,7 @@ async function callGroq(apiKey: string, prompt: string, images: Array<{ index: n
       method: "POST",
       headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
         messages: [{ role: "user", content: parts }],
         temperature: 0.1,
         max_completion_tokens: 8192,
@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
       "There are " + prepared.length + " uploaded screenshots in total."
     ].join("\n");
     const chunks: Array<Array<{ index: number; name: string; data: string }>> = [];
-    for (let i = 0; i < prepared.length; i += 5) chunks.push(prepared.slice(i, i + 5));
+    for (let i = 0; i < prepared.length; i += 3) chunks.push(prepared.slice(i, i + 3));
     const combined: Record<string, unknown> = { screenshots: [], items: [], gems: [], warnings: [] };
     for (let i = 0; i < chunks.length; i++) {
       const start = chunks[i][0].index + 1;
