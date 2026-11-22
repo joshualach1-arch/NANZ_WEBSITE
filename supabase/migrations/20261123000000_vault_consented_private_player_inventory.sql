@@ -11,7 +11,7 @@ create table if not exists public.vault_player_oauth_states (
   claimed_at timestamptz
 );
 create table if not exists public.vault_player_oauth_tokens (
-  roblox_user_id bigint primary key,
+  roblox_user_id bigint not null,
   roblox_username text,
   display_name text,
   access_token text not null,
@@ -19,7 +19,8 @@ create table if not exists public.vault_player_oauth_tokens (
   expires_at timestamptz not null,
   authorized_at timestamptz not null default now(),
   authorized_by_collector integer not null check (authorized_by_collector in (1,2)),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  primary key (roblox_user_id, authorized_by_collector)
 );
 alter table public.vault_player_oauth_states enable row level security;
 alter table public.vault_player_oauth_tokens enable row level security;
