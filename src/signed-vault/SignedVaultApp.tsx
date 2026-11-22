@@ -2452,6 +2452,14 @@ function SettingsTab({ data, onRefresh, onSignOut }: { data: VaultData; onRefres
 
           <div className="vault-section-head">
             <div>
+              <span className="vault-kicker">Integration</span>
+              <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>BIG Games inventory connection</h3>
+            </div>
+          </div>
+          <BigGamesConnect onSynced={onRefresh} />
+
+          <div className="vault-section-head">
+            <div>
               <span className="vault-kicker">Integrations</span>
               <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>Data sources</h3>
             </div>
