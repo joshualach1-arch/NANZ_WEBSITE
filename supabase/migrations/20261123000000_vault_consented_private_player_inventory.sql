@@ -56,6 +56,6 @@ $$;
 revoke execute on function public.vault_player_oauth_state_set(text,text,text,integer,bigint,text) from public,anon,authenticated;
 revoke execute on function public.vault_player_oauth_state_claim(text) from public,anon,authenticated;
 revoke execute on function public.vault_player_oauth_save(bigint,text,text,text,text,timestamptz,integer) from public,anon,authenticated;
-grant execute on function public.vault_player_oauth_state_set(text,text,text,integer) to service_role;
+grant execute on function public.vault_player_oauth_state_set(text,text,text,integer,bigint,text) to service_role;
 grant execute on function public.vault_player_oauth_state_claim(text) to service_role;
 grant execute on function public.vault_player_oauth_save(bigint,text,text,text,text,timestamptz,integer) to service_role;
