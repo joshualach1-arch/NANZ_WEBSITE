@@ -2759,3 +2759,44 @@
   box-shadow:0 0 13px rgba(226,55,151,.3)!important;
 }
 .vault-header-tabs::-webkit-scrollbar-corner { background:transparent!important; }
+
+
+/* Compact scrollbar fully contained by the navigation pill */
+.vault-header-tabs {
+  box-sizing:border-box!important;
+  padding:4px 8px 5px!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:rgba(231,91,170,.78) transparent!important;
+  overscroll-behavior:contain!important;
+  contain:paint!important;
+  border-radius:999px!important;
+  background-clip:padding-box!important;
+}
+.vault-header-tabs::-webkit-scrollbar {
+  height:4px!important;
+  background:transparent!important;
+}
+.vault-header-tabs::-webkit-scrollbar-track {
+  margin:0 13px!important;
+  background:rgba(255,255,255,.035)!important;
+  border:0!important;
+  border-radius:999px!important;
+}
+.vault-header-tabs::-webkit-scrollbar-thumb {
+  min-width:36px!important;
+  background:linear-gradient(90deg,rgba(239,88,166,.88),rgba(174,119,225,.82))!important;
+  border:0!important;
+  border-radius:999px!important;
+  box-shadow:0 0 7px rgba(226,55,151,.12)!important;
+}
+.vault-header-tabs::-webkit-scrollbar-thumb:hover {
+  background:linear-gradient(90deg,#ff79bd,#c09aff)!important;
+}
+.vault-header-tabs::-webkit-scrollbar-button,
+.vault-header-tabs::-webkit-scrollbar-button:single-button,
+.vault-header-tabs::-webkit-scrollbar-corner {
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  background:transparent!important;
+}
