@@ -15,7 +15,9 @@ function streamResponse(run: (send: (value: Record<string, unknown>) => void) =>
       const send = (value: Record<string, unknown>) => controller.enqueue(new TextEncoder().encode("data: " + JSON.stringify(value) + "\n\n"));
       void run(send).catch((error) => {
         console.error("screenshot-trade-analyzer stream error", error);
-        send({ type: "error", code: "unexpected_error", error: "Something went wrong while analyzing your screenshots. Please try again." });
+        const message = error instanceof Error ? error.message : "Something went wrong while analyzing your screenshots. Please try again.";
+        const code = String((error as Error & { code?: string }).code ?? "unexpected_error");
+        send({ type: "error", code, error: message });
       }).finally(() => controller.close());
     },
   });
@@ -165,10 +167,5 @@ Deno.serve(async (req: Request) => {
     send({ type: "progress", percent: 82, stage: "Looking up signer values", detail: "Matching detected signers to NANZO's stored Huge, Exclusive and Titanic signature values." });
     send({ type: "progress", percent: 94, stage: "Finalizing trade", detail: "Combining screenshots, removing duplicate evidence and preparing your review." });
     send({ type: "complete", percent: 100, analysis: { screenshots: combined.screenshots, items, gems: combined.gems, warnings: combined.warnings } });
-  }).catch((error) => {
-    const status = Number((error as Error & { status?: number }).status ?? 0);
-    const code = String((error as Error & { code?: string }).code ?? "analysis_failed");
-    console.error("Screenshot analyzer failed", { code, status, message: (error as Error).message });
-    send({ type: "error", code, error: (error as Error).message || "Screenshot analysis failed. Please try again." });
   });
 });
