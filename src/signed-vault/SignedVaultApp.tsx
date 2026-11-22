@@ -3155,6 +3155,22 @@ class VaultErrorBoundary extends Component<
 }
 
 function VaultShell() {
+  const navTabsRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const element = navTabsRef.current;
+    if (!element) return;
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaX === 0 && event.deltaY === 0) return;
+      // This listener is explicitly non-passive, so preventDefault reliably
+      // keeps the document from scrolling while the pointer is over the nav.
+      element.scrollLeft += event.deltaX + event.deltaY;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    return () => element.removeEventListener('wheel', handleWheel);
+  }, []);
+
   const session = useVaultSession();
 
   const route = useVaultRoute();
@@ -3245,18 +3261,9 @@ function VaultShell() {
             </span>
           </a>
           <nav
+            ref={navTabsRef}
             className="vault-tabs vault-header-tabs"
             aria-label="Signed Vault navigation"
-            onWheel={(event) => {
-              const element = event.currentTarget;
-              // While the pointer is over this pill, route all wheel movement
-              // into its horizontal scroller and never let the page consume it.
-              if (event.deltaX !== 0 || event.deltaY !== 0) {
-                element.scrollLeft += event.deltaX + event.deltaY;
-                event.preventDefault();
-                event.stopPropagation();
-              }
-            }}
           >
             {vaultTabs.filter((entry) => ['overview', 'collection', 'player-inventory', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
               <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
