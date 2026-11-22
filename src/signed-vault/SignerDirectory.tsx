@@ -88,9 +88,29 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   };
 
 
-  const ownedSignerIds = useMemo(() => new Set(
-    data.pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').map((pet) => pet.signer_id as string)
-  ), [data.pets]);
+  // The signer gallery reflects signatures that are actually in either
+  // collector's current collection, not the lifetime Cosmic signature catalog.
+  const ownedSignedPets = useMemo(() => {
+    const allPets = [...data.pets, ...(data.is_owner ? (data.other_pets ?? []) : [])];
+    const seen = new Set<string>();
+    return allPets.filter((pet) => {
+      if (!pet.signer_id || pet.signed_status === 'not_signed') return false;
+      const key = pet.id || `${pet.signer_id}|${pet.pet_id}|${pet.variant}|${pet.inventory_uid ?? pet.instance_id ?? ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [data.pets, data.other_pets, data.is_owner]);
+
+  const ownedSignatureCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const pet of ownedSignedPets) {
+      counts.set(pet.signer_id!, (counts.get(pet.signer_id!) ?? 0) + 1);
+    }
+    return counts;
+  }, [ownedSignedPets]);
+
+  const ownedSignerIds = useMemo(() => new Set(ownedSignatureCounts.keys()), [ownedSignatureCounts]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -110,9 +130,9 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
         if (ownedOrder !== 0) return ownedOrder;
         return sort === 'name'
           ? a.signer_name.localeCompare(b.signer_name)
-          : b.signature_count - a.signature_count;
+          : (ownedSignatureCounts.get(b.id) ?? 0) - (ownedSignatureCounts.get(a.id) ?? 0);
       });
-  }, [data.signers, query, category, verification, ownership, sort, ownedSignerIds]);
+  }, [data.signers, query, category, verification, ownership, sort, ownedSignerIds, ownedSignatureCounts]);
 
   const ownedSignerCount = data.signers.filter((entry) => ownedSignerIds.has(entry.id)).length;
   const missingSignerCount = Math.max(0, data.signers.length - ownedSignerCount);
@@ -196,7 +216,7 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
                 <div><small>TITANIC</small><strong>{signer.cosmic_titanic_value != null ? formatValue(signer.cosmic_titanic_value, '') : signer.cosmic_titanic_status === 'soon' ? 'SOON' : signer.cosmic_titanic_status === 'na' ? 'N/A' : '—'}</strong></div>
                 <div><small>DEMAND</small><strong>{signer.cosmic_demand != null ? `${signer.cosmic_demand}/10` : signer.cosmic_demand_status === 'na' ? 'N/A' : '—'}</strong></div>
               </div>
-              <div className="vault-signer-card-footer"><span>{signer.signature_count} signatures</span><span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span></div>
+              <div className="vault-signer-card-footer"><span>{ownedSignatureCounts.get(signer.id) ?? 0} owned signatures</span><span>{(signer.roles ?? []).slice(0, 2).map((role) => signerRoleLabels[role]).join(' · ') || 'Community signer'}</span></div>
             </button>
           )})}
         </div>
@@ -224,10 +244,20 @@ export function SignerDetailPage({ data, signerId, onBack }: {
       </section>
     </div>
   );
-  const signatures = data.signatures.filter((record) => record.signer_id === signer.id);
-  const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id) : [];
+  const allSignerPets = [...data.pets, ...(data.is_owner ? (data.other_pets ?? []) : [])];
+  const seenSignerPetIds = new Set<string>();
+  const ownedSignerPets = allSignerPets.filter((pet) => {
+    if (pet.signer_id !== signer.id || pet.signed_status === 'not_signed') return false;
+    const key = pet.id || `${pet.signer_id}|${pet.pet_id}|${pet.variant}|${pet.inventory_uid ?? pet.instance_id ?? ''}`;
+    if (seenSignerPetIds.has(key)) return false;
+    seenSignerPetIds.add(key);
+    return true;
+  });
+  const signatures = data.signatures.filter((record) => record.signer_id === signer.id
+    && ownedSignerPets.some((pet) => pet.pet_id === record.pet_id && pet.variant === record.variant));
+  const ownerPets = data.is_owner ? (data.other_pets ?? []).filter((pet) => pet.signer_id === signer.id && pet.signed_status !== 'not_signed') : [];
   const myPets = data.pets.filter((pet) => pet.signer_id === signer.id && pet.signed_status !== 'not_signed');
-  const hasOwnedPets = myPets.length > 0;
+  const hasOwnedPets = ownedSignerPets.length > 0;
   const totalValue = myPets.reduce((sum, pet) => {
     const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
     const category = String(catalogPet?.category ?? pet.pet_category ?? '').toLowerCase();
@@ -280,21 +310,22 @@ export function SignerDetailPage({ data, signerId, onBack }: {
           </div>
 
           <section className="vault-known-signatures">
-            <div className="vault-known-signatures-kicker">SIGNATURE RECORDS</div>
-            <h3>KNOWN SIGNATURES</h3>
+            <div className="vault-known-signatures-kicker">CURRENT COLLECTION</div>
+            <h3>OWNED SIGNATURES</h3>
             <div className="vault-known-signatures-underline" aria-hidden="true" />
             <div className="vault-table-wrap vault-known-signatures-table">
               <table className="vault-table">
                 <thead><tr><th>Pet</th><th>Variant</th><th>Signature</th><th>Signature Value</th></tr></thead>
-                <tbody>{signatures.map((record) => {
-                  const pet = data.catalog.find((entry) => entry.id === record.pet_id);
-                  return <tr key={record.id}>
-                    <td style={{ fontWeight: 750, color: 'var(--text)' }}>{pet?.pet_name ?? 'Unknown pet'}</td>
-                    <td>{variantLabel[record.variant]}</td>
-                    <td><span className="vault-signature-name-rainbow">{record.signature_name || signer.display_name || signer.signer_name}</span></td>
-                    <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 800 }}>{record.signature_value != null ? formatValue(record.signature_value) : '—'}</td>
+                <tbody>{ownedSignerPets.map((ownedPet) => {
+                  const record = signatures.find((entry) => entry.pet_id === ownedPet.pet_id && entry.variant === ownedPet.variant);
+                  const catalogPet = data.catalog.find((entry) => entry.id === ownedPet.pet_id);
+                  return <tr key={ownedPet.id}>
+                    <td style={{ fontWeight: 750, color: 'var(--text)' }}>{catalogPet?.display_name || catalogPet?.pet_name || ownedPet.pet_name || 'Unknown pet'}</td>
+                    <td>{variantLabel[ownedPet.variant]}</td>
+                    <td><span className="vault-signature-name-rainbow">{record?.signature_name || ownedPet.signer_name || signer.display_name || signer.signer_name}</span></td>
+                    <td className="vault-num" style={{ color: 'var(--gold)', fontWeight: 800 }}>{record?.signature_value != null ? formatValue(record.signature_value) : ownedPet.cosmic_value != null ? formatValue(ownedPet.cosmic_value) : '—'}</td>
                   </tr>;
-                })}{signatures.length === 0 && <tr><td colSpan={4} className="vault-known-signatures-empty">No signature records for this signer yet.</td></tr>}</tbody>
+                })}{ownedSignerPets.length === 0 && <tr><td colSpan={4} className="vault-known-signatures-empty">No signed pets from this signer are currently in either collection.</td></tr>}</tbody>
               </table>
             </div>
           </section>
