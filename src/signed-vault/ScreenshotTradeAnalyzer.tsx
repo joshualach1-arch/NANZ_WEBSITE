@@ -33,6 +33,7 @@ const parseMoney = (n: number) => Number.isFinite(n) ? n : 0;
 export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:VaultData;token:string|null;onImport:(side:'give'|'get',petId:string,signerId:string,variant:Variant)=>void;onSetGems:(side:'give'|'get',amount:string)=>void}) {
   const [files,setFiles]=useState<ScreenshotFile[]>([]);
   const [busy,setBusy]=useState(false);
+  const [progress,setProgress]=useState<{percent:number;stage:string;detail:string}>({percent:0,stage:'',detail:''});
   const [error,setError]=useState('');
   const [analysis,setAnalysis]=useState<Analysis|null>(null);
   const [imported,setImported]=useState(false);
@@ -50,17 +51,52 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
     if(!files.length){setError('Upload at least one screenshot first.');return;}
     const uploadBytes=files.reduce((sum,file)=>sum+Math.floor(file.data.length*0.75),0);
     if(uploadBytes>4.5*1024*1024){setError('The selected screenshots are too large for one request. Remove a few images or upload smaller screenshots (maximum 4.5 MB combined).');return;}
-    setBusy(true);setError('');setAnalysis(null);setImported(false);
-    const {data:response,error:invokeError}=await supabase.functions.invoke('screenshot-trade-analyzer',{body:{
-      token,images:files.map(f=>({name:f.file.name,data:f.data})),
-      petCatalog:data.catalog.map(p=>p.display_name||p.pet_name).slice(0,1800),
-      signerCatalog:data.signers.map(s=>s.display_name||s.signer_name).slice(0,1200),
-    }});
-    setBusy(false);
-    if(invokeError||response?.error){setError(response?.error||invokeError?.message||'Analysis failed.');return;}
-    setAnalysis(response.analysis as Analysis);
-    const gems=(response.analysis?.gems??[]) as DetectedGem[];
-    setSideGems({give:String(gems.filter(g=>g.side==='give').reduce((n,g)=>n+parseMoney(g.amount),0)),get:String(gems.filter(g=>g.side==='get').reduce((n,g)=>n+parseMoney(g.amount),0))});
+    setBusy(true);setError('');setAnalysis(null);setImported(false);setProgress({percent:2,stage:'Connecting to Vision AI',detail:'Securely sending your screenshots for analysis.'});
+    try {
+      const response=await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/screenshot-trade-analyzer`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json',apikey:import.meta.env.VITE_SUPABASE_ANON_KEY,Authorization:`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`},
+        body:JSON.stringify({
+          token,images:files.map(f=>({name:f.file.name,data:f.data})),
+          petCatalog:data.catalog.map(p=>({name:p.display_name||p.pet_name,category:p.category,cosmic_value:p.cosmic_value})).slice(0,1800),
+          signerCatalog:data.signers.map(s=>({signer_name:s.signer_name,display_name:s.display_name,cosmic_exclusive_value:s.cosmic_exclusive_value,cosmic_huge_value:s.cosmic_huge_value,cosmic_titanic_value:s.cosmic_titanic_value})).slice(0,1200),
+        }),
+      });
+      if(!response.ok||!response.body) {
+        const payload=await response.json().catch(()=>({}));
+        throw new Error(payload.error||`Vision service returned HTTP ${response.status}. Please try again.`);
+      }
+      const reader=response.body.getReader();
+      const decoder=new TextDecoder();
+      let buffer='';
+      let completed:Analysis|null=null;
+      while(true){
+        const {done,value}=await reader.read();
+        if(done)break;
+        buffer+=decoder.decode(value,{stream:true});
+        const events=buffer.split('\n\n');
+        buffer=events.pop()||'';
+        for(const event of events){
+          const line=event.split('\n').find(part=>part.startsWith('data:'));
+          if(!line)continue;
+          const payload=JSON.parse(line.slice(5).trim());
+          if(payload.type==='progress')setProgress({percent:Number(payload.percent)||0,stage:String(payload.stage||'Analyzing'),detail:String(payload.detail||'')});
+          if(payload.type==='error')throw new Error(String(payload.error||'Screenshot analysis failed. Please try again.'));
+          if(payload.type==='complete'){
+            completed=payload.analysis as Analysis;
+            setProgress({percent:100,stage:'Analysis complete',detail:'Your trade is ready to review.'});
+          }
+        }
+      }
+      if(!completed)throw new Error('The analysis connection ended before a result was received. Please try again.');
+      setAnalysis(completed);
+      const gems=(completed.gems??[]) as DetectedGem[];
+      setSideGems({give:String(gems.filter(g=>g.side==='give').reduce((n,g)=>n+parseMoney(g.amount),0)),get:String(gems.filter(g=>g.side==='get').reduce((n,g)=>n+parseMoney(g.amount),0))});
+    } catch(e) {
+      setError(e instanceof Error?e.message:'An unexpected error occurred while analyzing your screenshots.');
+    } finally {
+      setBusy(false);
+    }
   };
   const updateItem=(index:number,patch:Partial<DetectedItem>)=>setAnalysis(a=>a?({...a,items:(a.items??[]).map((item,i)=>i===index?{...item,...patch}:item)}):a);
   const importAll=()=>{
@@ -89,7 +125,12 @@ export function ScreenshotTradeAnalyzer({data,token,onImport,onSetGems}:{data:Va
     <label className="sc-dropzone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void addFiles(e.dataTransfer.files);}}><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={e=>{void addFiles(e.target.files);e.currentTarget.value='';}}/><Upload size={27}/><b>Drop screenshots here or click to browse</b><span>PNG, JPG or WEBP · Up to 10 images · Multiple screenshots are analyzed together</span><strong>{files.length}/10 UPLOADED</strong></label>
     {files.length>0&&<div className="sc-upload-grid">{files.map((f,i)=><article key={f.id}><img src={f.preview} alt={f.file.name}/><span>SCREENSHOT {i+1}</span><button onClick={()=>{setFiles(v=>v.filter(x=>x.id!==f.id));setAnalysis(null);}} aria-label="Remove screenshot"><X size={14}/></button><small>{f.file.name}</small></article>)}</div>}
     {error&&<div className="sc-error"><AlertTriangle size={16}/>{error}</div>}
-    <button className="sc-analyze" disabled={!files.length||busy} onClick={()=>void analyze()}>{busy?<><LoaderCircle className="sc-spin"/> Analyzing all screenshots…</>:<><Sparkles size={18}/> Analyze trade with AI</>}</button>
+    {busy&&<div className="sc-progress" role="status" aria-live="polite">
+      <div className="sc-progress-top"><span><LoaderCircle className="sc-spin"/> {progress.stage||'Starting analysis'}</span><strong>{Math.min(100,Math.max(0,progress.percent))}%</strong></div>
+      <div className="sc-progress-track"><div className="sc-progress-fill" style={{width:`${Math.min(100,Math.max(0,progress.percent))}%`}}/></div>
+      <p>{progress.detail}</p>
+    </div>}
+    <button className="sc-analyze" disabled={!files.length||busy} onClick={()=>void analyze()}>{busy?<><LoaderCircle className="sc-spin"/> {progress.stage||'Analyzing screenshots…'}</>:<><Sparkles size={18}/> Analyze trade with AI</>}</button>
     {analysis&&<div className="sc-review">
       <div className="sc-review-title"><div><span className="tc-kicker">AI DETECTION RESULTS</span><h4>Review your detected trade</h4><p>Close-ups are attached as signature evidence, not counted as extra pets. Check uncertain matches before importing.</p></div><span className="sc-count">{analysis.items?.length??0} PETS FOUND</span></div>
       {(analysis.screenshots??[]).map(s=><div className="sc-shot-kind" key={s.index}><b>Screenshot {s.index+1}</b><span>{s.kind.replaceAll('_',' ')}</span><small>{s.notes}</small></div>)}
