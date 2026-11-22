@@ -21,9 +21,8 @@ Deno.serve(async(req)=>{
    if(!/^[A-Za-z0-9_]{3,20}$/.test(username))return json({error:"roblox_username_invalid"},400);
    const lookup=await fetch("https://users.roblox.com/v1/usernames/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usernames:[username],excludeBannedUsers:false})});
    if(!lookup.ok)return json({error:"roblox_lookup_failed"},502);
-   const result=rec((Array.isArray(rec(await lookup.json()).data)?rec(await Promise.resolve({})).data:[]));
-   // Resolve once; do not trust a client-supplied numeric ID.
-   const lookupBody=await fetch("https://users.roblox.com/v1/usernames/users",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usernames:[username],excludeBannedUsers:false})}).then(r=>r.json());
+   // Resolve the requested username to its canonical Roblox ID. Never trust a client-supplied ID.
+   const lookupBody=await lookup.json();
    const first=rec((Array.isArray(rec(lookupBody).data)?rec(lookupBody).data:[])[0]);
    const userId=Number(first.id); if(!Number.isSafeInteger(userId)||userId<=0)return json({error:"roblox_not_found"},404);
    const verifier=b64(crypto.getRandomValues(new Uint8Array(48))), challenge=b64(await hash(verifier)), state=b64(crypto.getRandomValues(new Uint8Array(24)));
