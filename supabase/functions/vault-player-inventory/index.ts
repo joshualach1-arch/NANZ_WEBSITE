@@ -23,7 +23,8 @@ Deno.serve(async(req)=>{
    if(!lookup.ok)return json({error:"roblox_lookup_failed"},502);
    // Resolve the requested username to its canonical Roblox ID. Never trust a client-supplied ID.
    const lookupBody=await lookup.json();
-   const first=rec((Array.isArray(rec(lookupBody).data)?rec(lookupBody).data:[])[0]);
+   const lookupData=rec(lookupBody).data;
+   const first=rec(Array.isArray(lookupData)?lookupData[0]:null);
    const userId=Number(first.id); if(!Number.isSafeInteger(userId)||userId<=0)return json({error:"roblox_not_found"},404);
    const verifier=b64(crypto.getRandomValues(new Uint8Array(48))), challenge=b64(await hash(verifier)), state=b64(crypto.getRandomValues(new Uint8Array(24)));
    const redirect="https://nanz-clan.com/signed-vault/player-callback";
