@@ -40,7 +40,7 @@ async function callGroq(apiKey: string, prompt: string, images: Array<{ index: n
         model: "qwen/qwen3.8-27b",
         messages: [{ role: "user", content: parts }],
         temperature: 0.1,
-        max_completion_tokens: 8192,
+        max_completion_tokens: 4096,
         response_format: { type: "json_object" },
       }),
     });
@@ -115,29 +115,27 @@ Deno.serve(async (req: Request) => {
     const petCatalog = Array.isArray(body.petCatalog) ? body.petCatalog : [];
     const signerCatalog = Array.isArray(body.signerCatalog) ? body.signerCatalog : [];
     const prompt = [
-      "You are the screenshot parser for a Pet Simulator 99 trade calculator. Analyze the provided screenshots as ONE evidence set. Screenshot indexes are global indexes supplied in each image label.",
+      "You are a precise OCR and image parser for Pet Simulator 99 trade screenshots. Analyze ONLY the single screenshot attached to this request. The screenshot index is supplied in its label.",
       "Return ONLY valid JSON with this exact shape:",
       '{"screenshots":[{"index":0,"kind":"trade_overview|signature_closeup|gems|unknown","side":"give|get|unknown","notes":"short"}],"items":[{"pet_name":"exact visible or best catalog pet name","catalog_match":"exact candidate name or empty","variant":"normal|golden|rainbow|shiny|golden_shiny|rainbow_shiny|unknown","side":"give|get|unknown","signer_name":"visible signer/creator name or empty","signature_present":true,"signature_screenshot_indices":[1],"source_screenshot_indices":[0],"confidence":0.0,"needs_review":false,"review_reason":""}],"gems":[{"side":"give|get|unknown","amount":0,"screenshot_indices":[0],"confidence":0.0}],"warnings":[]}.',
       "Rules: full trade overview is primary evidence; count each pet visible in an overview once.",
-      "Signature close-ups are supporting evidence. Do not count a close-up as another pet if it matches an overview pet. Attach it using signature_screenshot_indices.",
-      "If a close-up cannot be matched confidently, only list it separately if a distinct pet is clearly shown and set needs_review=true.",
+      "If this is a signature close-up, report the visible pet and signer if readable. Do not invent missing context. Set needs_review=true if the trade side or pet identity cannot be determined from this image alone.",
+      "Do not assume other screenshots exist. Report only what is visible in this screenshot.",
       "Determine trade side from UI labels/layout. Never guess; use unknown if unclear.",
       "Read visible pet names, variants and signer text. Never invent signer names. Mark uncertain readings for review.",
       "Convert Gems K/M/B/T suffixes to absolute integers.",
-      "Match catalog_match and signer_name ONLY against supplied catalogs. Leave blank if no confident match.",
+      "Transcribe pet and signer names as visibly written. Do not guess or normalize uncertain text.",
       "Confidence is 0..1. Set needs_review for uncertain results.",
-      "PET CATALOG: " + JSON.stringify(petCatalog),
-      "SIGNER CATALOG (names and stored signer values): " + JSON.stringify(signerCatalog),
-      "There are " + prepared.length + " uploaded screenshots in total."
+      "Use the exact screenshot index from the image label. Return an empty array when no pets or Gems are visible."
     ].join("\n");
     const chunks: Array<Array<{ index: number; name: string; data: string }>> = [];
-    for (let i = 0; i < prepared.length; i += 3) chunks.push(prepared.slice(i, i + 3));
+    for (let i = 0; i < prepared.length; i += 1) chunks.push(prepared.slice(i, i + 1));
     const combined: Record<string, unknown> = { screenshots: [], items: [], gems: [], warnings: [] };
     for (let i = 0; i < chunks.length; i++) {
       const start = chunks[i][0].index + 1;
       const end = chunks[i][chunks[i].length - 1].index + 1;
-      const percent = chunks.length === 1 ? 28 : 18 + Math.round((i / chunks.length) * 38);
-      send({ type: "progress", percent, stage: "Searching for pets", detail: "Reading pet names, variants, trade sides and Gems in screenshots " + start + "–" + end + "." });
+      const percent = 12 + Math.round(((i + 1) / chunks.length) * 48);
+      send({ type: "progress", percent, stage: "Searching for pets", detail: "Reading pet names, variants, trade sides and Gems in screenshot " + start + " of " + prepared.length + "." });
       const result = await callGroq(apiKey, prompt, chunks[i]);
       for (const key of ["screenshots", "items", "gems", "warnings"]) {
         const target = Array.isArray(combined[key]) ? combined[key] as unknown[] : [];
@@ -155,13 +153,13 @@ Deno.serve(async (req: Request) => {
       const signerName = String(item.signer_name ?? "").trim().toLowerCase();
       const signer = signers.find((s) => String(s.display_name ?? s.signer_name ?? "").trim().toLowerCase() === signerName
         || String(s.signer_name ?? "").trim().toLowerCase() === signerName);
-      const petName = String(item.catalog_match ?? "").trim().toLowerCase();
+      const petName = String(item.catalog_match || item.pet_name || "").trim().toLowerCase();
       const pet = pets.find((p) => String(p.name ?? p.display_name ?? p.pet_name ?? "").trim().toLowerCase() === petName);
       const category = String(pet?.category ?? "").toLowerCase();
       const value = !signer ? null : category.includes("titanic") ? signer.cosmic_titanic_value
         : category.includes("huge") ? signer.cosmic_huge_value
         : category.includes("exclusive") ? signer.cosmic_exclusive_value : null;
-      return { ...item, signer_value: value ?? null, signer_value_category: category || null, signer_value_source: value != null ? "NANZO signer catalog" : null };
+      return { ...item, catalog_match: pet ? String(pet.display_name ?? pet.name ?? pet.pet_name ?? item.pet_name ?? "") : String(item.catalog_match ?? ""), signer_value: value ?? null, signer_value_category: category || null, signer_value_source: value != null ? "NANZO signer catalog" : null };
     });
     combined.items = items;
     send({ type: "progress", percent: 82, stage: "Looking up signer values", detail: "Matching detected signers to NANZO's stored Huge, Exclusive and Titanic signature values." });
