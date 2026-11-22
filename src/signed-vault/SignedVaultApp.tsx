@@ -64,6 +64,7 @@ import {
 import { BigGamesConnect, OAuthCallback } from './BigGamesConnect';
 import { InventoryScannerTab } from './InventoryScannerTab';
 import { PlayerInventoryExplorer } from './PlayerInventoryExplorer';
+import { PrivatePlayerInventoryPanel, PrivateInventoryOAuthCallback } from './PrivatePlayerInventoryPanel';
 import { AcquisitionsPage } from './AcquisitionsPage';
 import { TradeCalculator } from './TradeCalculator';
 import { RobloxConnectionCard } from './RobloxConnect';
@@ -3092,6 +3093,9 @@ export default function SignedVaultApp() {
   // The BIG Games OAuth redirect lands on /signed-vault/callback (a GET
   // navigation from an external site) — it is handled before any session
   // UI so the exchange runs even with no active vault session.
+  if (path === '/signed-vault/player-callback') {
+    return <div className="vault-app"><div className="bg-glow bg-glow-1 vault-bg-glow-1" /><PrivateInventoryOAuthCallback /></div>;
+  }
   if (path === '/signed-vault/callback') {
     return (
       <div className="vault-app">
@@ -3273,7 +3277,7 @@ function VaultShell() {
         {tab === 'overview' && <OverviewTab data={data} onNavigate={navigate} />}
         {tab === 'collection' && <CollectionTab data={data} onRefresh={refresh} isOwner={data.is_owner} />}
         {tab === 'scanner' && <InventoryScannerTab onRefresh={refresh} isOwner={data.is_owner} />}
-        {tab === 'player-inventory' && <PlayerInventoryExplorer />}
+        {tab === 'player-inventory' && <><PlayerInventoryExplorer /><PrivatePlayerInventoryPanel /></>}
         {tab === 'missing' && <MissingTab data={data} />}
         {tab === 'signers' && (
           <SignerGallery
