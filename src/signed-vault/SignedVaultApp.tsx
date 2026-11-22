@@ -3167,10 +3167,12 @@ function VaultShell() {
     const handleWheel = (event: WheelEvent) => {
       const maxScroll = element.scrollWidth - element.clientWidth;
       if (maxScroll <= 1) return;
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      const rawDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
         ? event.deltaX
         : event.deltaY;
-      if (delta === 0) return;
+      if (rawDelta === 0) return;
+      const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1;
+      const delta = rawDelta * scale;
       const next = Math.max(0, Math.min(maxScroll, element.scrollLeft + delta));
       element.scrollLeft = next;
       // While the pointer is over a scrollable nav, keep the page stationary.
