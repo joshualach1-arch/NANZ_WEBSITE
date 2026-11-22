@@ -2837,3 +2837,23 @@
 }
 .sc-progress p { margin:9px 0 0;color:#91a7b9;font-size:12px;line-height:1.5; }
 .sc-error { white-space:pre-wrap;line-height:1.5; }
+
+
+/* Final navigation interaction fix: keep the horizontal scroller unclipped and wheel-ready. */
+.vault-header-tabs {
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+  contain:none!important;
+  touch-action:pan-x!important;
+  scrollbar-gutter:stable;
+  cursor:grab;
+}
+.vault-header-tabs:active { cursor:grabbing; }
+.vault-header-tabs::-webkit-scrollbar-button,
+.vault-header-tabs::-webkit-scrollbar-corner {
+  display:none!important;
+  width:0!important;
+  height:0!important;
+}
