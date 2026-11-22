@@ -37,7 +37,7 @@ export function PrivatePlayerInventoryPanel(){
 export function PrivateInventoryOAuthCallback(){
  const [message,setMessage]=useState('Completing player authorization…');
  useEffect(()=>{const q=new URLSearchParams(window.location.search);const code=q.get('code'),state=q.get('state');if(q.get('error')){setMessage('The player declined authorization.');return;}if(!code||!state){setMessage('Authorization callback is incomplete.');return;}
-  void call('callback',{code,state}).then(r=>{setMessage(`Private inventory authorized for @${r.username||r.user_id}. Returning to Explorer…`);window.setTimeout(()=>{window.location.href='/signed-vault/player-inventory';},1400);}).catch(e=>setMessage(`Authorization failed: ${(e as Error).message}"));
+  void call('callback',{code,state}).then(r=>{setMessage(`Private inventory authorized for @${r.username||r.user_id}. Returning to Explorer…`);window.setTimeout(()=>{window.location.href='/signed-vault/player-inventory';},1400);}).catch(e=>setMessage(`Authorization failed: ${(e as Error).message}`));
  },[]);
  return <div className="vault-lock-wrap"><div className="vault-lock-card"><RefreshCw size={28} className="vault-spin"/><h1 className="vault-lock-title">Player authorization</h1><p className="vault-lock-sub">{message}</p><a className="vault-btn" href="/signed-vault/player-inventory">Back to Explorer</a></div></div>;
 }
