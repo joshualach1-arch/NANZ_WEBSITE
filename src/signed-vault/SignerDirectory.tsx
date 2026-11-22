@@ -394,7 +394,7 @@ function SignerEditor({ data, signer, onClose, onSaved }: {
         ...(isEdit ? { p_signer_id: signer?.id } : {}),
         p_signer_name: name.trim(),
         ...resolved,
-        p_roles: JSON.stringify(roles),
+        p_roles: roles,
         p_is_developer: roles.includes('big_games_developer'),
         p_is_partner: roles.includes('big_games_partner'),
         p_is_creator: roles.includes('community_creator') || roles.includes('content_creator'),
