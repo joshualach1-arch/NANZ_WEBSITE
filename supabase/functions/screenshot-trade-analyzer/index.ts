@@ -53,7 +53,9 @@ async function callGroq(apiKey: string, prompt: string, images: Array<{ index: n
     const status = response?.status ?? 502;
     const err = record(payload.error);
     const detail = String(err.message ?? "");
-    const message = status === 429
+    const message = status === 413
+      ? "This screenshot request is still too large for Groq's current token-per-minute limit. The analyzer now processes one compressed screenshot at a time; please retry. If it continues, wait for the token quota to reset."
+      : status === 429
       ? "Groq's free request limit has been reached. Please wait a little and try again."
       : status === 503 || status === 502 || status === 504
         ? "Groq's vision service is temporarily at capacity or unavailable. Please try again in a moment."
