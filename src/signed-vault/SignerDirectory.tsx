@@ -39,12 +39,20 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   const [verification, setVerification] = useState('all');
   const [ownership, setOwnership] = useState<'all' | 'owned' | 'missing'>('all');
   const [sort, setSort] = useState<'name' | 'signatures'>('name');
+  const [viewCollectorNo, setViewCollectorNo] = useState<number>(data.me);
+  const otherCollector = data.collectors.find((collector) => collector.collector_no !== data.me);
+  const viewingOtherCollector = viewCollectorNo !== data.me;
+  const otherCollectionUnavailable = viewingOtherCollector && data.other_pets == null;
+  const viewedData: VaultData = {
+    ...data,
+    pets: viewingOtherCollector ? (data.other_pets ?? []) : data.pets,
+  };
   const [editor, setEditor] = useState<'new' | Signer | null>(null);
   const [importingCosmic, setImportingCosmic] = useState(false);
   const [importSummary, setImportSummary] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const exportSignatureChecklist = (format: 'html' | 'csv') => {
-    const ownedKeys = new Set(data.pets
+    const ownedKeys = new Set(viewedData.pets
       .filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed')
       .map((pet) => `${pet.signer_id}|${pet.pet_id}|${pet.variant}`));
     const rows = data.signatures.map((record) => {
@@ -91,14 +99,14 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   // Signer ownership totals are calculated only from the active collector's pets.
   const ownedSignedPets = useMemo(() => {
     const seen = new Set<string>();
-    return data.pets.filter((pet) => {
+    return viewedData.pets.filter((pet) => {
       if (!pet.signer_id || pet.signed_status === 'not_signed') return false;
       const key = pet.id || `${pet.signer_id}|${pet.pet_id}|${pet.variant}|${pet.inventory_uid ?? pet.instance_id ?? ''}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
-  }, [data.pets]);
+  }, [viewedData.pets]);
 
   const ownedSignatureCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -152,6 +160,14 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
           <div className="vault-signers-stat"><Box size={31} /><div><strong>{missingSignerCount}</strong><span>Not Collected Yet</span></div></div>
         </div>
         <div className="vault-signers-actions">
+          {otherCollector && <>
+            <button className={`vault-tab${!viewingOtherCollector ? ' active' : ''}`} onClick={() => setViewCollectorNo(data.me)}>
+              My Collection
+            </button>
+            <button className={`vault-tab${viewingOtherCollector ? ' active' : ''}`} onClick={() => setViewCollectorNo(otherCollector.collector_no)}>
+              {otherCollector.label || `Collector ${otherCollector.collector_no}`}
+            </button>
+          </>}
           <button className="vault-btn vault-btn-sm" onClick={() => exportSignatureChecklist('html')}>↓ Export Checklist</button>
           <button className="vault-btn vault-btn-sm" onClick={() => exportSignatureChecklist('csv')}>↓ Export CSV</button>
           {isOwner && <>
@@ -220,7 +236,8 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
         </div>
       )}
       {editor && <SignerEditor data={data} signer={editor === 'new' ? null : editor} onClose={() => setEditor(null)} onSaved={onRefresh} />}
-      {selectedSignerId && <SignerDetailPage data={data} signerId={selectedSignerId} onBack={() => onOpenSigner('')} />}
+      {otherCollectionUnavailable && <div className="vault-empty" style={{ marginTop: 14 }}><div className="vault-empty-title">Collection unavailable</div><div>The other collector's pets were not included in the vault response. Refresh the vault or check collector access configuration.</div></div>}
+      {selectedSignerId && <SignerDetailPage data={viewedData} signerId={selectedSignerId} onBack={() => onOpenSigner('')} />}
     </div>
   );
 }
