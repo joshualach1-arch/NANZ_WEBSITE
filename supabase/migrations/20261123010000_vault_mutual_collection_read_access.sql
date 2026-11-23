@@ -224,7 +224,14 @@ BEGIN
           'purchase_price', vp.purchase_price, 'currency', vp.currency,
           'inventory_uid', vp.inventory_uid, 'added_by', vp.added_by,
           'notes', vp.notes, 'created_at', vp.created_at,
-          'cosmic_value', cv.cosmic_value
+          'cosmic_value', coalesce(
+            CASE vp.variant
+              WHEN 'golden' THEN cv.golden_value
+              WHEN 'rainbow' THEN cv.rainbow_value
+              WHEN 'shiny' THEN cv.shiny_value
+              WHEN 'rainbow_shiny' THEN cv.rainbow_shiny_value
+              ELSE cv.normal_value
+            END, cv.cosmic_value)
         ) AS row_data
         FROM vault_pets vp
         JOIN vault_pet_catalog pc ON pc.id = vp.pet_id
