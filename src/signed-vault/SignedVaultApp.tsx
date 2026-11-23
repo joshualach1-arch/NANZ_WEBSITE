@@ -741,6 +741,12 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [presetPetId, setPresetPetId] = useState<string | null>(null);
   const [presetSignerId, setPresetSignerId] = useState<string | null>(null);
   const [presetVariant, setPresetVariant] = useState<Variant>('normal');
+  const [signatureTarget, setSignatureTarget] = useState<InventoryItem | null>(null);
+  const [signatureSearch, setSignatureSearch] = useState('');
+  const [signatureBusy, setSignatureBusy] = useState(false);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [signatureSuccess, setSignatureSuccess] = useState(false);
+
 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [variantFilter, setVariantFilter] = useState('all');
@@ -856,7 +862,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           {p.error && <div className="vault-error" style={{ marginTop: 8 }}>{String(p.error)}</div>}
         </div>;
       })()}
-      {showScanner && <InventoryScannerTab modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setPresetPetId(item.pet_id); setPresetSignerId(item.signer_id); setPresetVariant(item.variant); setAddOpen(true); }} />}
+      {showScanner && <InventoryScannerTab modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setSignatureTarget(item); setSignatureSearch(''); setSignatureError(null); setSignatureSuccess(false); }} />}
       <div className="vault-section-head">
         <div className="vault-row">
           <span className="vault-kicker">Collection</span>
@@ -1013,6 +1019,47 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       )}
 
+      {signatureTarget && (
+        <Modal title={`Add signature · ${signatureTarget.pet_name}`} onClose={() => { if (!signatureBusy) setSignatureTarget(null); }} wide>
+          <p className="vault-note" style={{ marginBottom: 12 }}>
+            This pet already exists in the scanned inventory. Choose a signer to attach the signature to this existing pet — no new pet will be created.
+          </p>
+          <div className="vault-field">
+            <span className="vault-label">Search signer</span>
+            <input className="vault-input" autoFocus placeholder="Search signer name or Roblox username…" value={signatureSearch} onChange={(event) => setSignatureSearch(event.target.value)} />
+          </div>
+          <div className="vault-scan-signers-list" style={{ display: 'grid', gap: 8, maxHeight: 360, overflowY: 'auto', marginTop: 12 }}>
+            {data.signers.filter((signer) => {
+              const q = signatureSearch.trim().toLowerCase();
+              return !q || signer.signer_name.toLowerCase().includes(q) || String(signer.roblox_username ?? '').toLowerCase().includes(q);
+            }).sort((a,b) => a.signer_name.localeCompare(b.signer_name)).map((signer) => (
+              <button key={signer.id} className="vault-btn" style={{ justifyContent: 'flex-start', textAlign: 'left', padding: 10 }} disabled={signatureBusy} onClick={() => {
+                setSignatureBusy(true); setSignatureError(null);
+                void rpcCall('vault_inventory_set_signature', readStoredToken() ?? '', {
+                  p_inventory_uid: signatureTarget.inventory_uid,
+                  p_signer_id: signer.id,
+                  p_collector_no: view,
+                }).then(async () => {
+                  await onRefresh();
+                  setSignatureSuccess(true);
+                  setSignatureTarget(null);
+                }).catch((err) => setSignatureError(err instanceof VaultApiError ? err.message : 'Could not attach this signature.'))
+                  .finally(() => setSignatureBusy(false));
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  {signer.avatar_url ? <img src={signer.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} /> : <span className="vault-pill vault-pill-gray">✦</span>}
+                  <span><strong>{signer.display_name || signer.signer_name}</strong><small style={{ display: 'block', opacity: .7 }}>{signer.roblox_username ? '@' + signer.roblox_username : signer.signer_name}</small></span>
+                </span>
+                <span style={{ marginLeft: 'auto' }}>Select</span>
+              </button>
+            ))}
+          </div>
+          {signatureError && <div className="vault-error" role="alert" style={{ marginTop: 10 }}>{signatureError}</div>}
+          <div className="vault-row" style={{ justifyContent: 'flex-end', marginTop: 14 }}>
+            <button className="vault-btn" onClick={() => setSignatureTarget(null)} disabled={signatureBusy}>Cancel</button>
+          </div>
+        </Modal>
+      )}
       {addOpen && (
         <AddPetModal
           data={data}
