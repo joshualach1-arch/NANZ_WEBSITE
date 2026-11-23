@@ -705,7 +705,9 @@ function petSignatureValue(pet: VaultPet, signatures: SignatureRecord[]): number
 function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: () => Promise<void>; isOwner: boolean }) {
   const [view, setView] = useState<number>(data.me);
   const otherCollector = data.collectors.find((collector) => collector.collector_no !== data.me);
-  const canSwitchCollectors = Boolean(otherCollector);
+  const otherCollectorNo = otherCollector?.collector_no ?? (data.me === 1 ? 2 : 1);
+  const otherCollectorLabel = otherCollector?.label || (otherCollectorNo === 2 ? 'Collector 2' : 'Owner');
+  const canSwitchCollectors = true;
   const viewingOtherCollector = view !== data.me;
   const otherCollectionUnavailable = viewingOtherCollector && data.other_pets == null;
   const [addOpen, setAddOpen] = useState(false);
@@ -851,8 +853,8 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
               <button className={`vault-tab${view === data.me ? ' active' : ''}`} onClick={() => setView(data.me)}>
                 {data.collectors.find((collector) => collector.collector_no === data.me)?.label || (data.is_owner ? 'My Collection' : 'My Collection')}
               </button>
-              <button className={`vault-tab${view === otherCollector!.collector_no ? ' active' : ''}`} onClick={() => setView(otherCollector!.collector_no)}>
-                {otherCollector!.label || `Collector ${otherCollector!.collector_no}`}
+              <button className={`vault-tab${view === otherCollectorNo ? ' active' : ''}`} onClick={() => setView(otherCollectorNo)}>
+                {otherCollectorLabel}
               </button>
             </div>
           )}
