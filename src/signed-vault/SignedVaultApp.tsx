@@ -753,6 +753,18 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [sort, setSort] = useState<CollectionSort>('value_high');
 
   const pets = (view === data.me ? data.pets : (data.other_pets ?? []))
+    .map((pet) => {
+      // The owner-only other_pets RPC payload intentionally contains fewer
+      // catalog fields than the current collector's pets payload. Resolve
+      // category and image from the shared catalog before filtering/rendering.
+      const catalogPet = data.catalog.find((entry) => entry.id === pet.pet_id);
+      return {
+        ...pet,
+        pet_category: pet.pet_category ?? catalogPet?.category ?? null,
+        pet_image: pet.pet_image ?? catalogPet?.image_url ?? null,
+        cosmic_value: pet.cosmic_value ?? catalogPet?.cosmic_value ?? null,
+      };
+    })
     .filter((pet) => isTrackedCategory(pet.pet_category));
 
   const run = async (params: Record<string, unknown>) => {
