@@ -745,7 +745,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [signatureSearch, setSignatureSearch] = useState('');
   const [signatureBusy, setSignatureBusy] = useState(false);
   const [signatureError, setSignatureError] = useState<string | null>(null);
-  const [signatureSuccess, setSignatureSuccess] = useState(false);
+  const [scannerRefreshKey, setScannerRefreshKey] = useState(0);
 
 
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -862,7 +862,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           {p.error && <div className="vault-error" style={{ marginTop: 8 }}>{String(p.error)}</div>}
         </div>;
       })()}
-      {showScanner && <InventoryScannerTab modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setSignatureTarget(item); setSignatureSearch(''); setSignatureError(null); setSignatureSuccess(false); }} />}
+      {showScanner && <InventoryScannerTab key={scannerRefreshKey} modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setSignatureTarget(item); setSignatureSearch(''); setSignatureError(null); }} />}
       <div className="vault-section-head">
         <div className="vault-row">
           <span className="vault-kicker">Collection</span>
@@ -1041,7 +1041,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
                   p_collector_no: view,
                 }).then(async () => {
                   await onRefresh();
-                  setSignatureSuccess(true);
+                  setScannerRefreshKey((value) => value + 1);
                   setSignatureTarget(null);
                 }).catch((err) => setSignatureError(err instanceof VaultApiError ? err.message : 'Could not attach this signature.'))
                   .finally(() => setSignatureBusy(false));
