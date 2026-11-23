@@ -66,13 +66,13 @@ export function InventoryScannerTab({ onRefresh, isOwner, catalog = [], onSignPe
   }, [catalog]);
   const present = (data?.items ?? []).filter((item) => item.present);
   const renderItem = (item: InventoryItem, status: 'added' | 'updated' | 'removed') => {
-    const pet = catalog.find((entry) => entry.id === item.pet_id);
-    const canAdd = status !== 'removed' && Boolean(item.pet_id) && Boolean(onSignPet);
+    const pet = catalog.find((entry) => entry.id === item.pet_id) ?? catalog.find((entry) => entry.pet_name.trim().toLowerCase() === item.pet_name.trim().toLowerCase());
+    const canAdd = status !== 'removed' && Boolean(pet?.id) && Boolean(onSignPet);
     return <div className="vault-scan-result-item" key={`${status}-${item.inventory_uid}`}>
       <div className="vault-scan-result-art">{pet?.image_url ? <img src={pet.image_url} alt={item.pet_name} /> : <Sparkles size={27} />}</div>
       <div className="vault-scan-result-copy"><strong>{pet?.display_name || item.pet_name}</strong><span>{item.category || 'Pet'} · {variantLabelWide[item.variant] || item.variant}{item.quantity > 1 ? ` · ×${item.quantity}` : ''}</span><small>{item.signer_name ? `Signed by ${item.signer_name}` : signedShort[item.signed_status] || item.signed_status}</small></div>
       <span className={`vault-scan-status is-${status}`}>{status === 'added' ? 'ADDED' : status === 'updated' ? 'UPDATED' : 'LOST'}</span>
-      {canAdd && <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => onSignPet?.(item)}><Plus size={13} /> Add signature</button>}
+      {canAdd && <button className="vault-btn vault-btn-gold vault-btn-sm" onClick={() => onSignPet?.({ ...item, pet_id: pet!.id })}><Plus size={13} /> Add signature</button>}
     </div>;
   };
 
