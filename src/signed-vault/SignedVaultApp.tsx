@@ -49,6 +49,7 @@ import {
   type Signer,
   type VaultData,
   type VaultPet,
+  type InventoryItem,
   type CostSnapshot,
   type SignatureRecord,
   type ValueHistoryPoint,
@@ -318,15 +319,17 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
 
 /* ── form modal for adding a pet to the collection ───────────────── */
 
-function AddPetModal({ data, onClose, onSubmit, presetPetId }: {
+function AddPetModal({ data, onClose, onSubmit, presetPetId, presetSignerId, presetVariant }: {
   data: VaultData;
   onClose: () => void;
   onSubmit: (params: Record<string, unknown>) => Promise<void>;
   presetPetId?: string | null;
+  presetSignerId?: string | null;
+  presetVariant?: Variant;
 }) {
   const [petId, setPetId] = useState(presetPetId ?? '');
-  const [signerId, setSignerId] = useState('');
-  const [variant, setVariant] = useState<Variant>('normal');
+  const [signerId, setSignerId] = useState(presetSignerId ?? '');
+  const [variant, setVariant] = useState<Variant>(presetVariant ?? 'normal');
   const [nickname, setNickname] = useState('');
   const [acquiredAt, setAcquiredAt] = useState('');
   const [price, setPrice] = useState('');
@@ -730,6 +733,8 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const [missingCategoryFilter, setMissingCategoryFilter] = useState('all');
   const [petSearch, setPetSearch] = useState('');
   const [presetPetId, setPresetPetId] = useState<string | null>(null);
+  const [presetSignerId, setPresetSignerId] = useState<string | null>(null);
+  const [presetVariant, setPresetVariant] = useState<Variant>('normal');
 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [variantFilter, setVariantFilter] = useState('all');
@@ -833,7 +838,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           {p.error && <div className="vault-error" style={{ marginTop: 8 }}>{String(p.error)}</div>}
         </div>;
       })()}
-      {showScanner && <div style={{ marginBottom: 18 }}><InventoryScannerTab onRefresh={onRefresh} isOwner={isOwner} /></div>}
+      {showScanner && <InventoryScannerTab modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setPresetPetId(item.pet_id); setPresetSignerId(item.signer_id); setPresetVariant(item.variant); setAddOpen(true); }} />}
       <div className="vault-section-head">
         <div className="vault-row">
           <span className="vault-kicker">Collection</span>
@@ -868,7 +873,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
               .finally(() => setImportingCosmicPets(false));
           }}>{importingCosmicPets ? 'Importing Cosmic Values…' : '↓ Update Cosmic Pet Values'}</button>}
           <button className="vault-btn vault-btn-sm" onClick={() => setShowScanner((value) => !value)}>
-            {showScanner ? 'Hide scanner' : 'Scan Roblox inventory'}
+            Scan Roblox inventory
           </button>
           <button className="vault-btn vault-btn-gold" onClick={() => setAddOpen(true)} disabled={busy}>
             <Plus size={15} /> Add pet
@@ -985,11 +990,15 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         <AddPetModal
           data={data}
           presetPetId={presetPetId}
-          onClose={() => { setAddOpen(false); setPresetPetId(null); }}
+          presetSignerId={presetSignerId}
+          presetVariant={presetVariant}
+          onClose={() => { setAddOpen(false); setPresetPetId(null); setPresetSignerId(null); setPresetVariant('normal'); }}
           onSubmit={async () => {
             await onRefresh();
             setCollectionMode('owned');
             setPresetPetId(null);
+            setPresetSignerId(null);
+            setPresetVariant('normal');
           }}
         />
       )}
