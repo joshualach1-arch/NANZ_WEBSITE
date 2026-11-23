@@ -41,6 +41,8 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
   const [sort, setSort] = useState<'name' | 'signatures'>('name');
   const [viewCollectorNo, setViewCollectorNo] = useState<number>(data.me);
   const otherCollector = data.collectors.find((collector) => collector.collector_no !== data.me);
+  const otherCollectorNo = otherCollector?.collector_no ?? (data.me === 1 ? 2 : 1);
+  const otherCollectorLabel = otherCollector?.label || (otherCollectorNo === 2 ? 'Collector 2' : 'Owner');
   const viewingOtherCollector = viewCollectorNo !== data.me;
   const otherCollectionUnavailable = viewingOtherCollector && data.other_pets == null;
   const viewedData: VaultData = {
@@ -160,12 +162,12 @@ export function SignerGallery({ data, onOpenSigner, onRefresh, isOwner, selected
           <div className="vault-signers-stat"><Box size={31} /><div><strong>{missingSignerCount}</strong><span>Not Collected Yet</span></div></div>
         </div>
         <div className="vault-signers-actions">
-          {otherCollector && <>
+          {<>
             <button className={`vault-tab${!viewingOtherCollector ? ' active' : ''}`} onClick={() => setViewCollectorNo(data.me)}>
               My Collection
             </button>
-            <button className={`vault-tab${viewingOtherCollector ? ' active' : ''}`} onClick={() => setViewCollectorNo(otherCollector.collector_no)}>
-              {otherCollector.label || `Collector ${otherCollector.collector_no}`}
+            <button className={`vault-tab${viewingOtherCollector ? ' active' : ''}`} onClick={() => setViewCollectorNo(otherCollectorNo)}>
+              {otherCollectorLabel}
             </button>
           </>}
           <button className="vault-btn vault-btn-sm" onClick={() => exportSignatureChecklist('html')}>↓ Export Checklist</button>
