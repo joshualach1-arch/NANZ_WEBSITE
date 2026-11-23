@@ -704,6 +704,10 @@ function petSignatureValue(pet: VaultPet, signatures: SignatureRecord[]): number
 
 function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefresh: () => Promise<void>; isOwner: boolean }) {
   const [view, setView] = useState<number>(data.me);
+  const otherCollector = data.collectors.find((collector) => collector.collector_no !== data.me);
+  const canSwitchCollectors = Boolean(otherCollector);
+  const viewingOtherCollector = view !== data.me;
+  const otherCollectionUnavailable = viewingOtherCollector && data.other_pets == null;
   const [addOpen, setAddOpen] = useState(false);
   const [detail, setDetail] = useState<VaultPet | null>(null);
   const [busy, setBusy] = useState(false);
@@ -842,10 +846,14 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
       <div className="vault-section-head">
         <div className="vault-row">
           <span className="vault-kicker">Collection</span>
-          {isOwner && (
-            <div className="vault-tabs">
-              <button className={`vault-tab${view === data.me ? ' active' : ''}`} onClick={() => setView(data.me)}>Mine</button>
-              <button className={`vault-tab${view === 2 ? ' active' : ''}`} onClick={() => setView(2)}>Collector 2</button>
+          {canSwitchCollectors && (
+            <div className="vault-tabs" role="group" aria-label="Choose collection owner">
+              <button className={`vault-tab${view === data.me ? ' active' : ''}`} onClick={() => setView(data.me)}>
+                {data.collectors.find((collector) => collector.collector_no === data.me)?.label || (data.is_owner ? 'My Collection' : 'My Collection')}
+              </button>
+              <button className={`vault-tab${view === otherCollector!.collector_no ? ' active' : ''}`} onClick={() => setView(otherCollector!.collector_no)}>
+                {otherCollector!.label || `Collector ${otherCollector!.collector_no}`}
+              </button>
             </div>
           )}
           <span className="vault-pill vault-pill-gray">{filtered.length} of {pets.length} pets</span>
@@ -970,6 +978,11 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
       {collectionMode === 'missing' ? (
         missingCatalog.length === 0 ? <div className="vault-empty"><div className="vault-empty-title">No missing pets found</div><div>Your tracked catalog is fully collected for these filters.</div></div> :
         <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Choose variant +</span></div><div className="vault-pet-value">{formatValue(pet.cosmic_value)}</div></div></button>)}</div>
+      ) : otherCollectionUnavailable ? (
+        <div className="vault-empty">
+          <div className="vault-empty-title">Collection unavailable</div>
+          <div>The other collector's collection was not included in the vault response. Refresh the vault or check the collector access configuration.</div>
+        </div>
       ) : pets.length === 0 ? (
         <div className="vault-empty">
           <div className="vault-empty-title">Empty collection</div>
