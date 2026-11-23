@@ -9,9 +9,9 @@ const signedShort: Record<string, string> = { verified: 'Verified', unverified: 
 
 type ScanDelta = { added: InventoryItem[]; updated: InventoryItem[]; removed: InventoryItem[]; counts: { added: number; updated: number; removed: number; parsed: number; signed: number } };
 
-export function InventoryScannerTab({ onRefresh, isOwner, catalog = [], onSignPet, modal = false, onClose }: {
+export function InventoryScannerTab({ onRefresh, isOwner, catalog = [], onSignPet, modal = false, onClose, refreshKey = 0 }: {
   onRefresh: () => Promise<void>; isOwner: boolean; catalog?: CatalogPet[];
-  onSignPet?: (item: InventoryItem) => void; modal?: boolean; onClose?: () => void;
+  onSignPet?: (item: InventoryItem) => void; modal?: boolean; onClose?: () => void; refreshKey?: number;
 }) {
   const [data, setData] = useState<ScannerData | null>(null);
   void isOwner;
@@ -28,6 +28,7 @@ export function InventoryScannerTab({ onRefresh, isOwner, catalog = [], onSignPe
     catch { setError('Scanner data could not be loaded.'); return null; }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (refreshKey > 0) void load(); }, [refreshKey, load]);
   useEffect(() => {
     if (!syncing) return;
     const timer = window.setInterval(() => setTickerIndex((v) => v + 1), 1150);

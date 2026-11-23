@@ -862,7 +862,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           {p.error && <div className="vault-error" style={{ marginTop: 8 }}>{String(p.error)}</div>}
         </div>;
       })()}
-      {showScanner && <InventoryScannerTab key={scannerRefreshKey} modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setSignatureTarget(item); setSignatureSearch(''); setSignatureError(null); }} />}
+      {showScanner && <InventoryScannerTab refreshKey={scannerRefreshKey} modal catalog={data.catalog} onRefresh={onRefresh} isOwner={isOwner} onClose={() => setShowScanner(false)} onSignPet={(item: InventoryItem) => { setSignatureTarget(item); setSignatureSearch(''); setSignatureError(null); }} />}
       <div className="vault-section-head">
         <div className="vault-row">
           <span className="vault-kicker">Collection</span>
