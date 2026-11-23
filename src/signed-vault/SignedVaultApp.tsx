@@ -1023,6 +1023,7 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           pet={detail}
           data={data}
           busy={busy}
+          canManage={isOwner || view === data.me}
           onRemove={() => void remove(detail)}
           onClose={() => setDetail(null)}
           onSaved={async () => {
@@ -1037,10 +1038,11 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
 /* ── pet detail (Part 3: full info, history, authorized corrections) ─ */
 
-function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
+function PetDetailModal({ pet, data, busy, canManage, onRemove, onClose, onSaved }: {
   pet: VaultPet;
   data: VaultData;
   busy: boolean;
+  canManage: boolean;
   onRemove: () => void;
   onClose: () => void;
   onSaved: () => Promise<void>;
@@ -1071,7 +1073,7 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
   const [assignBusy, setAssignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canEdit = data.is_owner || data.me === 2;
+  const canEdit = canManage;
   const filteredSignerOptions = data.signers.filter((entry) => {
     const q = signerSearch.trim().toLowerCase();
     return Boolean(entry.roblox_username) && (!q || [entry.signer_name, entry.display_name, entry.roblox_username, String(entry.roblox_user_id ?? '')].some((value) => String(value ?? '').toLowerCase().includes(q)));
@@ -1224,7 +1226,7 @@ function PetDetailModal({ pet, data, busy, onRemove, onClose, onSaved }: {
         </div>
       )}
       <div className="vault-row" style={{ marginTop: 18, justifyContent: 'space-between' }}>
-        <button className="vault-btn vault-btn-danger" disabled={busy} onClick={onRemove}>Remove</button>
+        <button className="vault-btn vault-btn-danger" disabled={busy || !canManage} onClick={onRemove}>Remove</button>
         <div className="vault-row" style={{ gap: 8 }}>
           {canEdit && <button className="vault-btn" onClick={() => setEditOpen(true)}>Correct details</button>}
           <button className="vault-btn vault-btn-gold" onClick={onClose}>Close</button>
