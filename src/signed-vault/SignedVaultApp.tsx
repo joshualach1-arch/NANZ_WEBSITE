@@ -12,6 +12,7 @@ import {
   Plus,
   Pencil,
   RefreshCw,
+  ScanLine,
   ShieldCheck,
   Sparkles,
   Tag,
@@ -3155,6 +3156,7 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
   const [filter, setFilter] = useState<'all' | 'owned' | 'missing'>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [importBusy, setImportBusy] = useState(false);
+  const [scanBusy, setScanBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const owned = new Map((data.egg_collection ?? []).filter((entry) => entry.collector_no === view && entry.owned).map((entry) => [entry.egg_id, entry]));
@@ -3183,6 +3185,22 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
     } catch (err) { setError(err instanceof Error ? err.message : 'Could not update egg ownership.'); }
     finally { setBusyId(null); }
   };
+  const scanInventory = async () => {
+    setScanBusy(true); setError(null); setMessage(null);
+    try {
+      const result = await vaultCall('biggames-sync', { collector_no: view });
+      const detected = Number(result.eggs_detected ?? 0);
+      const quantity = Number(result.egg_quantity ?? 0);
+      if (detected > 0) {
+        setMessage(`Inventory scan complete: ${detected} egg types found · ${quantity} eggs marked as owned.`);
+      } else {
+        setMessage('Inventory scan complete, but no egg names matched the current egg catalog. Your existing collection was not changed.');
+      }
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Egg inventory scan failed. Connect your BIG Games account and try again.');
+    } finally { setScanBusy(false); }
+  };
   return <div className="vault-collection-page">
     <section className="vault-collection-hero"><div className="vault-collection-hero-copy">
       <span className="vault-kicker">NANZO EGG ARCHIVE</span><h1 className="vault-title">Egg Collection</h1>
@@ -3191,7 +3209,8 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
     <div className="vault-row" style={{justifyContent:'space-between',flexWrap:'wrap',marginBottom:14}}>
       <div className="vault-tabs"><button className={view===data.me?'vault-tab active':'vault-tab'} onClick={()=>setView(data.me)}>{data.collectors.find(c=>c.collector_no===data.me)?.label ?? 'My Collection'}</button>
       {data.is_owner && <button className={view!==data.me?'vault-tab active':'vault-tab'} onClick={()=>setView(data.me===1?2:1)}>{data.collectors.find(c=>c.collector_no!==data.me)?.label ?? 'Other collector'}</button>}</div>
-      <div className="vault-row"><span className="vault-pill vault-pill-gold">{owned.size} owned</span>
+      <div className="vault-row" style={{gap:8,flexWrap:'wrap'}}><span className="vault-pill vault-pill-gold">{owned.size} owned</span>
+      <button className="vault-btn vault-btn-sm" disabled={scanBusy} onClick={()=>void scanInventory()}><ScanLine size={13} className={scanBusy?'vault-spin':''}/> {scanBusy?'Scanning inventory…':'Scan Inventory'}</button>
       {data.is_owner && <button className="vault-btn vault-btn-sm" disabled={importBusy} onClick={()=>void importEggs()}><RefreshCw size={13} className={importBusy?'vault-spin':''}/> {importBusy?'Importing…':'Update Cosmic Eggs'}</button>}</div>
     </div>
     {message && <div className="vault-success" style={{marginBottom:12}}>{message}</div>}
