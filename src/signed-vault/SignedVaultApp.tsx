@@ -271,17 +271,21 @@ export function StatCard({ label, value, hint, gold, icon }: { label: string; va
 function vaultImageSrc(value: string | null | undefined): string | undefined {
   if (!value) return undefined;
   const raw = value.trim();
+  if (!raw) return undefined;
+  const base = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+  const proxy = base ? base + '/functions/v1/vault-image' : '';
   const match = raw.match(/rbxassetid:\/\/(\d+)/i)
     ?? raw.match(/[?&](?:id|assetId|asset_id)=(\d+)/i)
     ?? raw.match(/\/(?:image|asset)\/(\d{6,})(?:[/?#]|$)/i);
   if (match) {
-    const base = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
-    if (base) return `${base}/functions/v1/vault-image?assetId=${match[1]}`;
-    return `https://ps99.biggamesapi.io/image/${match[1]}`;
+    if (proxy) return proxy + '?assetId=' + match[1];
+    return 'https://ps99.biggamesapi.io/image/' + match[1];
   }
+  // Proxy external BIG Games / Cosmic Values CDN URLs to avoid hotlink failures.
+  if (/^https:\/\//i.test(raw) && proxy) return proxy + '?url=' + encodeURIComponent(raw);
+  if (/^\/\//.test(raw) && proxy) return proxy + '?url=' + encodeURIComponent('https:' + raw);
   return raw;
 }
-
 function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => void }) {
   const isSigned = Boolean(pet.signer_id && pet.signed_status !== 'not_signed');
   const variantClass = String(pet.variant || 'normal').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
