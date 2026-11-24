@@ -58,14 +58,24 @@ type PetRow = {
 };
 
 function assetImageUrl(value: unknown): string | null {
-  if (typeof value === "number" && Number.isFinite(value)) return `${API_BASE}/image/${value}`;
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return `${API_BASE}/image/${value}`;
   if (typeof value !== "string" || !value.trim()) return null;
   const raw = value.trim();
-  const match = raw.match(/rbxassetid:\/\/(\d+)/i) ?? raw.match(/(?:assetid|image|thumbnail)[=:/" ]+(\d{6,})/i);
-  if (match) return `${API_BASE}/image/${match[1]}`;
+  const assetId = raw.match(/rbxassetid:\/\/(\d+)/i)
+    ?? raw.match(/[?&](?:id|assetId|asset_id)=(\d+)/i)
+    ?? raw.match(/\/(?:image|asset)\/(\d{6,})(?:[/?#]|$)/i)
+    ?? raw.match(/(?:assetid|image|thumbnail)[=:/" ]+(\d{6,})/i);
+  if (assetId) return `${API_BASE}/image/${assetId[1]}`;
   if (/^https?:\/\//i.test(raw)) return raw;
   if (/^\/\//.test(raw)) return `https:${raw}`;
   return null;
+}
+
+function normalizePetImageKey(value: string): string {
+  return value.toLowerCase()
+    .replace(/^(?:exclusive|huge|titanic|gargantuan)\s+/i, "")
+    .replace(/\s+(?:exclusive|huge|titanic|gargantuan)$/i, "")
+    .replace(/[^a-z0-9]+/g, "");
 }
 
 function thumbnailUrl(pet: PetRow): string | null {
@@ -437,7 +447,7 @@ Deno.serve(async (req: Request) => {
         const gameImage = gameImages.get(normalizeEggKey(eggName));
         return {
           egg_name: eggName,
-          image_url: row.image_url ?? gameImage ?? existingImages.get(eggName.toLowerCase()) ?? null,
+          image_url: gameImage ?? assetImageUrl(row.image_url) ?? existingImages.get(eggName.toLowerCase()) ?? null,
           cosmic_value: row.cosmic_value,
           rap_value: row.rap_value,
           demand: row.demand,
@@ -575,9 +585,9 @@ Deno.serve(async (req: Request) => {
           const gamePets = Array.isArray(petPayload.data) ? petPayload.data as PetRow[] : [];
           for (const pet of gamePets) {
             const image = thumbnailUrl(pet);
-            if (image && pet.configName) officialPetImages.set(pet.configName.toLowerCase(), image);
+            if (image && pet.configName) officialPetImages.set(normalizePetImageKey(pet.configName), image);
             const displayName = asRecord(pet.configData).name;
-            if (image && typeof displayName === "string") officialPetImages.set(displayName.toLowerCase(), image);
+            if (image && typeof displayName === "string") officialPetImages.set(normalizePetImageKey(displayName), image);
           }
         }
       } catch (error) {
@@ -668,7 +678,7 @@ Deno.serve(async (req: Request) => {
           } catch {
             // Keep the RAP row even if one detail page is temporarily unavailable.
           }
-          imageUrl = imageUrl ?? officialPetImages.get(item.name.toLowerCase()) ?? null;
+          imageUrl = officialPetImages.get(normalizePetImageKey(item.name)) ?? assetImageUrl(imageUrl) ?? null;
           return {
             pet_name: item.name,
             rap: item.rap,
