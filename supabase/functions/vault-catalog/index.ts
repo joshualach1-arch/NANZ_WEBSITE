@@ -228,8 +228,8 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
 
 function normalizeEggKey(value: string): string {
   return value.toLowerCase()
-    .replace(/^exclusive\\s+/i, "")
-    .replace(/\\s+/g, " ")
+    .replace(/^exclusive\s+/i, "")
+    .replace(/\s+/g, " ")
     .replace(/[^a-z0-9]+/g, "");
 }
 
@@ -239,28 +239,28 @@ function parseBigGamesExclusiveEggs(html: string, petImages: Map<string, string>
     .replace(/&#x27;/g, "'").replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/")
     .replace(/&lt;/g, "<").replace(/&gt;/g, " ");
   const plain = decode(html
-    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
-    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
-    .replace(/\\s+/g, " "));
-  const ranks = [...plain.matchAll(/#(\\d{1,2})\\s+([\\s\\S]*?)(?=#\\d{1,2}\\s+|More Pet Simulator 99|$)/g)];
+    .replace(/\s+/g, " "));
+  const ranks = [...plain.matchAll(/#(\d{1,2})\s+([\s\S]*?)(?=#\d{1,2}\s+|More Pet Simulator 99|$)/g)];
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
   for (const match of ranks) {
     const block = match[2].trim();
-    const eggMatch = block.match(/((?:Exclusive\\s+)?[A-Za-z0-9'’& -]+?\\bEgg)\\b/i);
+    const eggMatch = block.match(/((?:Exclusive\s+)?[A-Za-z0-9'’& -]+?\bEgg)\b/i);
     if (!eggMatch) continue;
-    const shortName = eggMatch[1].replace(/^Exclusive\\s+/i, "").trim();
-    const eggName = /^exclusive\\s/i.test(eggMatch[1]) ? eggMatch[1] : `Exclusive ${shortName}`;
+    const shortName = eggMatch[1].replace(/^Exclusive\s+/i, "").trim();
+    const eggName = /^exclusive\s/i.test(eggMatch[1]) ? eggMatch[1] : `Exclusive ${shortName}`;
     const key = normalizeEggKey(eggName);
     if (seen.has(key)) continue;
     seen.add(key);
     const contentsText = block.slice(eggMatch.index! + eggMatch[0].length);
     const contents: Array<{ pet_name: string; odds: string; image_url: string | null }> = [];
-    const oddsRegex = /([^,]+?)\\s*\\(([0-9]+(?:\\.[0-9]+)?%)\\)/g;
+    const oddsRegex = /([^,]+?)\s*\(([0-9]+(?:\.[0-9]+)?%)\)/g;
     let oddsMatch: RegExpExecArray | null;
     while ((oddsMatch = oddsRegex.exec(contentsText)) !== null) {
-      const petName = oddsMatch[1].replace(/[•·|]/g, " ").replace(/\\s+/g, " ").trim();
+      const petName = oddsMatch[1].replace(/[•·|]/g, " ").replace(/\s+/g, " ").trim();
       if (!petName || petName.length > 90) continue;
       const petKey = petName.toLowerCase().replace(/[^a-z0-9]+/g, "");
       contents.push({
@@ -272,7 +272,7 @@ function parseBigGamesExclusiveEggs(html: string, petImages: Map<string, string>
     const rawIndex = html.toLowerCase().indexOf(shortName.toLowerCase());
     const nearby = rawIndex >= 0 ? html.slice(Math.max(0, rawIndex - 2400), Math.min(html.length, rawIndex + 4200)) : "";
     let imageUrl: string | null = null;
-    const imageTags = [...nearby.matchAll(/<(?:img|source)\\b[^>]*>/gi)].map((m) => m[0]);
+    const imageTags = [...nearby.matchAll(/<(?:img|source)\b[^>]*>/gi)].map((m) => m[0]);
     for (const tag of imageTags) {
       const src = tag.match(/(?:src|data-src|data-lazy-src|data-original)=["']([^"']+)/i)?.[1];
       if (!src || /^data:/i.test(src)) continue;
