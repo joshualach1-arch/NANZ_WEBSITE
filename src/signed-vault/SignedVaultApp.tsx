@@ -268,6 +268,20 @@ export function StatCard({ label, value, hint, gold, icon }: { label: string; va
   );
 }
 
+function vaultImageSrc(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const raw = value.trim();
+  const match = raw.match(/rbxassetid:\/\/(\d+)/i)
+    ?? raw.match(/[?&](?:id|assetId|asset_id)=(\d+)/i)
+    ?? raw.match(/\/(?:image|asset)\/(\d{6,})(?:[/?#]|$)/i);
+  if (match) {
+    const base = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+    if (base) return `${base}/functions/v1/vault-image?assetId=${match[1]}`;
+    return `https://ps99.biggamesapi.io/image/${match[1]}`;
+  }
+  return raw;
+}
+
 function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => void }) {
   const isSigned = Boolean(pet.signer_id && pet.signed_status !== 'not_signed');
   const variantClass = String(pet.variant || 'normal').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
@@ -275,7 +289,11 @@ function PetCard({ pet, onOpen }: { pet: VaultPet; onOpen: (pet: VaultPet) => vo
     <button className={`vault-pet-card vault-pet-card-refined${isSigned ? ' vault-pet-card-signed' : ''}`} onClick={() => onOpen(pet)} style={{ textAlign: 'left', padding: 0 }}>
       <div className="vault-pet-media vault-collection-variant-media">
         <span className={`vault-variant-swatch variant-${variantClass}`}>
-          {pet.pet_image ? <img src={pet.pet_image} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={40} />}
+          {pet.pet_image ? <img src={vaultImageSrc(pet.pet_image)} alt={pet.pet_name} loading="lazy" onError={(event) => {
+            const image = event.currentTarget;
+            if (pet.pet_image && image.src !== pet.pet_image) image.src = pet.pet_image;
+            else image.style.visibility = 'hidden';
+          }} /> : <Sparkles size={40} />}
           {['shiny', 'golden_shiny', 'rainbow_shiny'].includes(pet.variant) && <i className="vault-shine-sweep" aria-hidden="true" />}
         </span>
       </div>
@@ -384,7 +402,11 @@ function AddPetModal({ data, onClose, onSubmit, presetPetId, presetSignerId, pre
       <div className="vault-variant-modal">
         {presetPetId && selectedPet && <div className="vault-variant-preview">
           <div className={'vault-variant-art variant-' + variant.replace('_', '-')}>
-            {selectedPet.image_url ? <img src={selectedPet.image_url} alt={selectedPet.pet_name} /> : <Sparkles size={44} />}
+            {selectedPet.image_url ? <img src={vaultImageSrc(selectedPet.image_url)} alt={selectedPet.pet_name} onError={(event) => {
+              const image = event.currentTarget;
+              if (selectedPet.image_url && image.src !== selectedPet.image_url) image.src = selectedPet.image_url;
+              else image.style.visibility = 'hidden';
+            }} /> : <Sparkles size={44} />}
             {['shiny','golden_shiny','rainbow_shiny'].includes(variant) && <span className="vault-shine-sweep" />}
           </div>
           <div><span className="vault-kicker">{selectedPet.category}</span><h3>{selectedPet.display_name || selectedPet.pet_name}</h3><p>Select the exact variant you own. Only that variant will be added.</p></div>
@@ -1044,7 +1066,11 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
       {collectionMode === 'missing' ? (
         missingCatalog.length === 0 ? <div className="vault-empty"><div className="vault-empty-title">No missing pets found</div><div>Your tracked catalog is fully collected for these filters.</div></div> :
-        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Choose variant +</span></div><div className="vault-pet-value">{formatValue(pet.manual_value ?? pet.cosmic_value)}</div>
+        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={vaultImageSrc(pet.image_url)} alt={pet.pet_name} loading="lazy" onError={(event) => {
+            const image = event.currentTarget;
+            if (pet.image_url && image.src !== pet.image_url) image.src = pet.image_url;
+            else image.style.visibility = 'hidden';
+          }} /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Choose variant +</span></div><div className="vault-pet-value">{formatValue(pet.manual_value ?? pet.cosmic_value)}</div>
           {(pet.trade_hub_rap != null || pet.trade_hub_exist_count != null) && <div className="vault-pet-meta"><span>Trade Hub RAP: {formatValue(pet.trade_hub_rap ?? 0)}</span><span>Exist: {pet.trade_hub_exist_count?.toLocaleString() ?? '—'}</span></div>}
           {pet.manual_value_locked && <div className="vault-pet-meta"><span className="vault-pill vault-pill-gold">Manual value locked</span></div>}
         </div></button>)}</div>
@@ -3178,7 +3204,11 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
       <div className="vault-pet-grid">{eggs.map(egg=>{
         const entry=owned.get(egg.id); const has=Boolean(entry);
         return <article key={egg.id} className={`vault-pet-card vault-pet-card-refined${has?' vault-pet-card-signed':''}`} style={{padding:14,border:has?'1px solid rgba(236,72,153,.8)':undefined,background:has?'linear-gradient(145deg,rgba(236,72,153,.16),rgba(15,23,42,.85))':undefined}}>
-          <div className="vault-pet-media"><span className="vault-variant-swatch">{egg.image_url?<img src={egg.image_url} alt={egg.egg_name}/>:<span style={{fontSize:42}}>🥚</span>}</span></div>
+          <div className="vault-pet-media"><span className="vault-variant-swatch">{egg.image_url?<img src={vaultImageSrc(egg.image_url)} alt={egg.egg_name} loading="lazy" onError={(event) => {
+            const image = event.currentTarget;
+            if (egg.image_url && image.src !== egg.image_url) image.src = egg.image_url;
+            else image.style.visibility = 'hidden';
+          }}/>:<span style={{fontSize:42}}>🥚</span>}</span></div>
           <div className="vault-pet-body"><div className="vault-pet-name">{egg.egg_name}</div>
             <div className="vault-note">Cosmic value: {egg.cosmic_value==null?'—':formatValue(egg.cosmic_value)}{egg.demand!=null?` · Demand ${egg.demand}/10`:''}</div>
             {has&&<span className="vault-pill vault-pill-gold" style={{marginTop:8}}>✓ OWNED{entry?.quantity>1?` ×${entry.quantity}`:''}</span>}
