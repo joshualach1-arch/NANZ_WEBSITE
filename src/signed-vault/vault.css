@@ -2956,3 +2956,74 @@
   isolation:auto!important;
   pointer-events:none!important;
 }
+
+
+/* Egg cards: let the hatch preview escape the normal clipped collection cards. */
+.vault-collection-page .vault-pet-grid {
+  position:relative!important;
+  overflow:visible!important;
+  isolation:auto!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card,
+.vault-collection-page .vault-pet-grid > .vault-egg-card.vault-pet-card {
+  position:relative!important;
+  overflow:visible!important;
+  isolation:auto!important;
+  contain:none!important;
+  z-index:0!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card:hover,
+.vault-collection-page .vault-pet-grid > .vault-egg-card:focus-within {
+  z-index:10000!important;
+  transform:translateY(0)!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-tooltip {
+  position:absolute!important;
+  top:auto!important;
+  bottom:calc(100% + 14px)!important;
+  left:50%!important;
+  width:min(370px,calc(100vw - 32px))!important;
+  max-height:min(440px,70vh)!important;
+  overflow:auto!important;
+  transform:translate(-50%,0)!important;
+  z-index:10001!important;
+  padding:16px!important;
+  border-radius:18px!important;
+  border:1px solid rgba(168,126,255,.85)!important;
+  background:linear-gradient(155deg,#fffaff 0%,#f5f0ff 58%,#fff 100%)!important;
+  box-shadow:0 18px 48px rgba(0,0,0,.48),0 0 0 4px rgba(139,92,246,.12)!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-tooltip:after {
+  top:auto!important;
+  bottom:-9px!important;
+  transform:rotate(45deg)!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-content-grid {
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:10px 8px!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-content-art {
+  aspect-ratio:1/1!important;
+  overflow:hidden!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-content-art img {
+  width:100%!important;height:100%!important;object-fit:contain!important;
+}
+.vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-content > span {
+  color:#393348!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+@media(max-width:640px) {
+  .vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-tooltip {
+    position:fixed!important;
+    top:50%!important;left:50%!important;bottom:auto!important;
+    width:min(370px,calc(100vw - 28px))!important;
+    max-height:72vh!important;
+    transform:translate(-50%,-50%)!important;
+    z-index:100000!important;
+  }
+  .vault-collection-page .vault-pet-grid > .vault-egg-card .vault-egg-tooltip:after {display:none!important;}
+}
