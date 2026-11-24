@@ -76,6 +76,7 @@ import './vault.css';
 type VaultTab =
   | 'overview'
   | 'collection'
+  | 'eggs'
   | 'scanner'
   | 'player-inventory'
   | 'missing'
@@ -89,6 +90,7 @@ type VaultTab =
 const vaultTabs: { id: VaultTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'collection', label: 'My Collection' },
+  { id: 'eggs', label: 'Egg Collection' },
   { id: 'scanner', label: 'Inventory Scanner' },
   { id: 'player-inventory', label: 'Player Inventory' },
   { id: 'missing', label: 'Missing Pets' },
@@ -3069,6 +3071,77 @@ function SignabilityEditor({ pet, onClose, onSaved }: {
   );
 }
 
+function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () => Promise<void> }) {
+  const [view, setView] = useState<number>(data.me);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'owned' | 'missing'>('all');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const owned = new Map((data.egg_collection ?? []).filter((entry) => entry.collector_no === view && entry.owned).map((entry) => [entry.egg_id, entry]));
+  const eggs = (data.egg_catalog ?? []).filter((egg) => {
+    const has = owned.has(egg.id);
+    const q = search.trim().toLowerCase();
+    return (filter === 'all' || (filter === 'owned' ? has : !has))
+      && (!q || egg.egg_name.toLowerCase().includes(q));
+  });
+  const importEggs = async () => {
+    setImportBusy(true); setError(null); setMessage(null);
+    try {
+      const result = await vaultCall('cosmic-egg-import', {});
+      setMessage(`Cosmic Eggs updated: ${result.added ?? 0} new, ${result.updated ?? 0} updated, ${result.skipped ?? 0} skipped.`);
+      await onRefresh();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Egg import failed.'); }
+    finally { setImportBusy(false); }
+  };
+  const toggle = async (eggId: string, has: boolean) => {
+    setBusyId(eggId); setError(null);
+    try {
+      await rpcCall('vault_egg_collection_manage', readStoredToken() ?? '', {
+        p_egg_id: eggId, p_owned: !has, p_quantity: 1, p_collector_no: view,
+      });
+      await onRefresh();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not update egg ownership.'); }
+    finally { setBusyId(null); }
+  };
+  return <div className="vault-collection-page">
+    <section className="vault-collection-hero"><div className="vault-collection-hero-copy">
+      <span className="vault-kicker">NANZO EGG ARCHIVE</span><h1 className="vault-title">Egg Collection</h1>
+      <p className="vault-subtitle">Track the rare and valuable eggs you own. Owned eggs are highlighted in your archive.</p>
+    </div></section>
+    <div className="vault-row" style={{justifyContent:'space-between',flexWrap:'wrap',marginBottom:14}}>
+      <div className="vault-tabs"><button className={view===data.me?'vault-tab active':'vault-tab'} onClick={()=>setView(data.me)}>{data.collectors.find(c=>c.collector_no===data.me)?.label ?? 'My Collection'}</button>
+      {data.is_owner && <button className={view!==data.me?'vault-tab active':'vault-tab'} onClick={()=>setView(data.me===1?2:1)}>{data.collectors.find(c=>c.collector_no!==data.me)?.label ?? 'Other collector'}</button>}</div>
+      <div className="vault-row"><span className="vault-pill vault-pill-gold">{owned.size} owned</span>
+      {data.is_owner && <button className="vault-btn vault-btn-sm" disabled={importBusy} onClick={()=>void importEggs()}><RefreshCw size={13} className={importBusy?'vault-spin':''}/> {importBusy?'Importing…':'Update Cosmic Eggs'}</button>}</div>
+    </div>
+    {message && <div className="vault-success" style={{marginBottom:12}}>{message}</div>}
+    {error && <div className="vault-error" role="alert" style={{marginBottom:12}}>{error}</div>}
+    <div className="vault-card" style={{padding:14,marginBottom:14}}>
+      <div className="vault-row" style={{gap:10,flexWrap:'wrap'}}>
+        <input className="vault-input" style={{flex:1,minWidth:180}} placeholder="Search eggs…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <select className="vault-select" style={{maxWidth:180}} value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}>
+          <option value="all">All eggs</option><option value="owned">Owned only</option><option value="missing">Not owned</option>
+        </select>
+      </div>
+    </div>
+    {(data.egg_catalog ?? []).length===0 ? <div className="vault-empty"><div className="vault-empty-title">Egg catalog is empty</div><div>Import the Cosmic Values egg list to get started.</div></div> :
+      <div className="vault-pet-grid">{eggs.map(egg=>{
+        const entry=owned.get(egg.id); const has=Boolean(entry);
+        return <article key={egg.id} className={`vault-pet-card vault-pet-card-refined${has?' vault-pet-card-signed':''}`} style={{padding:14,border:has?'1px solid rgba(236,72,153,.8)':undefined,background:has?'linear-gradient(145deg,rgba(236,72,153,.16),rgba(15,23,42,.85))':undefined}}>
+          <div className="vault-pet-media"><span className="vault-variant-swatch">{egg.image_url?<img src={egg.image_url} alt={egg.egg_name}/>:<span style={{fontSize:42}}>🥚</span>}</span></div>
+          <div className="vault-pet-body"><div className="vault-pet-name">{egg.egg_name}</div>
+            <div className="vault-note">Cosmic value: {egg.cosmic_value==null?'—':formatValue(egg.cosmic_value)}{egg.demand!=null?` · Demand ${egg.demand}/10`:''}</div>
+            {has&&<span className="vault-pill vault-pill-gold" style={{marginTop:8}}>✓ OWNED{entry?.quantity>1?` ×${entry.quantity}`:''}</span>}
+            <button className={has?'vault-btn vault-btn-sm':'vault-btn vault-btn-gold vault-btn-sm'} style={{marginTop:10,width:'100%'}} disabled={busyId===egg.id} onClick={()=>void toggle(egg.id,has)}>{busyId===egg.id?'Saving…':has?'Remove from collection':'I have this egg'}</button>
+          </div>
+        </article>;
+      })}</div>}
+    {eggs.length===0&&(data.egg_catalog??[]).length>0&&<div className="vault-empty">No eggs match this filter.</div>}
+  </div>;
+}
+
 /* ── setup wizard (first run) ────────────────────────────────────── */
 
 function SetupScreen({ onDone }: { onDone: () => void }) {
@@ -3391,6 +3464,7 @@ function VaultShell() {
 
         {tab === 'overview' && <OverviewTab data={data} onNavigate={navigate} />}
         {tab === 'collection' && <CollectionTab data={data} onRefresh={refresh} isOwner={data.is_owner} />}
+        {tab === 'eggs' && <EggCollectionTab data={data} onRefresh={refresh} />}
         {tab === 'scanner' && <InventoryScannerTab onRefresh={refresh} isOwner={data.is_owner} />}
         {tab === 'player-inventory' && <><PlayerInventoryExplorer /><PrivatePlayerInventoryPanel /></>}
         {tab === 'missing' && <MissingTab data={data} />}
