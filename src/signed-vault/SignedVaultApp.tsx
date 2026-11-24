@@ -414,7 +414,7 @@ function AddPetModal({ data, onClose, onSubmit, presetPetId, presetSignerId, pre
         {!presetPetId && <div className="vault-field"><span className="vault-label">Pet (catalog)</span><select className="vault-select" value={petId} onChange={(event) => setPetId(event.target.value)}><option value="">Select pet…</option>{data.catalog.map((pet) => <option key={pet.id} value={pet.id}>{pet.pet_name}</option>)}</select></div>}
         <div className="vault-field"><span className="vault-label">Choose variant</span><div className="vault-variant-grid">
           {variants.map((value) => <button type="button" key={value} className={'vault-variant-option' + (variant === value ? ' active' : '')} onClick={() => setVariant(value)}>
-            <span className={'vault-variant-swatch variant-' + value.replace('_', '-')}>{selectedPet?.image_url ? <img src={selectedPet.image_url} alt="" /> : <Sparkles size={24} />}{['shiny','golden_shiny','rainbow_shiny'].includes(value) && <i className="vault-shine-sweep" />}</span>
+            <span className={'vault-variant-swatch variant-' + value.replace('_', '-')}>{selectedPet?.image_url ? <img src={vaultImageSrc(selectedPet.image_url)} alt="" /> : <Sparkles size={24} />}{['shiny','golden_shiny','rainbow_shiny'].includes(value) && <i className="vault-shine-sweep" />}</span>
             <b>{variantLabelWide[value] ?? value}</b>{variant === value && <span className="vault-variant-check">Selected</span>}
           </button>)}
         </div></div>
@@ -1249,7 +1249,7 @@ function PetDetailModal({ pet, data, busy, canManage, onRemove, onClose, onSaved
     <Modal title={pet.nickname || pet.pet_name} onClose={onClose} wide>
       <div className="vault-detail-premium-head">
         <div className="vault-detail-premium-avatar">
-          {pet.pet_image ? <img src={pet.pet_image} alt={pet.pet_name} /> : <Sparkles size={36} />}
+          {pet.pet_image ? <img src={vaultImageSrc(pet.pet_image)} alt={pet.pet_name} /> : <Sparkles size={36} />}
         </div>
         <div className="vault-detail-premium-identity">
           <h2>{pet.pet_name}</h2>
