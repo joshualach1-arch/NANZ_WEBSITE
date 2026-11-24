@@ -459,6 +459,54 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    if (action === "trade_hub_exclusive_import") {
+      const session = await supabase.rpc("vault_assert_session", { p_token: token });
+      if (session.error) return json({ error: "vault_access_denied" }, 401);
+      const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
+      if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
+
+      const response = await fetch("https://ps99.trade/de/values/exclusive", {
+        headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 NANZO Signed Vault catalog sync" },
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!response.ok) return json({ error: "trade_hub_fetch_failed", status: response.status }, 502);
+      const html = await response.text();
+      const decode = (value: string) => value
+        .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, "&#62;")
+        .replace(/&#x27;/g, "'");
+      const rows: Record<string, unknown>[] = [];
+      const seen = new Set<string>();
+      // Trade Hub item cards link to /item/<slug>. Extract each card's label,
+      // value and exist count independently; do not infer values from Cosmic.
+      const anchors = [...html.matchAll(/<a\\b[^>]*href=["']\\/(?:de\\/)?item\\/([^"'#?]+)["'][^>]*>([\\s\\S]*?)<\\/a>/gi)];
+      for (const match of anchors) {
+        const slug = match[1];
+        const anchorHtml = match[2];
+        const anchorText = decode(anchorHtml.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
+        const name = anchorText || slug.split("/").pop()!.replace(/-/g, " ");
+        if (!name || seen.has(name.toLowerCase())) continue;
+        const tail = decode(html.slice(match.index! + match[0].length, match.index! + match[0].length + 1800)
+          .replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+          .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " "));
+        const metric = tail.match(/(?:Value\\s*)?([\\d,.]+\\s*[KMBT])\\s*(?:Value)?[\\s\\S]{0,180}?Exist\\s*:?\\s*([\\d,]+)/i);
+        if (!metric) continue;
+        const image = anchorHtml.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
+        const parse = (value: string) => {
+          const normalized = value.replace(/,/g, "").replace(/\\s+/g, "").toUpperCase();
+          const parsed = normalized.match(/^([\\d.]+)([KMBT])$/);
+          if (!parsed) return null;
+          return Number(parsed[1]) * ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[parsed[2]];
+        };
+        seen.add(name.toLowerCase());
+        rows.push({ pet_name: name, rap: parse(metric[1]), exist_count: Number(metric[2].replace(/,/g, "")), image_url: image });
+      }
+      if (!rows.length) return json({ error: "trade_hub_parse_empty", source_url: "https://ps99.trade/de/values/exclusive" }, 502);
+      const saved = await supabase.rpc("vault_trade_hub_exclusive_import", { p_token: token, p_items: rows });
+      if (saved.error) return json({ error: saved.error.message ?? "trade_hub_import_failed", parsed: rows.length }, 500);
+      return json({ status: "ok", source: "ps99_trade_hub", source_url: "https://ps99.trade/de/values/exclusive", source_rows: rows.length, ...asRecord(saved.data) });
+    }
+
     if (action === "catalog_import") {
       // owner session required (validated against vault sessions server-side)
       const session = await supabase.rpc("vault_assert_session", { p_token: token });
