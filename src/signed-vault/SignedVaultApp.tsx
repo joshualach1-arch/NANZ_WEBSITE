@@ -1044,7 +1044,10 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
 
       {collectionMode === 'missing' ? (
         missingCatalog.length === 0 ? <div className="vault-empty"><div className="vault-empty-title">No missing pets found</div><div>Your tracked catalog is fully collected for these filters.</div></div> :
-        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Choose variant +</span></div><div className="vault-pet-value">{formatValue(pet.cosmic_value)}</div></div></button>)}</div>
+        <div className="vault-pet-grid">{missingCatalog.map((pet) => <button key={pet.id} className="vault-pet-card vault-missing-pet-card" onClick={() => { setPresetPetId(pet.id); setAddOpen(true); }} style={{ textAlign: 'left', padding: 0 }}><div className="vault-pet-media">{pet.image_url ? <img src={pet.image_url} alt={pet.pet_name} loading="lazy" /> : <Sparkles size={36} />}</div><div className="vault-pet-body"><div className="vault-pet-name">{pet.display_name || pet.pet_name}</div><div className="vault-pet-meta"><span>{pet.category}</span><span className="vault-pill vault-pill-blue">Choose variant +</span></div><div className="vault-pet-value">{formatValue(pet.manual_value ?? pet.cosmic_value)}</div>
+          {(pet.trade_hub_rap != null || pet.trade_hub_exist_count != null) && <div className="vault-pet-meta"><span>Trade Hub RAP: {formatValue(pet.trade_hub_rap ?? 0)}</span><span>Exist: {pet.trade_hub_exist_count?.toLocaleString() ?? '—'}</span></div>}
+          {pet.manual_value_locked && <div className="vault-pet-meta"><span className="vault-pill vault-pill-gold">Manual value locked</span></div>}
+        </div></button>)}</div>
       ) : otherCollectionUnavailable ? (
         <div className="vault-empty">
           <div className="vault-empty-title">Collection unavailable</div>
