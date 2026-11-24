@@ -52,6 +52,18 @@ function petCategory(petName: string): string {
   return "other";
 }
 
+function normalizeEggInventoryName(value: unknown): string {
+  return String(value ?? "").normalize("NFKC").toLowerCase()
+    .replace(/\\b(signed|golden|rainbow|shiny)\\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+}
+
+function eggInventoryCandidates(item: Record<string, unknown>): string[] {
+  const raw = asRecord(item.rawData);
+  return [item.id, item.name, item.displayName, item.display_name, raw.id, raw.name, raw.displayName]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+}
+
 // Full inventory parse: EVERY Pet-class item is scanned (not only signed ones).
 // A "Signed <PetName>" config id marks a signed pet, but the prefix alone never
 // proves verification — signed_status stays manual_review and the database only
@@ -539,6 +551,51 @@ Deno.serve(async (req: Request) => {
       const parsed = items
         .map(parsePet)
         .filter((entry): entry is Record<string, unknown> => entry !== null);
+
+      // Eggs are stored in a separate collection from pets. Match inventory
+      // item names against the live egg catalog, then mark only those exact
+      // catalog rows as owned for the authenticated collector.
+      const eggCatalogRes = await supabase.from("vault_egg_catalog").select("id, egg_name");
+      if (eggCatalogRes.error) {
+        console.error("[vault-biggames] egg catalog lookup failed", eggCatalogRes.error);
+      }
+      const eggByName = new Map<string, { id: string; egg_name: string }>();
+      for (const row of (eggCatalogRes.data ?? []) as Array<{ id: string; egg_name: string }>) {
+        const key = normalizeEggInventoryName(row.egg_name);
+        eggByName.set(key, row);
+        eggByName.set(normalizeEggInventoryName(row.egg_name.replace(/^Exclusive\\s+/i, "")), row);
+      }
+      const detectedEggs = new Map<string, { egg_id: string; egg_name: string; quantity: number }>();
+      for (const item of items) {
+        const candidates = eggInventoryCandidates(item);
+        const match = candidates.map((candidate) => eggByName.get(normalizeEggInventoryName(candidate))).find(Boolean);
+        if (!match) continue;
+        const raw = asRecord(item.rawData);
+        const rawQuantity = Number(raw.a ?? item.amount ?? item.quantity ?? 1);
+        const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.floor(rawQuantity) : 1;
+        const previous = detectedEggs.get(match.id);
+        detectedEggs.set(match.id, {
+          egg_id: match.id,
+          egg_name: match.egg_name,
+          quantity: (previous?.quantity ?? 0) + quantity,
+        });
+      }
+      let eggsAdded = 0;
+      let eggQuantity = 0;
+      if (detectedEggs.size > 0) {
+        const eggRows = [...detectedEggs.values()].map((egg) => ({
+          collector_no: scope, egg_id: egg.egg_id, owned: true, quantity: egg.quantity,
+        }));
+        const eggUpsert = await supabase.from("vault_egg_collection")
+          .upsert(eggRows, { onConflict: "collector_no,egg_id" });
+        if (eggUpsert.error) {
+          console.error("[vault-biggames] egg collection upsert failed", eggUpsert.error);
+          return fail("egg_collection_sync_failed", 500, { egg_matches: detectedEggs.size });
+        }
+        eggsAdded = detectedEggs.size;
+        eggQuantity = [...detectedEggs.values()].reduce((sum, egg) => sum + egg.quantity, 0);
+      }
+
       const signedFound = parsed.filter((p) =>
         asRecord(p.signature_data).signed_prefix_detected === true ||
         (typeof p.signer_id === "string" && p.signer_id.length > 0)
@@ -612,6 +669,9 @@ Deno.serve(async (req: Request) => {
         removed: Number(applyRow?.removed ?? 0),
         acquisitions: Number(applyRow?.acquisitions ?? 0),
         verified_notifications: notified,
+        eggs_detected: detectedEggs.size,
+        eggs_added: eggsAdded,
+        egg_quantity: eggQuantity,
       });
     }
 
