@@ -72,7 +72,7 @@ function thumbnailUrl(pet: PetRow): string | null {
   const configData = asRecord(pet.configData);
   for (const candidate of [
     configData.thumbnail, configData.icon, configData.image, configData.imageUrl,
-    configData.thumbnailUrl, configData.assetId, configData.imageId,
+    configData.thumbnailUrl, configData.assetId, configData.imageId, configData.goldenThumbnail,
   ]) {
     const url = assetImageUrl(candidate);
     if (url) return url;
