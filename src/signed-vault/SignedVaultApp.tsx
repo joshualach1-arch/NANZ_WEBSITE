@@ -3164,7 +3164,7 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
     setImportBusy(true); setError(null); setMessage(null);
     try {
       const result = await vaultCall('cosmic-egg-import', {});
-      setMessage(`Cosmic Eggs updated: ${result.added ?? 0} new, ${result.updated ?? 0} updated, ${result.skipped ?? 0} skipped.`);
+      setMessage(`Egg catalog updated: ${result.official_exclusive_eggs ?? 0} official Exclusive Eggs · ${result.images_resolved ?? 0} egg images · ${result.eggs_with_contents ?? 0} hover previews with hatch odds · ${result.total_catalog ?? result.added_or_updated ?? 0} eggs total.`);
       await onRefresh();
     } catch (err) { setError(err instanceof Error ? err.message : 'Egg import failed.'); }
     finally { setImportBusy(false); }
