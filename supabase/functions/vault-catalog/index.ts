@@ -323,15 +323,42 @@ Deno.serve(async (req: Request) => {
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
       const all = new Map<string, Record<string, unknown>>();
       for (let page = 1; page <= 10; page++) {
-        const url = new URL("https://petsimulatorvalues.com/valuesnew.php");
-        url.searchParams.set("category", "Eggs");
-        url.searchParams.set("page", String(page));
-        const response = await fetch(url.toString(), {
-          headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault egg catalog refresh" },
-          signal: AbortSignal.timeout(18000),
-        });
-        if (!response.ok) return json({ error: "cosmic_egg_fetch_failed", page }, 502);
-        const html = await response.text();
+        // Cosmic currently serves the egg list through both valuesnew.php and
+        // the standard values.php listing. Some edge locations intermittently
+        // reject one route, so retry the alternate route before failing.
+        const urls = [
+          new URL("https://petsimulatorvalues.com/valuesnew.php"),
+          new URL("https://petsimulatorvalues.com/values.php"),
+        ];
+        for (const url of urls) {
+          url.searchParams.set("category", "Eggs");
+          url.searchParams.set("page", String(page));
+        }
+        let html: string | null = null;
+        const failures: Array<{ url: string; status: number | string }> = [];
+        for (const url of urls) {
+          try {
+            const response = await fetch(url.toString(), {
+              headers: {
+                Accept: "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9",
+                "User-Agent": "Mozilla/5.0 (compatible; NANZO Signed Vault/1.0)",
+                Referer: "https://petsimulatorvalues.com/values.php?category=Eggs",
+              },
+              signal: AbortSignal.timeout(20000),
+            });
+            if (response.ok) {
+              html = await response.text();
+              break;
+            }
+            failures.push({ url: url.toString(), status: response.status });
+          } catch (error) {
+            failures.push({ url: url.toString(), status: error instanceof Error ? error.message : String(error) });
+          }
+        }
+        if (html === null) {
+          return json({ error: "cosmic_egg_fetch_failed", page, attempts: failures }, 502);
+        }
         const rows = parseCosmicEggRows(html);
         for (const row of rows) all.set(String(row.egg_name).toLowerCase(), row);
         const cardCount = (html.match(/class=["'][^"']*card-box[^"']*["']/gi) ?? []).length;
