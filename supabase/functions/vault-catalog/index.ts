@@ -152,13 +152,13 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
   const strip = (value: string) => decode(value
-    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
-    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
 
   // Cosmic changed its egg cards' markup. Do not depend on the old card-box
   // class: the current values page exposes each item as a linked card.
-  const blocks = [...html.matchAll(/<a\\b[^>]*>([\\s\\S]*?)<\\/a>/gi)].map((match) => ({
+  const blocks = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)].map((match) => ({
     html: match[1],
     text: strip(match[1]),
   }));
@@ -166,14 +166,14 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
   const seen = new Set<string>();
   for (const block of blocks) {
     const text = block.text;
-    const marker = text.match(/\\bN\\/?A\\b/i);
+    const marker = text.match(/\bN\/?A\b/i);
     if (!marker || marker.index == null) continue;
     const eggName = text.slice(0, marker.index).replace(/^[^A-Za-z0-9]*/, "").trim();
-    if (!eggName || !/\\b(Egg|Gift|Present)\\b/i.test(eggName)) continue;
+    if (!eggName || !/\b(Egg|Gift|Present)\b/i.test(eggName)) continue;
     const tail = text.slice(marker.index + marker[0].length);
-    const valueText = tail.match(/^\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
-    const demand = tail.match(/(\\d+)\\s*\\/\\s*10/);
-    const rapText = text.match(/RAP\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
+    const valueText = tail.match(/^\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
+    const demand = tail.match(/(\d+)\s*\/\s*10/);
+    const rapText = text.match(/RAP\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
     const image = block.html.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
     const parse = (value: string | null) => value ? parseCosmicValue(value) : null;
     const key = eggName.toLowerCase();
@@ -524,35 +524,35 @@ Deno.serve(async (req: Request) => {
         .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
         .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
       const strip = (value: string) => decode(value
-        .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
-        .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
-        .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
-      const anchors = [...html.matchAll(/<a\\b[^>]*href=["'](?:https?:\\/\\/ps99\\.trade)?\\/(?:de\\/)?item\\/([^"'#?]+)["'][^>]*>([\\s\\S]*?)<\\/a>/gi)];
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
+      const anchors = [...html.matchAll(/<a\b[^>]*href=["'](?:https?:\/\/ps99\.trade)?\/(?:de\/)?item\/([^"'#?]+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
       const candidates: Array<{ slug: string; name: string; rap: number | null; image: string | null; detailUrl: string }> = [];
       const seen = new Set<string>();
       const parseValue = (value: string | null): number | null => {
         if (!value) return null;
-        const normalized = value.replace(/,/g, "").replace(/\\s+/g, "").toUpperCase();
-        const parsed = normalized.match(/^([\\d.]+)([KMBT])$/);
+        const normalized = value.replace(/,/g, "").replace(/\s+/g, "").toUpperCase();
+        const parsed = normalized.match(/^([\d.]+)([KMBT])$/);
         if (!parsed) return null;
         return Number(parsed[1]) * ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[parsed[2]];
       };
       for (const match of anchors) {
-        const slug = match[1].replace(/\\/$/, "");
+        const slug = match[1].replace(/\/$/, "");
         const anchorHtml = match[2];
         const anchorText = strip(anchorHtml);
         const name = anchorText
-          .replace(/^Exclusive\\s+/i, "")
-          .replace(/\\s+Exclusive$/i, "")
-          .replace(/\\s*[—–-]\\s*[\\d,.]+\\s*[KMBT].*$/i, "")
+          .replace(/^Exclusive\s+/i, "")
+          .replace(/\s+Exclusive$/i, "")
+          .replace(/\s*[—–-]\s*[\d,.]+\s*[KMBT].*$/i, "")
           .trim() || slug.split("/").pop()!.replace(/-/g, " ");
         if (!name || seen.has(name.toLowerCase())) continue;
         // On the current Trade Hub list, the value is rendered next to the
         // linked pet name (not followed by an "Exist" label in the same card).
         const afterAnchor = strip(html.slice(match.index! + match[0].length, match.index! + match[0].length + 700));
-        const rapText = anchorText.match(/[—–-]\\s*([\\d,.]+\\s*[KMBT])/i)?.[1]
-          ?? afterAnchor.match(/^[\\s|·:]*([\\d,.]+\\s*[KMBT])/i)?.[1]
-          ?? anchorText.match(/([\\d,.]+\\s*[KMBT])/i)?.[1]
+        const rapText = anchorText.match(/[—–-]\s*([\d,.]+\s*[KMBT])/i)?.[1]
+          ?? afterAnchor.match(/^[\s|·:]*([\d,.]+\s*[KMBT])/i)?.[1]
+          ?? anchorText.match(/([\d,.]+\s*[KMBT])/i)?.[1]
           ?? null;
         const image = anchorHtml.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
         seen.add(name.toLowerCase());
@@ -587,7 +587,7 @@ Deno.serve(async (req: Request) => {
             if (detailResponse.ok) {
               const detailHtml = await detailResponse.text();
               const detailText = strip(detailHtml);
-              const copies = detailText.match(/(?:Copies\\s*([\\d,]+)|([\\d,]+)\\s+in the game|Exist\\s*:?\\s*([\\d,]+))/i);
+              const copies = detailText.match(/(?:Copies\s*([\d,]+)|([\d,]+)\s+in the game|Exist\s*:?\s*([\d,]+))/i);
               const rawCount = copies?.[1] ?? copies?.[2] ?? copies?.[3] ?? null;
               if (rawCount) existCount = Number(rawCount.replace(/,/g, ""));
               if (!imageUrl) imageUrl = detailHtml.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
