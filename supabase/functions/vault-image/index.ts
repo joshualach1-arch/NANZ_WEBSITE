@@ -49,15 +49,30 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const upstream = await fetch(upstreamUrl.toString(), {
-      headers: {
-        Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-        "User-Agent": "Mozilla/5.0 NANZO Signed Vault image proxy",
-      },
-      redirect: "error",
-      signal: AbortSignal.timeout(20000),
-    });
-
+    const requestHeaders = {
+      Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
+      "User-Agent": "Mozilla/5.0 NANZO Signed Vault image proxy",
+    };
+    let currentUrl = upstreamUrl;
+    let upstream: Response | null = null;
+    // Follow only a few redirects and re-check every destination host.
+    for (let hop = 0; hop < 4; hop++) {
+      upstream = await fetch(currentUrl.toString(), {
+        headers: requestHeaders,
+        redirect: "manual",
+        signal: AbortSignal.timeout(20000),
+      });
+      if (![301, 302, 303, 307, 308].includes(upstream.status)) break;
+      const location = upstream.headers.get("location");
+      if (!location) break;
+      const redirected = parseAllowedImageUrl(new URL(location, currentUrl).toString());
+      if (!redirected) return errorResponse("Image redirect host is not allowed", 502);
+      currentUrl = redirected;
+    }
+    if (!upstream) return errorResponse("Image source unavailable", 502);
+    if ([301, 302, 303, 307, 308].includes(upstream.status)) {
+      return errorResponse("Too many image redirects", 502);
+    }
     if (!upstream.ok) {
       return errorResponse("Image source unavailable", upstream.status === 404 ? 404 : 502);
     }
