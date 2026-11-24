@@ -55,13 +55,17 @@ function petCategory(petName: string): string {
 function normalizeEggInventoryName(value: unknown): string {
   return String(value ?? "").normalize("NFKC").toLowerCase()
     .replace(/\b(signed|golden|rainbow|shiny)\b/g, " ")
+    .replace(/^exclusive\s+/g, "")
+    .replace(/\begg\b/g, " ")
     .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
 
 function eggInventoryCandidates(item: Record<string, unknown>): string[] {
   const raw = asRecord(item.rawData);
-  return [item.id, item.name, item.displayName, item.display_name, raw.id, raw.name, raw.displayName]
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+  return [
+    item.displayName, item.id, item.name, item.display_name, item.configName,
+    raw.displayName, raw.display_name, raw.id, raw.name,
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
 }
 
 // Full inventory parse: EVERY Pet-class item is scanned (not only signed ones).
@@ -552,27 +556,41 @@ Deno.serve(async (req: Request) => {
         .map(parsePet)
         .filter((entry): entry is Record<string, unknown> => entry !== null);
 
-      // Eggs are stored in a separate collection from pets. Match inventory
-      // item names against the live egg catalog, then mark only those exact
-      // catalog rows as owned for the authenticated collector.
+      // The BIG Games inventory endpoint returns egg stacks as class "Egg"
+      // with id/displayName/count. Match those explicit Egg rows only; do not
+      // confuse pets whose names happen to contain the word egg.
       const eggCatalogRes = await supabase.from("vault_egg_catalog").select("id, egg_name");
       if (eggCatalogRes.error) {
         console.error("[vault-biggames] egg catalog lookup failed", eggCatalogRes.error);
+        return fail("egg_catalog_lookup_failed", 500);
       }
       const eggByName = new Map<string, { id: string; egg_name: string }>();
       for (const row of (eggCatalogRes.data ?? []) as Array<{ id: string; egg_name: string }>) {
         const key = normalizeEggInventoryName(row.egg_name);
-        eggByName.set(key, row);
-        eggByName.set(normalizeEggInventoryName(row.egg_name.replace(/^Exclusive\s+/i, "")), row);
+        if (key) eggByName.set(key, row);
       }
+      const eggItems = items.filter((item) =>
+        String(item.class ?? "").toLowerCase() === "egg" ||
+        String(item.collection ?? "").toLowerCase() === "eggs"
+      );
       const detectedEggs = new Map<string, { egg_id: string; egg_name: string; quantity: number }>();
-      for (const item of items) {
+      const unmatchedEggItems: Array<{ id: string; display_name: string; count: number }> = [];
+      for (const item of eggItems) {
         const candidates = eggInventoryCandidates(item);
-        const match = candidates.map((candidate) => eggByName.get(normalizeEggInventoryName(candidate))).find(Boolean);
-        if (!match) continue;
+        const match = candidates
+          .map((candidate) => eggByName.get(normalizeEggInventoryName(candidate)))
+          .find((candidate) => Boolean(candidate));
         const raw = asRecord(item.rawData);
-        const rawQuantity = Number(raw.a ?? item.amount ?? item.quantity ?? 1);
+        const rawQuantity = Number(item.count ?? item.amount ?? raw._am ?? raw.a ?? 1);
         const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.floor(rawQuantity) : 1;
+        if (!match) {
+          unmatchedEggItems.push({
+            id: String(item.id ?? ""),
+            display_name: String(item.displayName ?? item.name ?? ""),
+            count: quantity,
+          });
+          continue;
+        }
         const previous = detectedEggs.get(match.id);
         detectedEggs.set(match.id, {
           egg_id: match.id,
@@ -672,6 +690,8 @@ Deno.serve(async (req: Request) => {
         eggs_detected: detectedEggs.size,
         eggs_added: eggsAdded,
         egg_quantity: eggQuantity,
+        egg_inventory_items: eggItems.length,
+        egg_unmatched: unmatchedEggItems.slice(0, 50),
       });
     }
 
