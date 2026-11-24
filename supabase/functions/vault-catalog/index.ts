@@ -151,25 +151,42 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
   const decode = (value: string) => value
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-  const cards = html.match(/<[^>]*class=["'][^"']*card-box[^"']*["'][^>]*>[\s\S]*?(?=<[^>]*class=["'][^"']*card-box[^"']*["']|$)/gi) ?? [];
+  const strip = (value: string) => decode(value
+    .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
+
+  // Cosmic changed its egg cards' markup. Do not depend on the old card-box
+  // class: the current values page exposes each item as a linked card.
+  const blocks = [...html.matchAll(/<a\\b[^>]*>([\\s\\S]*?)<\\/a>/gi)].map((match) => ({
+    html: match[1],
+    text: strip(match[1]),
+  }));
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
-  for (const card of cards) {
-    const text = decode(card.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
-    const marker = text.match(/\bN\/?A\b/i);
+  for (const block of blocks) {
+    const text = block.text;
+    const marker = text.match(/\\bN\\/?A\\b/i);
     if (!marker || marker.index == null) continue;
     const eggName = text.slice(0, marker.index).replace(/^[^A-Za-z0-9]*/, "").trim();
-    if (!eggName || !/\b(Egg|Gift|Present)\b/i.test(eggName)) continue;
+    if (!eggName || !/\\b(Egg|Gift|Present)\\b/i.test(eggName)) continue;
     const tail = text.slice(marker.index + marker[0].length);
-    const valueText = tail.match(/^\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
-    const demand = tail.match(/(\d+)\s*\/\s*10/);
-    const rapText = tail.match(/RAP\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
-    const image = card.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
+    const valueText = tail.match(/^\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
+    const demand = tail.match(/(\\d+)\\s*\\/\\s*10/);
+    const rapText = text.match(/RAP\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
+    const image = block.html.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
     const parse = (value: string | null) => value ? parseCosmicValue(value) : null;
     const key = eggName.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    rows.push({ egg_name: eggName, cosmic_value: parse(valueText), rap_value: parse(rapText), demand: demand ? Number(demand[1]) : null, image_url: image, value_source: "cosmic_values" });
+    rows.push({
+      egg_name: eggName,
+      cosmic_value: parse(valueText),
+      rap_value: parse(rapText),
+      demand: demand ? Number(demand[1]) : null,
+      image_url: image,
+      value_source: "cosmic_values",
+    });
   }
   return rows;
 }
@@ -492,52 +509,113 @@ Deno.serve(async (req: Request) => {
       const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
 
-      const response = await fetch("https://ps99.trade/de/values/exclusive", {
-        headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 NANZO Signed Vault catalog sync" },
+      const sourceUrl = "https://ps99.trade/values/exclusive";
+      const response = await fetch(sourceUrl, {
+        headers: {
+          Accept: "text/html,application/xhtml+xml",
+          "Accept-Language": "en-US,en;q=0.9",
+          "User-Agent": "Mozilla/5.0 (compatible; NANZO Signed Vault/1.0)",
+        },
         signal: AbortSignal.timeout(25000),
       });
       if (!response.ok) return json({ error: "trade_hub_fetch_failed", status: response.status }, 502);
       const html = await response.text();
       const decode = (value: string) => value
         .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-        .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, "&#62;")
-        .replace(/&#x27;/g, "'");
-      const rows: Record<string, unknown>[] = [];
+        .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      const strip = (value: string) => decode(value
+        .replace(/<script[\\s\\S]*?<\\/script>/gi, " ")
+        .replace(/<style[\\s\\S]*?<\\/style>/gi, " ")
+        .replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
+      const anchors = [...html.matchAll(/<a\\b[^>]*href=["'](?:https?:\\/\\/ps99\\.trade)?\\/(?:de\\/)?item\\/([^"'#?]+)["'][^>]*>([\\s\\S]*?)<\\/a>/gi)];
+      const candidates: Array<{ slug: string; name: string; rap: number | null; image: string | null; detailUrl: string }> = [];
       const seen = new Set<string>();
-      // Trade Hub item cards link to /item/<slug>. Extract each card's label,
-      // value and exist count independently; do not infer values from Cosmic.
-      const anchors = [...html.matchAll(/<a\b[^>]*href=["']\/(?:de\/)?item\/([^"'#?]+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
+      const parseValue = (value: string | null): number | null => {
+        if (!value) return null;
+        const normalized = value.replace(/,/g, "").replace(/\\s+/g, "").toUpperCase();
+        const parsed = normalized.match(/^([\\d.]+)([KMBT])$/);
+        if (!parsed) return null;
+        return Number(parsed[1]) * ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[parsed[2]];
+      };
       for (const match of anchors) {
-        const slug = match[1];
+        const slug = match[1].replace(/\\/$/, "");
         const anchorHtml = match[2];
-        const anchorText = decode(anchorHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
-        const cleanAnchor = anchorText
-          .replace(/^Exclusive\s+/i, "")
-          .replace(/\s+Exclusive$/i, "")
-          .replace(/\s+[\d,.]+\s*[KMBT][\s\S]*$/i, "")
-          .trim();
-        const name = cleanAnchor || slug.split("/").pop()!.replace(/-/g, " ");
+        const anchorText = strip(anchorHtml);
+        const name = anchorText
+          .replace(/^Exclusive\\s+/i, "")
+          .replace(/\\s+Exclusive$/i, "")
+          .replace(/\\s*[—–-]\\s*[\\d,.]+\\s*[KMBT].*$/i, "")
+          .trim() || slug.split("/").pop()!.replace(/-/g, " ");
         if (!name || seen.has(name.toLowerCase())) continue;
-        const tail = decode(html.slice(match.index! + match[0].length, match.index! + match[0].length + 1800)
-          .replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")
-          .replace(/<[^>]+>/g, " ").replace(/\s+/g, " "));
-        const metricText = anchorText + " " + tail;
-        const metric = metricText.match(/([\d,.]+\s*[KMBT])\s*(?:Value)?[\s\S]{0,180}?Exist\s*:?\s*([\d,]+)/i);
-        if (!metric) continue;
-        const image = anchorHtml.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
-        const parse = (value: string) => {
-          const normalized = value.replace(/,/g, "").replace(/\s+/g, "").toUpperCase();
-          const parsed = normalized.match(/^([\d.]+)([KMBT])$/);
-          if (!parsed) return null;
-          return Number(parsed[1]) * ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[parsed[2]];
-        };
+        // On the current Trade Hub list, the value is rendered next to the
+        // linked pet name (not followed by an "Exist" label in the same card).
+        const afterAnchor = strip(html.slice(match.index! + match[0].length, match.index! + match[0].length + 700));
+        const rapText = anchorText.match(/[—–-]\\s*([\\d,.]+\\s*[KMBT])/i)?.[1]
+          ?? afterAnchor.match(/^[\\s|·:]*([\\d,.]+\\s*[KMBT])/i)?.[1]
+          ?? anchorText.match(/([\\d,.]+\\s*[KMBT])/i)?.[1]
+          ?? null;
+        const image = anchorHtml.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
         seen.add(name.toLowerCase());
-        rows.push({ pet_name: name, rap: parse(metric[1]), exist_count: Number(metric[2].replace(/,/g, "")), image_url: image });
+        candidates.push({
+          slug, name, rap: parseValue(rapText), image,
+          detailUrl: `https://ps99.trade/item/${encodeURIComponent(slug)}`,
+        });
       }
-      if (!rows.length) return json({ error: "trade_hub_parse_empty", source_url: "https://ps99.trade/de/values/exclusive" }, 502);
+      if (!candidates.length) {
+        return json({ error: "trade_hub_parse_empty", source_url: sourceUrl, html_length: html.length, item_links_found: anchors.length }, 502);
+      }
+
+      // The list page contains RAP; each item detail page contains its exact
+      // copy count. Fetch details with bounded concurrency and preserve RAP
+      // and exist_count as separate source fields.
+      const rows: Record<string, unknown>[] = [];
+      const concurrency = 12;
+      for (let offset = 0; offset < candidates.length; offset += concurrency) {
+        const batch = candidates.slice(offset, offset + concurrency);
+        const details = await Promise.all(batch.map(async (item) => {
+          let existCount: number | null = null;
+          let imageUrl = item.image;
+          try {
+            const detailResponse = await fetch(item.detailUrl, {
+              headers: {
+                Accept: "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9",
+                "User-Agent": "Mozilla/5.0 (compatible; NANZO Signed Vault/1.0)",
+              },
+              signal: AbortSignal.timeout(12000),
+            });
+            if (detailResponse.ok) {
+              const detailHtml = await detailResponse.text();
+              const detailText = strip(detailHtml);
+              const copies = detailText.match(/(?:Copies\\s*([\\d,]+)|([\\d,]+)\\s+in the game|Exist\\s*:?\\s*([\\d,]+))/i);
+              const rawCount = copies?.[1] ?? copies?.[2] ?? copies?.[3] ?? null;
+              if (rawCount) existCount = Number(rawCount.replace(/,/g, ""));
+              if (!imageUrl) imageUrl = detailHtml.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
+            }
+          } catch {
+            // Keep the RAP row even if one detail page is temporarily unavailable.
+          }
+          return {
+            pet_name: item.name,
+            rap: item.rap,
+            exist_count: existCount,
+            image_url: imageUrl,
+          };
+        }));
+        rows.push(...details);
+      }
+
       const saved = await supabase.rpc("vault_trade_hub_exclusive_import", { p_token: token, p_items: rows });
       if (saved.error) return json({ error: saved.error.message ?? "trade_hub_import_failed", parsed: rows.length }, 500);
-      return json({ status: "ok", source: "ps99_trade_hub", source_url: "https://ps99.trade/de/values/exclusive", source_rows: rows.length, ...asRecord(saved.data) });
+      return json({
+        status: "ok",
+        source: "ps99_trade_hub",
+        source_url: sourceUrl,
+        source_rows: rows.length,
+        rows_with_rap: rows.filter((row) => row.rap != null).length,
+        rows_with_exist_count: rows.filter((row) => row.exist_count != null).length,
+        ...asRecord(saved.data),
+      });
     }
 
     if (action === "catalog_import") {
