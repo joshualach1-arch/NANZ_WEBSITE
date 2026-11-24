@@ -3203,17 +3203,27 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
     {(data.egg_catalog ?? []).length===0 ? <div className="vault-empty"><div className="vault-empty-title">Egg catalog is empty</div><div>Import the Cosmic Values egg list to get started.</div></div> :
       <div className="vault-pet-grid">{eggs.map(egg=>{
         const entry=owned.get(egg.id); const has=Boolean(entry);
-        return <article key={egg.id} className={`vault-pet-card vault-pet-card-refined${has?' vault-pet-card-signed':''}`} style={{padding:14,border:has?'1px solid rgba(236,72,153,.8)':undefined,background:has?'linear-gradient(145deg,rgba(236,72,153,.16),rgba(15,23,42,.85))':undefined}}>
-          <div className="vault-pet-media"><span className="vault-variant-swatch">{egg.image_url?<img src={vaultImageSrc(egg.image_url)} alt={egg.egg_name} loading="lazy" onError={(event) => {
+        return <article key={egg.id} className={`vault-pet-card vault-pet-card-refined vault-egg-card${has?' vault-pet-card-signed':''}`} style={{padding:12,border:has?'1px solid rgba(236,72,153,.8)':undefined,background:has?'linear-gradient(145deg,rgba(236,72,153,.16),rgba(15,23,42,.85))':undefined}}>
+          <div className="vault-pet-media vault-egg-art"><span className="vault-variant-swatch">{egg.image_url?<img src={vaultImageSrc(egg.image_url)} alt={egg.egg_name} loading="lazy" onError={(event) => {
             const image = event.currentTarget;
             if (egg.image_url && image.src !== egg.image_url) image.src = egg.image_url;
             else image.style.visibility = 'hidden';
-          }}/>:<span style={{fontSize:42}}>🥚</span>}</span></div>
+          }}/>:<span style={{fontSize:58}}>🥚</span>}</span><span className="vault-egg-view-hint">HOVER TO VIEW CONTENTS</span></div>
           <div className="vault-pet-body"><div className="vault-pet-name">{egg.egg_name}</div>
             <div className="vault-note">Cosmic value: {egg.cosmic_value==null?'—':formatValue(egg.cosmic_value)}{egg.demand!=null?` · Demand ${egg.demand}/10`:''}</div>
             {has&&<span className="vault-pill vault-pill-gold" style={{marginTop:8}}>✓ OWNED{entry?.quantity>1?` ×${entry.quantity}`:''}</span>}
             <button className={has?'vault-btn vault-btn-sm':'vault-btn vault-btn-gold vault-btn-sm'} style={{marginTop:10,width:'100%'}} disabled={busyId===egg.id} onClick={()=>void toggle(egg.id,has)}>{busyId===egg.id?'Saving…':has?'Remove from collection':'I have this egg'}</button>
           </div>
+          {Array.isArray(egg.contents) && egg.contents.length>0 && <div className="vault-egg-tooltip" role="tooltip">
+            <div className="vault-egg-tooltip-title">{egg.egg_name}</div>
+            <div className="vault-egg-tooltip-rarity">{egg.rarity || 'Exclusive'} ★</div>
+            <div className="vault-egg-tooltip-label">CONTAINS</div>
+            <div className="vault-egg-content-grid">{egg.contents.map((content,index)=><div className="vault-egg-content" key={content.pet_name+index}>
+              <div className="vault-egg-content-art">{content.image_url?<img src={vaultImageSrc(content.image_url)} alt={content.pet_name} loading="lazy"/>:<span>🐾</span>}<b>{content.odds}</b></div>
+              <span title={content.pet_name}>{content.pet_name}</span>
+            </div>)}</div>
+            <div className="vault-egg-tooltip-foot">Official BIG Games hatch odds</div>
+          </div>}
         </article>;
       })}</div>}
     {eggs.length===0&&(data.egg_catalog??[]).length>0&&<div className="vault-empty">No eggs match this filter.</div>}
