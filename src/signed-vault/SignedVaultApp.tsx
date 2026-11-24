@@ -321,6 +321,36 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
 
 /* ── form modal for adding a pet to the collection ───────────────── */
 
+function ManualExclusiveModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => Promise<void> }) {
+  const [name, setName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (!name.trim()) { setError('Enter the Exclusive pet name.'); return; }
+    setBusy(true); setError(null);
+    try {
+      await rpcCall('vault_catalog_manual_manage', readStoredToken() ?? '', {
+        p_pet_name: name.trim(), p_image_url: imageUrl.trim() || null,
+        p_manual_value: value.trim() ? Number(value) : null, p_pet_id: null,
+      });
+      await onSaved(); onClose();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Could not save this Exclusive.'); }
+    finally { setBusy(false); }
+  };
+  return <Modal title="Add manual Exclusive Pet" onClose={onClose}>
+    <div className="vault-form-grid">
+      <div className="vault-field"><span className="vault-label">Pet name</span><input className="vault-input" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Crown" /></div>
+      <div className="vault-field"><span className="vault-label">Image URL</span><input className="vault-input" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} placeholder="https://…" /></div>
+      <div className="vault-field"><span className="vault-label">Manual value (diamonds)</span><input className="vault-input" type="number" min="0" step="1" value={value} onChange={e=>setValue(e.target.value)} placeholder="Optional" /></div>
+    </div>
+    <p className="vault-muted" style={{marginTop:10}}>Manual values are locked against later source imports. The pet will appear in the Exclusive catalog and can then be added with a variant and signer.</p>
+    {error && <div className="vault-error" role="alert" style={{marginTop:10}}>{error}</div>}
+    <div className="vault-row" style={{marginTop:16,justifyContent:'flex-end'}}><button className="vault-btn" onClick={onClose}>Cancel</button><button className="vault-btn vault-btn-gold" disabled={busy||!name.trim()} onClick={()=>void save()}>{busy?'Saving…':'Save Exclusive'}</button></div>
+  </Modal>;
+}
+
 function AddPetModal({ data, onClose, onSubmit, presetPetId, presetSignerId, presetVariant }: {
   data: VaultData;
   onClose: () => void;
@@ -713,6 +743,10 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
   const viewingOtherCollector = view !== data.me;
   const otherCollectionUnavailable = viewingOtherCollector && data.other_pets == null;
   const [addOpen, setAddOpen] = useState(false);
+  const [manualExclusiveOpen, setManualExclusiveOpen] = useState(false);
+  const [tradeHubBusy, setTradeHubBusy] = useState(false);
+  const [tradeHubMessage, setTradeHubMessage] = useState<string | null>(null);
+  const [tradeHubError, setTradeHubError] = useState<string | null>(null);
   const [detail, setDetail] = useState<VaultPet | null>(null);
   const [busy, setBusy] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -881,6 +915,14 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
           <span className="vault-pill vault-pill-gray">{filtered.length} of {pets.length} pets</span>
         </div>
         <div className="vault-row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {isOwner && <button className="vault-btn vault-btn-sm" disabled={tradeHubBusy} onClick={() => {
+            setTradeHubBusy(true); setTradeHubMessage(null); setTradeHubError(null);
+            void vaultCall('trade-hub-exclusive-import', {}).then(async result => {
+              setTradeHubMessage('Trade Hub: ' + Number(result.added ?? 0) + ' added · ' + Number(result.updated ?? 0) + ' updated · ' + Number(result.source_rows ?? 0) + ' source pets.');
+              await onRefresh();
+            }).catch(err => setTradeHubError(err instanceof Error ? err.message : 'Trade Hub import failed.')).finally(() => setTradeHubBusy(false));
+          }}>{tradeHubBusy ? 'Importing Trade Hub…' : '↓ Import Trade Hub Exclusives'}</button>}
+          {isOwner && <button className="vault-btn vault-btn-sm" onClick={() => setManualExclusiveOpen(true)}>＋ Manual Exclusive</button>}
           {isOwner && <button className="vault-btn vault-btn-sm" disabled={importingCosmicPets} onClick={() => {
             setImportingCosmicPets(true); setCosmicPetImportMessage(null); setCosmicPetImportError(null); setCosmicPetImportProgress(null);
             void (async () => {
@@ -911,6 +953,9 @@ function CollectionTab({ data, onRefresh, isOwner }: { data: VaultData; onRefres
         </div>
       </div>
 
+      {tradeHubMessage && <div className="vault-success" style={{marginBottom:10}}>{tradeHubMessage}</div>}
+      {tradeHubError && <div className="vault-error" role="alert" style={{marginBottom:10}}>{tradeHubError}</div>}
+      {manualExclusiveOpen && <ManualExclusiveModal onClose={() => setManualExclusiveOpen(false)} onSaved={onRefresh} />}
       <div className="vault-collection-switch">
         <button className={`vault-tab${collectionMode === 'owned' ? ' active' : ''}`} onClick={() => setCollectionMode('owned')}><span>MY SIGNED COLLECTION</span><b>{pets.filter((pet) => pet.signer_id && pet.signed_status !== 'not_signed').length}</b></button>
         <button className={`vault-tab${collectionMode === 'missing' ? ' active' : ''}`} onClick={() => setCollectionMode('missing')}><span>MISSING PETS</span><b>{missingCatalog.length}</b></button>
