@@ -3257,9 +3257,17 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
               return <div className="vault-egg-content" key={content.pet_name+index}>
                 <div className="vault-egg-content-art">{contentImage?<img src={vaultImageSrc(contentImage)} alt={content.pet_name} loading="lazy" onError={(event)=>{
                   const image=event.currentTarget;
-                  const fallback=fallbackImage ? vaultImageSrc(fallbackImage) : undefined;
-                  if(fallback && image.src!==fallback) image.src=fallback;
-                  else image.style.visibility='hidden';
+                  const raw = content.image_url || fallbackImage || '';
+                  const assetId = raw.match(/rbxassetid:\/\/(\d+)/i)?.[1];
+                  const direct = assetId ? `https://ps99.biggamesapi.io/image/${assetId}` : raw;
+                  if (direct && image.dataset.directTried !== '1' && /^https:\/\//i.test(direct) && image.src!==direct) {
+                    image.dataset.directTried='1'; image.src=direct; return;
+                  }
+                  const fallback = fallbackImage ? vaultImageSrc(fallbackImage) : undefined;
+                  if(fallback && image.dataset.catalogTried !== '1' && image.src!==fallback) {
+                    image.dataset.catalogTried='1'; image.src=fallback; return;
+                  }
+                  image.style.visibility='hidden';
                 }}/>:<span>🐾</span>}<b>{content.odds}</b></div>
                 <span title={content.pet_name}>{content.pet_name}</span>
               </div>;
