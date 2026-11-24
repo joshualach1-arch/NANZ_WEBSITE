@@ -567,6 +567,8 @@ Deno.serve(async (req: Request) => {
           rap_value: row.rap_value ?? previous.rap_value ?? null,
           demand: row.demand ?? previous.demand ?? null,
           contents: row.contents ?? previous.contents ?? [],
+          rarity: row.rarity ?? previous.rarity ?? null,
+          source_rank: row.official_rank ?? previous.source_rank ?? null,
           value_source: row.value_source ?? (row.source === "big_games_official" ? "big_games_official" : "cosmic_values"),
           source_updated_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
