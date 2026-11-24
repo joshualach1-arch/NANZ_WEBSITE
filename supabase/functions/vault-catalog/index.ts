@@ -82,7 +82,9 @@ function thumbnailUrl(pet: PetRow): string | null {
   const configData = asRecord(pet.configData);
   for (const candidate of [
     configData.thumbnail, configData.icon, configData.image, configData.imageUrl,
-    configData.thumbnailUrl, configData.assetId, configData.imageId, configData.goldenThumbnail,
+    configData.thumbnailUrl, configData.assetId, configData.imageId,
+    configData.iconId, configData.thumbnailId, configData.imageAssetId,
+    configData.iconAssetId, configData.iconImage, configData.goldenThumbnail,
   ]) {
     const url = assetImageUrl(candidate);
     if (url) return url;
@@ -675,7 +677,9 @@ Deno.serve(async (req: Request) => {
           cosmic_value: previous.cosmic_value ?? null,
           rap_value: previous.rap_value ?? null,
           demand: previous.demand ?? null,
-          image_url: official.image_url ?? officialEggImages.get(key) ?? previous.image_url ?? null,
+          // Prefer canonical BIG Games Eggs collection artwork over nearby-page
+          // HTML scraping, which can capture a neighboring egg's thumbnail.
+          image_url: officialEggImages.get(key) ?? official.image_url ?? previous.image_url ?? null,
           contents: official.contents ?? [],
         });
       }
