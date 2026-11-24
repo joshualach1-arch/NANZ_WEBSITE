@@ -253,7 +253,8 @@ export type VerificationRequest = {
   created_at: string;
 };
 
-export type EggCatalogEntry = { id: string; egg_name: string; image_url: string | null; cosmic_value: number | string | null; rap_value: number | string | null; demand: number | null; value_source: string | null };
+export type EggCatalogContent = { pet_name: string; odds: string; image_url: string | null };
+export type EggCatalogEntry = { id: string; egg_name: string; image_url: string | null; cosmic_value: number | string | null; rap_value: number | string | null; demand: number | null; value_source: string | null; contents?: EggCatalogContent[]; rarity?: string | null; source_rank?: number | null };
 export type EggCollectionEntry = { id: string; collector_no: number; egg_id: string; owned: boolean; quantity: number; notes: string | null; acquired_at: string | null; egg_name: string; image_url: string | null; cosmic_value: number | string | null; demand: number | null };
 
 export type VaultData = {
