@@ -147,19 +147,19 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
   const decode = (value: string) => value
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-  const cards = html.match(/<[^>]*class=["'][^"']*card-box[^"']*["'][^>]*>[\\s\\S]*?(?=<[^>]*class=["'][^"']*card-box[^"']*["']|$)/gi) ?? [];
+  const cards = html.match(/<[^>]*class=["'][^"']*card-box[^"']*["'][^>]*>[\s\S]*?(?=<[^>]*class=["'][^"']*card-box[^"']*["']|$)/gi) ?? [];
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
   for (const card of cards) {
-    const text = decode(card.replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<style[\\s\\S]*?<\\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
-    const marker = text.match(/\\bN\\/?A\\b/i);
+    const text = decode(card.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
+    const marker = text.match(/\bN\/?A\b/i);
     if (!marker || marker.index == null) continue;
     const eggName = text.slice(0, marker.index).replace(/^[^A-Za-z0-9]*/, "").trim();
-    if (!eggName || !/\\b(Egg|Gift|Present)\\b/i.test(eggName)) continue;
+    if (!eggName || !/\b(Egg|Gift|Present)\b/i.test(eggName)) continue;
     const tail = text.slice(marker.index + marker[0].length);
-    const valueText = tail.match(/^\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
-    const demand = tail.match(/(\\d+)\\s*\\/\\s*10/);
-    const rapText = tail.match(/RAP\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
+    const valueText = tail.match(/^\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
+    const demand = tail.match(/(\d+)\s*\/\s*10/);
+    const rapText = tail.match(/RAP\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
     const image = card.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
     const parse = (value: string | null) => value ? parseCosmicValue(value) : null;
     const key = eggName.toLowerCase();
