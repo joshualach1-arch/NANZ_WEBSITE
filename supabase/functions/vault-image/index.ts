@@ -4,31 +4,68 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "GET") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+function errorResponse(message: string, status: number) {
+  return new Response(message, {
+    status,
+    headers: { ...corsHeaders, "Cache-Control": "public, max-age=60" },
+  });
+}
 
-  const url = new URL(req.url);
-  const assetId = url.searchParams.get("assetId") ?? "";
-  if (!/^\d{6,20}$/.test(assetId)) {
-    return new Response("Invalid Roblox asset id", { status: 400, headers: corsHeaders });
+function parseAllowedImageUrl(raw: string): URL | null {
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    const host = url.hostname.toLowerCase();
+    const allowed =
+      host === "ps99.biggamesapi.io" ||
+      host === "biggames.io" || host.endsWith(".biggames.io") ||
+      host === "petsimulatorvalues.com" || host.endsWith(".petsimulatorvalues.com") ||
+      host === "rbxcdn.com" || host.endsWith(".rbxcdn.com") ||
+      host === "roblox.com" || host.endsWith(".roblox.com");
+    return allowed ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "GET") return errorResponse("Method not allowed", 405);
+
+  const requestUrl = new URL(req.url);
+  const assetId = requestUrl.searchParams.get("assetId") ?? "";
+  const rawUrl = requestUrl.searchParams.get("url");
+  let upstreamUrl: URL;
+
+  if (assetId) {
+    if (!/^\d{6,20}$/.test(assetId)) return errorResponse("Invalid Roblox asset id", 400);
+    upstreamUrl = new URL("https://ps99.biggamesapi.io/image/" + assetId);
+  } else if (rawUrl) {
+    const parsed = parseAllowedImageUrl(rawUrl);
+    if (!parsed) return errorResponse("Image host is not allowed", 400);
+    upstreamUrl = parsed;
+  } else {
+    return errorResponse("Missing assetId or url", 400);
   }
 
   try {
-    const upstream = await fetch(`https://ps99.biggamesapi.io/image/${assetId}`, {
-      headers: { Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8" },
-      signal: AbortSignal.timeout(15000),
+    const upstream = await fetch(upstreamUrl.toString(), {
+      headers: {
+        Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 NANZO Signed Vault image proxy",
+      },
+      redirect: "error",
+      signal: AbortSignal.timeout(20000),
     });
+
     if (!upstream.ok) {
-      return new Response("Image source unavailable", {
-        status: upstream.status === 404 ? 404 : 502,
-        headers: { ...corsHeaders, "Cache-Control": "public, max-age=60" },
-      });
+      return errorResponse("Image source unavailable", upstream.status === 404 ? 404 : 502);
     }
-    const contentType = upstream.headers.get("content-type") ?? "image/png";
-    if (!contentType.startsWith("image/")) {
-      return new Response("Image source returned a non-image response", { status: 502, headers: corsHeaders });
+    const contentType = upstream.headers.get("content-type") ?? "application/octet-stream";
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      return errorResponse("Image source returned a non-image response", 502);
     }
+
     return new Response(upstream.body, {
       status: 200,
       headers: {
@@ -39,7 +76,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (error) {
-    console.error("[vault-image] upstream fetch failed", error);
-    return new Response("Image proxy failed", { status: 502, headers: corsHeaders });
+    console.error("[vault-image] upstream fetch failed", upstreamUrl.toString(), error);
+    return errorResponse("Image proxy failed", 502);
   }
 });
