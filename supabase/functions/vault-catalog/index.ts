@@ -143,6 +143,33 @@ function parseCosmicPetRows(html: string): Record<string, unknown>[] {
 
   return rows;
 }
+function parseCosmicEggRows(html: string): Record<string, unknown>[] {
+  const decode = (value: string) => value
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ").replace(/&#x2F;/g, "/").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+  const cards = html.match(/<[^>]*class=["'][^"']*card-box[^"']*["'][^>]*>[\\s\\S]*?(?=<[^>]*class=["'][^"']*card-box[^"']*["']|$)/gi) ?? [];
+  const rows: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+  for (const card of cards) {
+    const text = decode(card.replace(/<script[\\s\\S]*?<\\/script>/gi, " ").replace(/<style[\\s\\S]*?<\\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
+    const marker = text.match(/\\bN\\/?A\\b/i);
+    if (!marker || marker.index == null) continue;
+    const eggName = text.slice(0, marker.index).replace(/^[^A-Za-z0-9]*/, "").trim();
+    if (!eggName || !/\\b(Egg|Gift|Present)\\b/i.test(eggName)) continue;
+    const tail = text.slice(marker.index + marker[0].length);
+    const valueText = tail.match(/^\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
+    const demand = tail.match(/(\\d+)\\s*\\/\\s*10/);
+    const rapText = tail.match(/RAP\\s*([\\d,.]+\\s*[KMBT]?)/i)?.[1] ?? null;
+    const image = card.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
+    const parse = (value: string | null) => value ? parseCosmicValue(value) : null;
+    const key = eggName.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ egg_name: eggName, cosmic_value: parse(valueText), rap_value: parse(rapText), demand: demand ? Number(demand[1]) : null, image_url: image, value_source: "cosmic_values" });
+  }
+  return rows;
+}
+
 function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
   const decode = (s: string) => s
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
@@ -284,6 +311,44 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+
+    if (action === "cosmic_egg_import") {
+      const session = await supabase.rpc("vault_assert_session", { p_token: token });
+      if (session.error) return json({ error: "vault_access_denied" }, 401);
+      const collectorNo = Number(Array.isArray(session.data) ? session.data[0] : session.data);
+      if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
+      const all = new Map<string, Record<string, unknown>>();
+      for (let page = 1; page <= 10; page++) {
+        const url = new URL("https://petsimulatorvalues.com/valuesnew.php");
+        url.searchParams.set("category", "Eggs");
+        url.searchParams.set("page", String(page));
+        const response = await fetch(url.toString(), {
+          headers: { Accept: "text/html", "User-Agent": "NANZO Signed Vault egg catalog refresh" },
+          signal: AbortSignal.timeout(18000),
+        });
+        if (!response.ok) return json({ error: "cosmic_egg_fetch_failed", page }, 502);
+        const html = await response.text();
+        const rows = parseCosmicEggRows(html);
+        for (const row of rows) all.set(String(row.egg_name).toLowerCase(), row);
+        const cardCount = (html.match(/class=["'][^"']*card-box[^"']*["']/gi) ?? []).length;
+        if (cardCount < 40 || rows.length === 0) break;
+      }
+      const rows = [...all.values()];
+      if (!rows.length) return json({ error: "cosmic_egg_parse_empty" }, 502);
+      const saved = await supabase.from("vault_egg_catalog").upsert(rows.map((row) => ({
+        egg_name: row.egg_name,
+        image_url: row.image_url,
+        cosmic_value: row.cosmic_value,
+        rap_value: row.rap_value,
+        demand: row.demand,
+        value_source: "cosmic_values",
+        source_updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })), { onConflict: "egg_name" });
+      if (saved.error) return json({ error: saved.error.message }, 500);
+      const count = await supabase.from("vault_egg_catalog").select("id", { count: "exact", head: true });
+      return json({ status: "ok", added_or_updated: rows.length, total_catalog: count.count ?? rows.length });
+    }
 
     if (action === "cosmic_pet_values_progress") {
       const session = await supabase.rpc("vault_assert_session", { p_token: token });
