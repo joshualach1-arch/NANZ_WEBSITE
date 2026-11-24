@@ -142,7 +142,13 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await supabase.rpc("vault_data_get", { p_token: token });
       const err = rpcError({ data, error });
       if (err) return err;
-      return json({ status: "ok", data });
+      // Egg data is isolated in its own RPC; merge it into the regular payload.
+      const eggResult = await supabase.rpc("vault_egg_data_get", { p_token: token });
+      if (eggResult.error) {
+        const eggErr = rpcError({ data: null, error: eggResult.error });
+        if (eggErr) return eggErr;
+      }
+      return json({ status: "ok", data: { ...asRecord(data), ...asRecord(eggResult.data) } });
     }
 
     // ── generic data-management dispatch ──────────────────────────────
@@ -179,8 +185,9 @@ Deno.serve(async (req: Request) => {
       vault_activity_feed: ["token", "p_collector_no", "p_limit"],
       vault_stats_get: ["token", "p_collector_no"],
       vault_snapshots_get: ["token", "p_collector_no"],
-      // Egg collection reads are dispatched through this same authenticated bridge.
+      // Egg collection reads and writes use the same authenticated bridge.
       vault_egg_data_get: ["token"],
+      vault_egg_collection_manage: ["token", "p_egg_id", "p_owned", "p_quantity", "p_notes", "p_acquired_at", "p_collector_no"],
     };
 
     // Route signer assignment through the dedicated SECURITY DEFINER dispatcher.
