@@ -34,6 +34,12 @@ export type CatalogPet = {
   is_titanic?: boolean;
   is_gargantuan?: boolean;
   data_source?: string;
+  manual_value?: number | null;
+  manual_value_source?: string | null;
+  manual_value_locked?: boolean;
+  trade_hub_rap?: number | null;
+  trade_hub_exist_count?: number | null;
+  trade_hub_updated_at?: string | null;
 };
 
 export type SignerRole =
