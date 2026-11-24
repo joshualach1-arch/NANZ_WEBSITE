@@ -559,13 +559,13 @@ Deno.serve(async (req: Request) => {
       // The BIG Games inventory endpoint returns egg stacks as class "Egg"
       // with id/displayName/count. Match those explicit Egg rows only; do not
       // confuse pets whose names happen to contain the word egg.
-      const eggCatalogRes = await supabase.from("vault_egg_catalog").select("id, egg_name");
+      const eggCatalogRes = await supabase.from("vault_egg_catalog").select("id, egg_name, image_url");
       if (eggCatalogRes.error) {
         console.error("[vault-biggames] egg catalog lookup failed", eggCatalogRes.error);
         return fail("egg_catalog_lookup_failed", 500);
       }
-      const eggByName = new Map<string, { id: string; egg_name: string }>();
-      for (const row of (eggCatalogRes.data ?? []) as Array<{ id: string; egg_name: string }>) {
+      const eggByName = new Map<string, { id: string; egg_name: string; image_url: string | null }>();
+      for (const row of (eggCatalogRes.data ?? []) as Array<{ id: string; egg_name: string; image_url: string | null }>) {
         const key = normalizeEggInventoryName(row.egg_name);
         if (key) eggByName.set(key, row);
       }
@@ -573,7 +573,7 @@ Deno.serve(async (req: Request) => {
         String(item.class ?? "").toLowerCase() === "egg" ||
         String(item.collection ?? "").toLowerCase() === "eggs"
       );
-      const detectedEggs = new Map<string, { egg_id: string; egg_name: string; quantity: number }>();
+      const detectedEggs = new Map<string, { egg_id: string; egg_name: string; quantity: number; image_url: string | null }>();
       const unmatchedEggItems: Array<{ id: string; display_name: string; count: number }> = [];
       for (const item of eggItems) {
         const candidates = eggInventoryCandidates(item);
@@ -592,14 +592,17 @@ Deno.serve(async (req: Request) => {
           continue;
         }
         const previous = detectedEggs.get(match.id);
+        const inventoryIcon = typeof item.icon === "string" && item.icon.trim() ? item.icon.trim() : null;
         detectedEggs.set(match.id, {
           egg_id: match.id,
           egg_name: match.egg_name,
           quantity: (previous?.quantity ?? 0) + quantity,
+          image_url: inventoryIcon ?? previous?.image_url ?? match.image_url ?? null,
         });
       }
       let eggsAdded = 0;
       let eggQuantity = 0;
+      let eggImagesRepaired = 0;
       if (detectedEggs.size > 0) {
         const eggRows = [...detectedEggs.values()].map((egg) => ({
           collector_no: scope, egg_id: egg.egg_id, owned: true, quantity: egg.quantity,
@@ -612,6 +615,14 @@ Deno.serve(async (req: Request) => {
         }
         eggsAdded = detectedEggs.size;
         eggQuantity = [...detectedEggs.values()].reduce((sum, egg) => sum + egg.quantity, 0);
+        for (const egg of detectedEggs.values()) {
+          if (!egg.image_url) continue;
+          const imageUpdate = await supabase.from("vault_egg_catalog")
+            .update({ image_url: egg.image_url })
+            .eq("id", egg.egg_id);
+          if (!imageUpdate.error) eggImagesRepaired++;
+          else console.warn("[vault-biggames] egg image repair failed", egg.egg_name, imageUpdate.error);
+        }
       }
 
       const signedFound = parsed.filter((p) =>
@@ -691,6 +702,7 @@ Deno.serve(async (req: Request) => {
         eggs_added: eggsAdded,
         egg_quantity: eggQuantity,
         egg_inventory_items: eggItems.length,
+        egg_images_repaired: eggImagesRepaired,
         egg_unmatched: unmatchedEggItems.slice(0, 50),
       });
     }
