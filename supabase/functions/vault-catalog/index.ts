@@ -36,10 +36,13 @@ function normalizePetCategory(pet: PetRow): string | null {
   if (raw.includes("exclusive")) return "Exclusive";
   if (raw.includes("huge")) return "Huge";
 
-  if (config.gargantuan === true) return "Gargantuan";
-  if (config.titanic === true) return "Titanic";
-  if (config.exclusive === true) return "Exclusive";
-  if (config.huge === true) return "Huge";
+  const rarity = String(config.rarity ?? config.type ?? config.petType ?? "").toLowerCase();
+  const exclusiveFlag = config.exclusive === true || config.isExclusive === true
+    || rarity.includes("exclusive");
+  if (config.gargantuan === true || rarity.includes("gargantuan")) return "Gargantuan";
+  if (config.titanic === true || rarity.includes("titanic")) return "Titanic";
+  if (exclusiveFlag) return "Exclusive";
+  if (config.huge === true || rarity.includes("huge")) return "Huge";
   return null;
 }
 
@@ -66,6 +69,7 @@ function buildItem(pet: PetRow): Record<string, unknown> {
   const configData = asRecord(pet.configData);
   const category = normalizePetCategory(pet) ?? "Other";
   const isHuge = category === "Huge";
+  const isExclusive = category === "Exclusive";
   return {
     external_id: pet.configName,
     pet_name: pet.configName,
@@ -73,7 +77,7 @@ function buildItem(pet: PetRow): Record<string, unknown> {
     category,
     image_url: thumbnailUrl(pet),
     is_huge: isHuge,
-    is_exclusive: category === "Exclusive",
+    is_exclusive: isExclusive,
     is_titanic: category === "Titanic",
     is_gargantuan: category === "Gargantuan",
   };
