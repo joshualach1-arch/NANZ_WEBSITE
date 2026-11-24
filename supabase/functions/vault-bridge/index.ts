@@ -145,8 +145,13 @@ Deno.serve(async (req: Request) => {
       // Egg data is isolated in its own RPC; merge it into the regular payload.
       const eggResult = await supabase.rpc("vault_egg_data_get", { p_token: token });
       if (eggResult.error) {
-        const eggErr = rpcError({ data: null, error: eggResult.error });
-        if (eggErr) return eggErr;
+        if ((eggResult.error.message ?? "").includes("vault_access_denied")) {
+          return json({ error: "vault_access_denied" }, 401);
+        }
+        // Do not take down the rest of the vault if the optional egg migration
+        // has not been applied yet; log the schema issue for deployment checks.
+        console.error("[vault-bridge] egg data RPC unavailable", eggResult.error);
+        return json({ status: "ok", data: asRecord(data), egg_data_warning: "vault_egg_data_unavailable" });
       }
       return json({ status: "ok", data: { ...asRecord(data), ...asRecord(eggResult.data) } });
     }
