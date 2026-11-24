@@ -37,3 +37,7 @@ entrypoint = "./functions/screenshot-trade-analyzer/index.ts"
 [functions.vault-player-inventory]
 verify_jwt = false
 entrypoint = "./functions/vault-player-inventory/index.ts"
+
+[functions.vault-image]
+verify_jwt = false
+entrypoint = "./functions/vault-image/index.ts"
