@@ -2899,3 +2899,35 @@
  .vault-egg-tooltip { position:fixed; left:50%; top:50%; bottom:auto; transform:translate(-50%,-50%); width:min(350px,calc(100vw - 28px)); z-index:9999; }
  .vault-egg-card:hover .vault-egg-tooltip,.vault-egg-card:focus-within .vault-egg-tooltip { animation:none; }
 }
+
+
+/* Egg tooltip must escape the gallery card and open downward inside the scroll area. */
+.vault-pet-grid { overflow:visible!important; }
+.vault-egg-card { overflow:visible!important; position:relative!important; }
+.vault-egg-card:hover,.vault-egg-card:focus-within { z-index:100!important; }
+.vault-egg-tooltip {
+  top:calc(100% - 20px)!important;
+  bottom:auto!important;
+  transform:translate(-50%,8px)!important;
+}
+.vault-egg-card:hover .vault-egg-tooltip,
+.vault-egg-card:focus-within .vault-egg-tooltip {
+  animation:vaultEggTooltipDown .16s ease-out both!important;
+}
+@keyframes vaultEggTooltipDown {
+  from { opacity:0; transform:translate(-50%,0)!important; }
+  to { opacity:1; transform:translate(-50%,8px)!important; }
+}
+.vault-egg-tooltip:after {
+  top:-10px!important;
+  bottom:auto!important;
+  transform:rotate(225deg)!important;
+}
+@media(max-width:640px) {
+  .vault-egg-tooltip {
+    top:50%!important;
+    bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+  }
+  .vault-egg-tooltip:after { display:none!important; }
+}
