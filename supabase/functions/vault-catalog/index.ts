@@ -528,6 +528,29 @@ Deno.serve(async (req: Request) => {
         console.warn("[vault-catalog] official BIG Games exclusive egg import failed", error);
       }
 
+      const officialEggImages = new Map<string, string>();
+      try {
+        const eggRes = await fetch(`${API_BASE}/api/collection/Eggs`, {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(20000),
+        });
+        if (eggRes.ok) {
+          const payload = asRecord(await eggRes.json().catch(() => ({})));
+          const gameEggs = Array.isArray(payload.data) ? payload.data as PetRow[] : [];
+          for (const egg of gameEggs) {
+            const image = thumbnailUrl(egg);
+            if (!image) continue;
+            const configName = String(egg.configName ?? "");
+            const displayName = String(asRecord(egg.configData).name ?? "");
+            for (const name of [configName, displayName]) {
+              if (name) officialEggImages.set(normalize(name), image);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("[vault-catalog] BIG Games egg config artwork lookup failed", error);
+      }
+
       // BIG Games' official index is the canonical source for all current
       // Exclusive Eggs. Keep Cosmic Values data where it exists and append
       // official-only eggs such as Mythical and Chrome.
@@ -542,7 +565,7 @@ Deno.serve(async (req: Request) => {
           cosmic_value: previous.cosmic_value ?? null,
           rap_value: previous.rap_value ?? null,
           demand: previous.demand ?? null,
-          image_url: official.image_url ?? previous.image_url ?? null,
+          image_url: official.image_url ?? officialEggImages.get(key) ?? previous.image_url ?? null,
           contents: official.contents ?? [],
         });
       }
@@ -562,7 +585,7 @@ Deno.serve(async (req: Request) => {
         const previous = existingByKey.get(normalize(eggName)) ?? {};
         return {
           egg_name: eggName,
-          image_url: row.image_url ?? previous.image_url ?? null,
+          image_url: row.image_url ?? officialEggImages.get(normalize(eggName)) ?? previous.image_url ?? null,
           cosmic_value: row.cosmic_value ?? previous.cosmic_value ?? null,
           rap_value: row.rap_value ?? previous.rap_value ?? null,
           demand: row.demand ?? previous.demand ?? null,
