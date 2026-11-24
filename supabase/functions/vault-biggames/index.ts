@@ -54,8 +54,8 @@ function petCategory(petName: string): string {
 
 function normalizeEggInventoryName(value: unknown): string {
   return String(value ?? "").normalize("NFKC").toLowerCase()
-    .replace(/\\b(signed|golden|rainbow|shiny)\\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ").trim().replace(/\\s+/g, " ");
+    .replace(/\b(signed|golden|rainbow|shiny)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
 
 function eggInventoryCandidates(item: Record<string, unknown>): string[] {
@@ -563,7 +563,7 @@ Deno.serve(async (req: Request) => {
       for (const row of (eggCatalogRes.data ?? []) as Array<{ id: string; egg_name: string }>) {
         const key = normalizeEggInventoryName(row.egg_name);
         eggByName.set(key, row);
-        eggByName.set(normalizeEggInventoryName(row.egg_name.replace(/^Exclusive\\s+/i, "")), row);
+        eggByName.set(normalizeEggInventoryName(row.egg_name.replace(/^Exclusive\s+/i, "")), row);
       }
       const detectedEggs = new Map<string, { egg_id: string; egg_name: string; quantity: number }>();
       for (const item of items) {
