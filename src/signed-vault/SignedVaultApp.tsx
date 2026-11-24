@@ -3433,7 +3433,7 @@ function VaultShell() {
             className="vault-tabs vault-header-tabs"
             aria-label="Signed Vault navigation"
           >
-            {vaultTabs.filter((entry) => ['overview', 'collection', 'player-inventory', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
+            {vaultTabs.filter((entry) => ['overview', 'collection', 'eggs', 'player-inventory', 'signers', 'acquisitions', 'trade-calculator'].includes(entry.id)).map((entry) => (
               <button key={entry.id} className={`vault-tab${tab === entry.id ? ' active' : ''}`} onClick={() => navigate(entry.id)}>{entry.label}</button>
             ))}
           </nav>
