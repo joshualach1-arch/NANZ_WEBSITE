@@ -3249,7 +3249,7 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
             <div className="vault-egg-tooltip-rarity">{egg.rarity || 'Exclusive'} ★</div>
             <div className="vault-egg-tooltip-label">CONTAINS</div>
             <div className="vault-egg-content-grid">{egg.contents.map((content,index)=>{
-              const imageKey = (value: string) => value.toLowerCase().replace(/^(huge|titanic|gargantuan|exclusive)\\s+/i,'').replace(/[^a-z0-9]/g,'');
+              const imageKey = (value: string) => value.toLowerCase().replace(/^(huge|titanic|gargantuan|exclusive)\s+/i,'').replace(/[^a-z0-9]/g,'');
               const fallbackImage = (data.catalog ?? []).find((pet) =>
                 [pet.pet_name, pet.display_name ?? ''].some((name) => imageKey(name) === imageKey(content.pet_name))
               )?.image_url ?? null;
