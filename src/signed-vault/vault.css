@@ -2931,3 +2931,28 @@
   }
   .vault-egg-tooltip:after { display:none!important; }
 }
+
+
+/* FIX: Egg hatch preview must stack above every neighboring egg card. */
+.vault-pet-grid:has(.vault-egg-card) {
+  position:relative!important;
+  z-index:1!important;
+  overflow:visible!important;
+  isolation:auto!important;
+}
+.vault-pet-grid:has(.vault-egg-card) .vault-egg-card {
+  position:relative!important;
+  z-index:0!important;
+  isolation:auto!important;
+  overflow:visible!important;
+}
+.vault-pet-grid:has(.vault-egg-card) .vault-egg-card:hover,
+.vault-pet-grid:has(.vault-egg-card) .vault-egg-card:focus-within {
+  z-index:99999!important;
+  transform:translateY(-4px)!important;
+}
+.vault-pet-grid:has(.vault-egg-card) .vault-egg-tooltip {
+  z-index:100000!important;
+  isolation:auto!important;
+  pointer-events:none!important;
+}
