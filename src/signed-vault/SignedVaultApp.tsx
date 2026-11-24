@@ -3191,10 +3191,16 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
       const result = await vaultCall('biggames-sync', { collector_no: view });
       const detected = Number(result.eggs_detected ?? 0);
       const quantity = Number(result.egg_quantity ?? 0);
+      const inventoryEggs = Number(result.egg_inventory_items ?? 0);
+      const unmatched = Array.isArray(result.egg_unmatched) ? result.egg_unmatched as Array<{id?:string;display_name?:string}> : [];
       if (detected > 0) {
-        setMessage(`Inventory scan complete: ${detected} egg types found · ${quantity} eggs marked as owned.`);
+        const unmatchedNames = unmatched.slice(0, 5).map((egg) => egg.display_name || egg.id || 'Unknown egg').join(', ');
+        setMessage(`Inventory scan complete: ${detected} egg types / ${quantity} eggs marked owned from ${inventoryEggs} inventory egg stacks.${unmatched.length ? ` Not matched in catalog: ${unmatchedNames}${unmatched.length > 5 ? '…' : ''}.` : ''}`);
       } else {
-        setMessage('Inventory scan complete, but no egg names matched the current egg catalog. Your existing collection was not changed.');
+        const unmatchedNames = unmatched.slice(0, 8).map((egg) => egg.display_name || egg.id || 'Unknown egg').join(', ');
+        setMessage(inventoryEggs > 0
+          ? `Found ${inventoryEggs} egg stacks in BIG Games inventory, but none matched the catalog. Names: ${unmatchedNames || 'not provided'}. Update Cosmic Eggs first, then scan again.`
+          : 'BIG Games returned no Egg-class inventory stacks. Check that the connected account is the correct Roblox account and that the inventory is refreshed.');
       }
       await onRefresh();
     } catch (err) {
