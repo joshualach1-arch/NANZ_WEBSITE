@@ -57,12 +57,27 @@ type PetRow = {
   configData?: Record<string, unknown>;
 };
 
+function assetImageUrl(value: unknown): string | null {
+  if (typeof value === "number" && Number.isFinite(value)) return `${API_BASE}/image/${value}`;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const raw = value.trim();
+  const match = raw.match(/rbxassetid:\/\/(\d+)/i) ?? raw.match(/(?:assetid|image|thumbnail)[=:/" ]+(\d{6,})/i);
+  if (match) return `${API_BASE}/image/${match[1]}`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  return null;
+}
+
 function thumbnailUrl(pet: PetRow): string | null {
   const configData = asRecord(pet.configData);
-  const thumb = typeof configData.thumbnail === "string" ? configData.thumbnail : "";
-  // rbxassetid://123456 -> https://ps99.biggamesapi.io/image/123456
-  const match = thumb.match(/rbxassetid:\/\/(\d+)/);
-  return match ? `${API_BASE}/image/${match[1]}` : null;
+  for (const candidate of [
+    configData.thumbnail, configData.icon, configData.image, configData.imageUrl,
+    configData.thumbnailUrl, configData.assetId, configData.imageId,
+  ]) {
+    const url = assetImageUrl(candidate);
+    if (url) return url;
+  }
+  return null;
 }
 
 function buildItem(pet: PetRow): Record<string, unknown> {
@@ -155,34 +170,43 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
-
-  // Cosmic changed its egg cards' markup. Do not depend on the old card-box
-  // class: the current values page exposes each item as a linked card.
-  const blocks = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)].map((match) => ({
-    html: match[1],
-    text: strip(match[1]),
-  }));
+  const imageFrom = (markup: string): string | null => {
+    const tags = [...markup.matchAll(/<(?:img|source)\b[^>]*>/gi)].map((m) => m[0]);
+    for (const tag of tags) {
+      const match = tag.match(/(?:src|data-src|data-lazy-src|data-original)=["']([^"']+)/i);
+      const raw = match?.[1];
+      if (!raw || /^data:/i.test(raw)) continue;
+      try { return new URL(decode(raw), "https://petsimulatorvalues.com").toString(); } catch { /* ignore invalid URL */ }
+    }
+    const bg = markup.match(/background-image\s*:\s*url\((["']?)([^)"']+)\1\)/i)?.[2];
+    if (bg) {
+      try { return new URL(decode(bg), "https://petsimulatorvalues.com").toString(); } catch { /* ignore invalid URL */ }
+    }
+    return null;
+  };
+  const links = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)];
   const rows: Record<string, unknown>[] = [];
   const seen = new Set<string>();
-  for (const block of blocks) {
-    const text = block.text;
+  for (const match of links) {
+    const blockHtml = match[1];
+    const text = strip(blockHtml);
     const marker = text.match(/\bN\/?A\b/i);
     if (!marker || marker.index == null) continue;
     const eggName = text.slice(0, marker.index).replace(/^[^A-Za-z0-9]*/, "").trim();
     if (!eggName || !/\b(Egg|Gift|Present)\b/i.test(eggName)) continue;
     const tail = text.slice(marker.index + marker[0].length);
     const valueText = tail.match(/^\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
-    const demand = tail.match(/(\d+)\s*\/\s*10/);
+    const demand = text.match(/(\d+)\s*\/\s*10/);
     const rapText = text.match(/RAP\s*([\d,.]+\s*[KMBT]?)/i)?.[1] ?? null;
-    const image = block.html.match(/<img[^>]+(?:src|data-src)=["']([^"']+)["']/i)?.[1] ?? null;
-    const parse = (value: string | null) => value ? parseCosmicValue(value) : null;
+    const nearby = html.slice(Math.max(0, match.index! - 900), Math.min(html.length, match.index! + match[0].length + 500));
+    const image = imageFrom(blockHtml) ?? imageFrom(nearby);
     const key = eggName.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     rows.push({
       egg_name: eggName,
-      cosmic_value: parse(valueText),
-      rap_value: parse(rapText),
+      cosmic_value: valueText ? parseCosmicValue(valueText) : null,
+      rap_value: rapText ? parseCosmicValue(rapText) : null,
       demand: demand ? Number(demand[1]) : null,
       image_url: image,
       value_source: "cosmic_values",
@@ -190,6 +214,7 @@ function parseCosmicEggRows(html: string): Record<string, unknown>[] {
   }
   return rows;
 }
+
 
 function parseCosmicSignerRows(html: string, role: string): Record<string, unknown>[] {
   const decode = (s: string) => s
@@ -340,9 +365,6 @@ Deno.serve(async (req: Request) => {
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
       const all = new Map<string, Record<string, unknown>>();
       for (let page = 1; page <= 10; page++) {
-        // Cosmic currently serves the egg list through both valuesnew.php and
-        // the standard values.php listing. Some edge locations intermittently
-        // reject one route, so retry the alternate route before failing.
         const urls = [
           new URL("https://petsimulatorvalues.com/valuesnew.php"),
           new URL("https://petsimulatorvalues.com/values.php"),
@@ -364,38 +386,70 @@ Deno.serve(async (req: Request) => {
               },
               signal: AbortSignal.timeout(20000),
             });
-            if (response.ok) {
-              html = await response.text();
-              break;
-            }
+            if (response.ok) { html = await response.text(); break; }
             failures.push({ url: url.toString(), status: response.status });
           } catch (error) {
             failures.push({ url: url.toString(), status: error instanceof Error ? error.message : String(error) });
           }
         }
-        if (html === null) {
-          return json({ error: "cosmic_egg_fetch_failed", page, attempts: failures }, 502);
-        }
+        if (html === null) return json({ error: "cosmic_egg_fetch_failed", page, attempts: failures }, 502);
         const rows = parseCosmicEggRows(html);
         for (const row of rows) all.set(String(row.egg_name).toLowerCase(), row);
-        const cardCount = (html.match(/class=["'][^"']*card-box[^"']*["']/gi) ?? []).length;
-        if (cardCount < 40 || rows.length === 0) break;
+        const pageText = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        const range = pageText.match(/(\d+)\s*[–-]\s*(\d+)\s+of\s+(\d+)/i);
+        const end = range ? Number(range[2]) : 0;
+        const total = range ? Number(range[3]) : 0;
+        if (range ? end >= total : (!/\bNext\b/i.test(pageText) || rows.length === 0)) break;
       }
       const rows = [...all.values()];
       if (!rows.length) return json({ error: "cosmic_egg_parse_empty" }, 502);
-      const saved = await supabase.from("vault_egg_catalog").upsert(rows.map((row) => ({
-        egg_name: row.egg_name,
-        image_url: row.image_url,
-        cosmic_value: row.cosmic_value,
-        rap_value: row.rap_value,
-        demand: row.demand,
-        value_source: "cosmic_values",
-        source_updated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })), { onConflict: "egg_name" });
+
+      const normalizeEggKey = (value: string) => value.toLowerCase()
+        .replace(/^(?:exclusive|huge|titanic|gargantuan)\s+/i, "")
+        .replace(/[^a-z0-9]+/g, "");
+      const gameImages = new Map<string, string>();
+      try {
+        const eggRes = await fetch(`${API_BASE}/api/collection/Eggs`, {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(20000),
+        });
+        if (eggRes.ok) {
+          const eggPayload = asRecord(await eggRes.json().catch(() => ({})));
+          const gameEggs = Array.isArray(eggPayload.data) ? eggPayload.data as PetRow[] : [];
+          for (const egg of gameEggs) {
+            const config = asRecord(egg.configData);
+            const image = thumbnailUrl({ configName: egg.configName, configData: config });
+            if (image && egg.configName) gameImages.set(normalizeEggKey(egg.configName), image);
+            const displayName = typeof config.name === "string" ? config.name : "";
+            if (image && displayName) gameImages.set(normalizeEggKey(displayName), image);
+          }
+        }
+      } catch (error) {
+        console.warn("[vault-catalog] BIG Games egg artwork lookup failed", error);
+      }
+      const existing = await supabase.from("vault_egg_catalog").select("egg_name,image_url");
+      const existingImages = new Map<string, string>();
+      for (const row of existing.data ?? []) {
+        if (row.image_url) existingImages.set(String(row.egg_name).toLowerCase(), String(row.image_url));
+      }
+      const saved = await supabase.from("vault_egg_catalog").upsert(rows.map((row) => {
+        const eggName = String(row.egg_name);
+        const gameImage = gameImages.get(normalizeEggKey(eggName));
+        return {
+          egg_name: eggName,
+          image_url: row.image_url ?? gameImage ?? existingImages.get(eggName.toLowerCase()) ?? null,
+          cosmic_value: row.cosmic_value,
+          rap_value: row.rap_value,
+          demand: row.demand,
+          value_source: "cosmic_values",
+          source_updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }), { onConflict: "egg_name" });
       if (saved.error) return json({ error: saved.error.message }, 500);
       const count = await supabase.from("vault_egg_catalog").select("id", { count: "exact", head: true });
-      return json({ status: "ok", added_or_updated: rows.length, total_catalog: count.count ?? rows.length });
+      const imageCount = rows.filter((row) => row.image_url || gameImages.has(normalizeEggKey(String(row.egg_name)))).length;
+      return json({ status: "ok", added_or_updated: rows.length, imported_pages: Math.min(10, Math.ceil(rows.length / 50)), images_resolved: imageCount, total_catalog: count.count ?? rows.length });
     }
 
     if (action === "cosmic_pet_values_progress") {
@@ -510,6 +564,25 @@ Deno.serve(async (req: Request) => {
       if (collectorNo !== 1) return json({ error: "vault_owner_only" }, 403);
 
       const sourceUrl = "https://ps99.trade/values/exclusive";
+      const officialPetImages = new Map<string, string>();
+      try {
+        const petRes = await fetch(`${API_BASE}/api/collection/Pets`, {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(20000),
+        });
+        if (petRes.ok) {
+          const petPayload = asRecord(await petRes.json().catch(() => ({})));
+          const gamePets = Array.isArray(petPayload.data) ? petPayload.data as PetRow[] : [];
+          for (const pet of gamePets) {
+            const image = thumbnailUrl(pet);
+            if (image && pet.configName) officialPetImages.set(pet.configName.toLowerCase(), image);
+            const displayName = asRecord(pet.configData).name;
+            if (image && typeof displayName === "string") officialPetImages.set(displayName.toLowerCase(), image);
+          }
+        }
+      } catch (error) {
+        console.warn("[vault-catalog] BIG Games pet artwork lookup failed", error);
+      }
       const response = await fetch(sourceUrl, {
         headers: {
           Accept: "text/html,application/xhtml+xml",
@@ -595,6 +668,7 @@ Deno.serve(async (req: Request) => {
           } catch {
             // Keep the RAP row even if one detail page is temporarily unavailable.
           }
+          imageUrl = imageUrl ?? officialPetImages.get(item.name.toLowerCase()) ?? null;
           return {
             pet_name: item.name,
             rap: item.rap,
