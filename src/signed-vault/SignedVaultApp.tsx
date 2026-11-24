@@ -3241,10 +3241,22 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
             <div className="vault-egg-tooltip-title">{egg.egg_name}</div>
             <div className="vault-egg-tooltip-rarity">{egg.rarity || 'Exclusive'} ★</div>
             <div className="vault-egg-tooltip-label">CONTAINS</div>
-            <div className="vault-egg-content-grid">{egg.contents.map((content,index)=><div className="vault-egg-content" key={content.pet_name+index}>
-              <div className="vault-egg-content-art">{content.image_url?<img src={vaultImageSrc(content.image_url)} alt={content.pet_name} loading="lazy"/>:<span>🐾</span>}<b>{content.odds}</b></div>
-              <span title={content.pet_name}>{content.pet_name}</span>
-            </div>)}</div>
+            <div className="vault-egg-content-grid">{egg.contents.map((content,index)=>{
+              const imageKey = (value: string) => value.toLowerCase().replace(/^(huge|titanic|gargantuan|exclusive)\\s+/i,'').replace(/[^a-z0-9]/g,'');
+              const fallbackImage = (data.catalog ?? []).find((pet) =>
+                [pet.pet_name, pet.display_name ?? ''].some((name) => imageKey(name) === imageKey(content.pet_name))
+              )?.image_url ?? null;
+              const contentImage = content.image_url || fallbackImage;
+              return <div className="vault-egg-content" key={content.pet_name+index}>
+                <div className="vault-egg-content-art">{contentImage?<img src={vaultImageSrc(contentImage)} alt={content.pet_name} loading="lazy" onError={(event)=>{
+                  const image=event.currentTarget;
+                  const fallback=fallbackImage ? vaultImageSrc(fallbackImage) : undefined;
+                  if(fallback && image.src!==fallback) image.src=fallback;
+                  else image.style.visibility='hidden';
+                }}/>:<span>🐾</span>}<b>{content.odds}</b></div>
+                <span title={content.pet_name}>{content.pet_name}</span>
+              </div>;
+            })}</div>
             <div className="vault-egg-tooltip-foot">Official BIG Games hatch odds</div>
           </div>}
         </article>;
