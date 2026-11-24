@@ -247,6 +247,9 @@ export type VerificationRequest = {
   created_at: string;
 };
 
+export type EggCatalogEntry = { id: string; egg_name: string; image_url: string | null; cosmic_value: number | string | null; rap_value: number | string | null; demand: number | null; value_source: string | null };
+export type EggCollectionEntry = { id: string; collector_no: number; egg_id: string; owned: boolean; quantity: number; notes: string | null; acquired_at: string | null; egg_name: string; image_url: string | null; cosmic_value: number | string | null; demand: number | null };
+
 export type VaultData = {
   me: number;
   is_owner: boolean;
@@ -262,6 +265,8 @@ export type VaultData = {
   verification: VerificationRequest[];
   access_setup_required: boolean;
   roblox_accounts?: RobloxAccount[];
+  egg_catalog?: EggCatalogEntry[];
+  egg_collection?: EggCollectionEntry[];
 };
 
 export type RobloxAccount = {
@@ -455,7 +460,13 @@ export async function logout(token: string): Promise<void> {
 
 export async function fetchData(token: string): Promise<VaultData> {
   const result = await vaultCall('data', { token });
-  return result.data as VaultData;
+  const data = result.data as VaultData;
+  try {
+    const eggs = await rpcCall('vault_egg_data_get', token);
+    return { ...data, ...(eggs.result as Pick<VaultData, 'egg_catalog' | 'egg_collection'>) };
+  } catch {
+    return { ...data, egg_catalog: [], egg_collection: [] };
+  }
 }
 
 export const TOKEN_KEY = 'nanz_vault_token';
