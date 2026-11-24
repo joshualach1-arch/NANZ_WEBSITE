@@ -378,7 +378,7 @@ function buildOfficialEggFallback(petImages: Map<string, string>, eggImages: Map
   return source.split("\n").map((line, index) => {
     const [shortName, contentText] = line.split("|");
     const eggName = "Exclusive " + shortName;
-    const contents = [...(contentText ?? "").matchAll(/([^,]+?)\\s*\\(([0-9]+(?:\\.[0-9]+)?%)\\)/g)].map((match) => {
+    const contents = [...(contentText ?? "").matchAll(/([^,]+?)\s*\\(([0-9]+(?:\.[0-9]+)?%)\\)/g)].map((match) => {
       const petName = match[1].trim();
       return {
         pet_name: petName,
