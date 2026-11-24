@@ -3192,10 +3192,11 @@ function EggCollectionTab({ data, onRefresh }: { data: VaultData; onRefresh: () 
       const detected = Number(result.eggs_detected ?? 0);
       const quantity = Number(result.egg_quantity ?? 0);
       const inventoryEggs = Number(result.egg_inventory_items ?? 0);
+      const imagesRepaired = Number(result.egg_images_repaired ?? 0);
       const unmatched = Array.isArray(result.egg_unmatched) ? result.egg_unmatched as Array<{id?:string;display_name?:string}> : [];
       if (detected > 0) {
         const unmatchedNames = unmatched.slice(0, 5).map((egg) => egg.display_name || egg.id || 'Unknown egg').join(', ');
-        setMessage(`Inventory scan complete: ${detected} egg types / ${quantity} eggs marked owned from ${inventoryEggs} inventory egg stacks.${unmatched.length ? ` Not matched in catalog: ${unmatchedNames}${unmatched.length > 5 ? '…' : ''}.` : ''}`);
+        setMessage(`Inventory scan complete: ${detected} egg types / ${quantity} eggs marked owned from ${inventoryEggs} inventory egg stacks · ${imagesRepaired} egg images refreshed.${unmatched.length ? ` Not matched in catalog: ${unmatchedNames}${unmatched.length > 5 ? '…' : ''}.` : ''}`);
       } else {
         const unmatchedNames = unmatched.slice(0, 8).map((egg) => egg.display_name || egg.id || 'Unknown egg').join(', ');
         setMessage(inventoryEggs > 0
