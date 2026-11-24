@@ -159,6 +159,8 @@ Deno.serve(async (req: Request) => {
       vault_activity_feed: ["token", "p_collector_no", "p_limit"],
       vault_stats_get: ["token", "p_collector_no"],
       vault_snapshots_get: ["token", "p_collector_no"],
+      // Egg collection reads are dispatched through this same authenticated bridge.
+      vault_egg_data_get: ["token"],
     };
 
     // Route signer assignment through the dedicated SECURITY DEFINER dispatcher.
