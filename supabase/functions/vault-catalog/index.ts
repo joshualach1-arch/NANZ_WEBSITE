@@ -484,12 +484,18 @@ Deno.serve(async (req: Request) => {
         const slug = match[1];
         const anchorHtml = match[2];
         const anchorText = decode(anchorHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
-        const name = anchorText || slug.split("/").pop()!.replace(/-/g, " ");
+        const cleanAnchor = anchorText
+          .replace(/^Exclusive\s+/i, "")
+          .replace(/\s+Exclusive$/i, "")
+          .replace(/\s+[\d,.]+\s*[KMBT][\s\S]*$/i, "")
+          .trim();
+        const name = cleanAnchor || slug.split("/").pop()!.replace(/-/g, " ");
         if (!name || seen.has(name.toLowerCase())) continue;
         const tail = decode(html.slice(match.index! + match[0].length, match.index! + match[0].length + 1800)
           .replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")
           .replace(/<[^>]+>/g, " ").replace(/\s+/g, " "));
-        const metric = tail.match(/(?:Value\s*)?([\d,.]+\s*[KMBT])\s*(?:Value)?[\s\S]{0,180}?Exist\s*:?\s*([\d,]+)/i);
+        const metricText = anchorText + " " + tail;
+        const metric = metricText.match(/([\d,.]+\s*[KMBT])\s*(?:Value)?[\s\S]{0,180}?Exist\s*:?\s*([\d,]+)/i);
         if (!metric) continue;
         const image = anchorHtml.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
         const parse = (value: string) => {
