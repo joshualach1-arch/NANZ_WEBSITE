@@ -53,6 +53,26 @@ Deno.serve(async (req: Request) => {
     const body = await readBody(req);
     const action = String(body.action ?? "");
 
+    // Backward compatibility for already-published frontends that still send
+    // the egg import action to vault-bridge instead of vault-catalog.
+    if (action === "cosmic-egg-import" || action === "cosmic_egg_import") {
+      const token = String(body.token ?? "");
+      const baseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const response = await fetch(`${baseUrl}/functions/v1/vault-catalog`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceKey}`,
+          apikey: serviceKey,
+        },
+        body: JSON.stringify({ action: "cosmic_egg_import", token }),
+        signal: AbortSignal.timeout(120000),
+      });
+      const result = await response.json().catch(() => ({ error: "egg_catalog_response_invalid" }));
+      return json(result, response.status);
+    }
+
     // ── status: is the vault configured? (no auth needed) ────────────
     if (action === "status") {
       const { data, error } = await supabase.rpc("vault_status");
